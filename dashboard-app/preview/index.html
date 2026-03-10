@@ -1305,10 +1305,34 @@
      ----------------------------------------------- */
   async function translateText(text) {
     if (!text.trim()) return '';
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ko|en`;
-    const res = await fetch(url);
-    const data = await res.json();
-    return data.responseData.translatedText;
+    const LIMIT = 450;
+    if (text.length <= LIMIT) {
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ko|en`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return data.responseData.translatedText;
+    }
+    // 450자 초과 시 문장 단위로 분할하여 순차 번역 후 합치기
+    const sentences = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
+    const chunks = [];
+    let current = '';
+    for (const s of sentences) {
+      if ((current + s).length > LIMIT) {
+        if (current) chunks.push(current.trim());
+        current = s;
+      } else {
+        current += s;
+      }
+    }
+    if (current.trim()) chunks.push(current.trim());
+    const results = [];
+    for (const chunk of chunks) {
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=ko|en`;
+      const res = await fetch(url);
+      const data = await res.json();
+      results.push(data.responseData.translatedText);
+    }
+    return results.join(' ');
   }
 
   /* 번역하기 버튼 클릭 */
