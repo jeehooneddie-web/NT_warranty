@@ -1305,32 +1305,40 @@
      ----------------------------------------------- */
   async function translateText(text) {
     if (!text.trim()) return '';
-    const LIMIT = 450;
-    if (text.length <= LIMIT) {
-      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ko|en`;
-      const res = await fetch(url);
-      const data = await res.json();
-      return data.responseData.translatedText;
-    }
-    // 450자 초과 시 문장 단위로 분할하여 순차 번역 후 합치기
-    const sentences = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
-    const chunks = [];
-    let current = '';
-    for (const s of sentences) {
-      if ((current + s).length > LIMIT) {
-        if (current) chunks.push(current.trim());
-        current = s;
-      } else {
-        current += s;
+    const LIMIT = 300;
+
+    // 텍스트를 300자 이하 청크로 강제 분할
+    function splitIntoChunks(str) {
+      const chunks = [];
+      // 먼저 줄바꿈/문장 단위로 분리
+      const lines = str.split(/(?<=[.!?\n])\s*/);
+      let current = '';
+      for (const line of lines) {
+        if (!line) continue;
+        // 한 줄 자체가 LIMIT 초과면 글자 단위로 강제 분할
+        if (line.length > LIMIT) {
+          if (current) { chunks.push(current.trim()); current = ''; }
+          for (let i = 0; i < line.length; i += LIMIT) {
+            chunks.push(line.slice(i, i + LIMIT));
+          }
+        } else if ((current + line).length > LIMIT) {
+          if (current) chunks.push(current.trim());
+          current = line;
+        } else {
+          current += line;
+        }
       }
+      if (current.trim()) chunks.push(current.trim());
+      return chunks.length ? chunks : [str.slice(0, LIMIT)];
     }
-    if (current.trim()) chunks.push(current.trim());
+
+    const chunks = splitIntoChunks(text);
     const results = [];
     for (const chunk of chunks) {
       const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=ko|en`;
       const res = await fetch(url);
       const data = await res.json();
-      results.push(data.responseData.translatedText);
+      results.push(data.responseData.translatedText || chunk);
     }
     return results.join(' ');
   }
