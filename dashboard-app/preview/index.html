@@ -1303,14 +1303,33 @@
   /* -----------------------------------------------
      보증번역기 - MyMemory API 호출
      ----------------------------------------------- */
-  async function translateText(text) {
-    if (!text.trim()) return '';
+  async function translateChunk(chunk) {
     const url = 'https://translate.googleapis.com/translate_a/single'
-      + '?client=gtx&sl=ko&tl=en&dt=t&q=' + encodeURIComponent(text);
+      + '?client=gtx&sl=ko&tl=en&dt=t&q=' + encodeURIComponent(chunk);
     const res = await fetch(url);
     const data = await res.json();
-    // 응답: [[[번역문, 원문], ...], ...]
     return data[0].map(item => item[0]).join('');
+  }
+
+  async function translateText(text) {
+    if (!text.trim()) return '';
+    // 인코딩 길이 기준으로 청크 분할 (한국어 1자 = 인코딩 후 약 9자)
+    const chunks = [];
+    let current = '';
+    for (const char of text) {
+      const next = current + char;
+      if (encodeURIComponent(next).length > 450) {
+        if (current) chunks.push(current);
+        current = char;
+      } else {
+        current = next;
+      }
+    }
+    if (current) chunks.push(current);
+
+    const results = [];
+    for (const chunk of chunks) results.push(await translateChunk(chunk));
+    return results.join('');
   }
 
   /* 번역하기 버튼 클릭 */
