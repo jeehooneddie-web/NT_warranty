@@ -1303,43 +1303,41 @@
   /* -----------------------------------------------
      보증번역기 - MyMemory API 호출
      ----------------------------------------------- */
+  async function translateChunk(chunk) {
+    const body = new URLSearchParams({ q: chunk, langpair: 'ko|en' });
+    const res = await fetch('https://api.mymemory.translated.net/get', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
+    });
+    const data = await res.json();
+    return data.responseData?.translatedText || chunk;
+  }
+
   async function translateText(text) {
     if (!text.trim()) return '';
-    const LIMIT = 300;
+    const LIMIT = 400;
 
-    // 텍스트를 300자 이하 청크로 강제 분할
-    function splitIntoChunks(str) {
-      const chunks = [];
-      // 먼저 줄바꿈/문장 단위로 분리
-      const lines = str.split(/(?<=[.!?\n])\s*/);
-      let current = '';
-      for (const line of lines) {
-        if (!line) continue;
-        // 한 줄 자체가 LIMIT 초과면 글자 단위로 강제 분할
-        if (line.length > LIMIT) {
-          if (current) { chunks.push(current.trim()); current = ''; }
-          for (let i = 0; i < line.length; i += LIMIT) {
-            chunks.push(line.slice(i, i + LIMIT));
-          }
-        } else if ((current + line).length > LIMIT) {
-          if (current) chunks.push(current.trim());
-          current = line;
-        } else {
-          current += line;
-        }
+    // 400자 단위로 분할 (문장 우선, 초과 시 글자 단위 강제 분할)
+    const chunks = [];
+    let current = '';
+    const sentences = text.split(/(?<=[.!?\n。])\s*/);
+    for (const s of sentences) {
+      if (!s) continue;
+      if (s.length > LIMIT) {
+        if (current) { chunks.push(current.trim()); current = ''; }
+        for (let i = 0; i < s.length; i += LIMIT) chunks.push(s.slice(i, i + LIMIT));
+      } else if ((current + s).length > LIMIT) {
+        chunks.push(current.trim());
+        current = s;
+      } else {
+        current += s;
       }
-      if (current.trim()) chunks.push(current.trim());
-      return chunks.length ? chunks : [str.slice(0, LIMIT)];
     }
+    if (current.trim()) chunks.push(current.trim());
 
-    const chunks = splitIntoChunks(text);
     const results = [];
-    for (const chunk of chunks) {
-      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=ko|en`;
-      const res = await fetch(url);
-      const data = await res.json();
-      results.push(data.responseData.translatedText || chunk);
-    }
+    for (const chunk of chunks) results.push(await translateChunk(chunk));
     return results.join(' ');
   }
 
