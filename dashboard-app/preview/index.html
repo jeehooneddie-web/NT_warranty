@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>National Motors 사내 관리 시스템</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- 브랜드 색상 설정 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'nm-navy': '#1e3a5f',
+            'nm-blue': '#2563eb',
+            'nm-hover': '#2d4a73',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* 상태 뱃지 */
+    .badge-pending   { background: #fef3c7; color: #92400e; }
+    .badge-inprogress { background: #dbeafe; color: #1e40af; }
+    .badge-resolved  { background: #dcfce7; color: #166534; }
+
+    /* 사이드바 네비게이션 아이템 활성 상태 */
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.625rem 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      color: #93c5fd;
+      transition: background 0.15s, color 0.15s;
+      font-size: 0.875rem;
+    }
+    .nav-item:hover {
+      background: #2d4a73;
+      color: #ffffff;
+    }
+    .nav-item.active {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .nav-item i, .nav-item svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    /* 테이블 행 호버 */
+    tbody tr:hover { background: #f8fafc; }
+
+    /* 스크롤바 스타일 */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+    /* 카드 호버 */
+    .notice-card:hover { background: #f8fafc; }
+  </style>
+</head>
+<body class="font-sans antialiased">
+
+<!-- =============================================
+     최상위 레이아웃
+     ============================================= -->
+<div class="flex h-screen overflow-hidden bg-slate-50">
+
+  <!-- ===================
+       사이드바 (260px 고정)
+       =================== -->
+  <aside class="w-[260px] flex-shrink-0 flex flex-col overflow-y-auto" style="background:#1e3a5f;">
+
+    <!-- 로고 영역 -->
+    <div class="px-5 py-6 border-b border-white/10">
+      <div class="text-white font-bold text-xl leading-tight">National Motors</div>
+      <div class="text-blue-300 text-xs mt-1">사내 관리 시스템</div>
+    </div>
+
+    <!-- 네비게이션 메뉴 -->
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <div class="nav-item active" data-view="view-dashboard" onclick="showView('view-dashboard')">
+        <i data-lucide="layout-dashboard"></i>
+        <span>대시보드</span>
+      </div>
+      <div class="nav-item" data-view="view-notices" onclick="showView('view-notices')">
+        <i data-lucide="bell"></i>
+        <span>공지사항</span>
+      </div>
+      <div class="nav-item" data-view="view-inquiries" onclick="showView('view-inquiries')">
+        <i data-lucide="message-square"></i>
+        <span>문의하기</span>
+      </div>
+
+      <!-- 구분선 -->
+      <div class="pt-3 pb-1 px-1">
+        <span class="text-blue-400/60 text-xs uppercase tracking-wider font-medium">관리자</span>
+      </div>
+
+      <div class="nav-item" data-view="view-admin-inquiries" onclick="showView('view-admin-inquiries')">
+        <i data-lucide="message-square-dot"></i>
+        <span>문의 관리</span>
+      </div>
+      <div class="nav-item" data-view="view-admin-notices" onclick="showView('view-admin-notices')">
+        <i data-lucide="megaphone"></i>
+        <span>공지 관리</span>
+      </div>
+      <div class="nav-item" data-view="view-admin-menus" onclick="showView('view-admin-menus')">
+        <i data-lucide="settings"></i>
+        <span>메뉴 관리</span>
+      </div>
+      <div class="nav-item" data-view="view-translator" onclick="showView('view-translator')">
+        <i data-lucide="languages"></i>
+        <span>보증번역기</span>
+      </div>
+    </nav>
+
+    <!-- 사용자 정보 -->
+    <div class="px-4 py-4 border-t border-white/10">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">A</div>
+        <div class="min-w-0">
+          <div class="text-white text-xs font-medium truncate">admin@nationalmotors.co.kr</div>
+          <span class="inline-block mt-0.5 px-2 py-0.5 bg-blue-500/30 text-blue-200 text-xs rounded-full">슈퍼관리자</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===================
+       우측 메인 영역
+       =================== -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <!-- 헤더 -->
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0">
+      <!-- 현재 페이지 제목 (JS로 동적 변경) -->
+      <h1 id="page-title" class="text-lg font-semibold text-slate-800">대시보드</h1>
+
+      <!-- 우측: 알림 + 아바타 -->
+      <div class="flex items-center gap-3">
+        <!-- 알림 벨 (뱃지 3) -->
+        <button class="relative w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
+        </button>
+        <!-- 사용자 아바타 -->
+        <div class="w-8 h-8 rounded-full bg-nm-blue flex items-center justify-center text-white text-sm font-bold cursor-pointer">A</div>
+      </div>
+    </header>
+
+    <!-- 메인 콘텐츠 영역 -->
+    <main class="flex-1 overflow-auto p-6">
+
+      <!-- =============================================
+           뷰 1: 대시보드
+           ============================================= -->
+      <div id="view-dashboard" class="view">
+
+        <!-- 통계 카드 4개 -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <!-- 이번달 보증 문의 -->
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+            <div class="flex items-start justify-between mb-3">
+              <div class="text-sm text-slate-500 font-medium">이번달 보증 문의</div>
+              <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center text-nm-blue">
+                <i data-lucide="file-text" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="text-3xl font-bold text-slate-800 mb-1">134</div>
+            <div class="text-xs text-emerald-600 flex items-center gap-1">
+              <i data-lucide="trending-up" class="w-3 h-3"></i>
+              +12% 전월 대비
+            </div>
+          </div>
+
+          <!-- 처리 대기 -->
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+            <div class="flex items-start justify-between mb-3">
+              <div class="text-sm text-slate-500 font-medium">처리 대기</div>
+              <div class="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center text-red-500">
+                <i data-lucide="clock" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="flex items-end gap-2 mb-1">
+              <span class="text-3xl font-bold text-slate-800">23</span>
+              <span class="inline-block mb-1 px-2 py-0.5 bg-red-100 text-red-600 text-xs font-semibold rounded-full">긴급</span>
+            </div>
+            <div class="text-xs text-slate-400">건</div>
+          </div>
+
+          <!-- 평균 처리시간 -->
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+            <div class="flex items-start justify-between mb-3">
+              <div class="text-sm text-slate-500 font-medium">평균 처리시간</div>
+              <div class="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center text-purple-500">
+                <i data-lucide="timer" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="text-3xl font-bold text-slate-800 mb-1">4.2<span class="text-lg font-normal text-slate-500 ml-1">시간</span></div>
+            <div class="text-xs text-emerald-600 flex items-center gap-1">
+              <i data-lucide="trending-down" class="w-3 h-3"></i>
+              -0.8h
+            </div>
+          </div>
+
+          <!-- 이번달 공지 -->
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+            <div class="flex items-start justify-between mb-3">
+              <div class="text-sm text-slate-500 font-medium">이번달 공지</div>
+              <div class="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500">
+                <i data-lucide="megaphone" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="text-3xl font-bold text-slate-800 mb-1">8</div>
+            <div class="text-xs text-slate-400">건</div>
+          </div>
+        </div>
+
+        <!-- 하단: 최근 문의 테이블 + 최근 공지 -->
+        <div class="grid grid-cols-3 gap-4">
+
+          <!-- 최근 문의 테이블 (2/3) -->
+          <div class="col-span-2 bg-white rounded-xl shadow-sm border border-slate-100">
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h2 class="font-semibold text-slate-800">최근 문의</h2>
+              <button onclick="showView('view-admin-inquiries')" class="text-xs text-nm-blue hover:underline">전체보기</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-xs text-slate-500 uppercase tracking-wider bg-slate-50">
+                    <th class="px-4 py-3 text-left font-medium">No</th>
+                    <th class="px-4 py-3 text-left font-medium">대분류</th>
+                    <th class="px-4 py-3 text-left font-medium">중분류</th>
+                    <th class="px-4 py-3 text-left font-medium">작성자</th>
+                    <th class="px-4 py-3 text-left font-medium">등록일</th>
+                    <th class="px-4 py-3 text-left font-medium">상태</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <tr>
+                    <td class="px-4 py-3 text-slate-500">1</td>
+                    <td class="px-4 py-3 text-slate-700">보증문의</td>
+                    <td class="px-4 py-3 text-slate-600">엔진/변속기</td>
+                    <td class="px-4 py-3 text-slate-700">김철수</td>
+                    <td class="px-4 py-3 text-slate-500">2026-03-09</td>
+                    <td class="px-4 py-3"><span class="badge-pending px-2 py-0.5 rounded-full text-xs font-medium">대기중</span></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-slate-500">2</td>
+                    <td class="px-4 py-3 text-slate-700">정비문의</td>
+                    <td class="px-4 py-3 text-slate-600">정기점검</td>
+                    <td class="px-4 py-3 text-slate-700">이영희</td>
+                    <td class="px-4 py-3 text-slate-500">2026-03-09</td>
+                    <td class="px-4 py-3"><span class="badge-inprogress px-2 py-0.5 rounded-full text-xs font-medium">처리중</span></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-slate-500">3</td>
+                    <td class="px-4 py-3 text-slate-700">보증문의</td>
+                    <td class="px-4 py-3 text-slate-600">전기/전자</td>
+                    <td class="px-4 py-3 text-slate-700">박민준</td>
+                    <td class="px-4 py-3 text-slate-500">2026-03-08</td>
+                    <td class="px-4 py-3"><span class="badge-resolved px-2 py-0.5 rounded-full text-xs font-medium">완료</span></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-slate-500">4</td>
+                    <td class="px-4 py-3 text-slate-700">부품문의</td>
+                    <td class="px-4 py-3 text-slate-600">순정부품</td>
+                    <td class="px-4 py-3 text-slate-700">최수진</td>
+                    <td class="px-4 py-3 text-slate-500">2026-03-08</td>
+                    <td class="px-4 py-3"><span class="badge-pending px-2 py-0.5 rounded-full text-xs font-medium">대기중</span></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-slate-500">5</td>
+                    <td class="px-4 py-3 text-slate-700">보증문의</td>
+                    <td class="px-4 py-3 text-slate-600">제동/조향</td>
+                    <td class="px-4 py-3 text-slate-700">정대호</td>
+                    <td class="px-4 py-3 text-slate-500">2026-03-07</td>
+                    <td class="px-4 py-3"><span class="badge-inprogress px-2 py-0.5 rounded-full text-xs font-medium">처리중</span></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-slate-500">6</td>
+                    <td class="px-4 py-3 text-slate-700">정비문의</td>
+                    <td class="px-4 py-3 text-slate-600">사고수리</td>
+                    <td class="px-4 py-3 text-slate-700">윤미래</td>
+                    <td class="px-4 py-3 text-slate-500">2026-03-07</td>
+                    <td class="px-4 py-3"><span class="badge-resolved px-2 py-0.5 rounded-full text-xs font-medium">완료</span></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-slate-500">7</td>
+                    <td class="px-4 py-3 text-slate-700">부품문의</td>
+                    <td class="px-4 py-3 text-slate-600">외장부품</td>
+                    <td class="px-4 py-3 text-slate-700">강지원</td>
+                    <td class="px-4 py-3 text-slate-500">2026-03-06</td>
+                    <td class="px-4 py-3"><span class="badge-pending px-2 py-0.5 rounded-full text-xs font-medium">대기중</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 최근 공지 카드 (1/3) -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-100">
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h2 class="font-semibold text-slate-800">최근 공지</h2>
+              <button onclick="showView('view-notices')" class="text-xs text-nm-blue hover:underline">전체보기</button>
+            </div>
+            <div class="divide-y divide-slate-100">
+              <!-- 공지 1 (핀) -->
+              <div class="notice-card px-5 py-4 cursor-pointer">
+                <div class="flex items-start gap-2">
+                  <i data-lucide="pin" class="w-3.5 h-3.5 text-red-400 mt-0.5 flex-shrink-0"></i>
+                  <div class="min-w-0">
+                    <div class="text-sm font-medium text-slate-800 leading-snug">[중요] 2026년 1분기 보증 정책 변경 안내</div>
+                    <div class="text-xs text-slate-400 mt-1">2026-03-05</div>
+                  </div>
+                </div>
+              </div>
+              <!-- 공지 2 -->
+              <div class="notice-card px-5 py-4 cursor-pointer">
+                <div class="flex items-start gap-2">
+                  <div class="w-3.5 h-3.5 mt-0.5 flex-shrink-0"></div>
+                  <div class="min-w-0">
+                    <div class="text-sm font-medium text-slate-800 leading-snug">시스템 정기 점검 안내 (3/15)</div>
+                    <div class="text-xs text-slate-400 mt-1">2026-03-04</div>
+                  </div>
+                </div>
+              </div>
+              <!-- 공지 3 (핀) -->
+              <div class="notice-card px-5 py-4 cursor-pointer">
+                <div class="flex items-start gap-2">
+                  <i data-lucide="pin" class="w-3.5 h-3.5 text-red-400 mt-0.5 flex-shrink-0"></i>
+                  <div class="min-w-0">
+                    <div class="text-sm font-medium text-slate-800 leading-snug">신규 딜러 온보딩 교육 일정</div>
+                    <div class="text-xs text-slate-400 mt-1">2026-03-03</div>
+                  </div>
+                </div>
+              </div>
+              <!-- 공지 4 -->
+              <div class="notice-card px-5 py-4 cursor-pointer">
+                <div class="flex items-start gap-2">
+                  <div class="w-3.5 h-3.5 mt-0.5 flex-shrink-0"></div>
+                  <div class="min-w-0">
+                    <div class="text-sm font-medium text-slate-800 leading-snug">클레임 처리 프로세스 개정 안내</div>
+                    <div class="text-xs text-slate-400 mt-1">2026-03-01</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /view-dashboard -->
+
+      <!-- =============================================
+           뷰 2: 공지사항
+           ============================================= -->
+      <div id="view-notices" class="view hidden">
+        <!-- 헤더 -->
+        <div class="flex items-center justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <h2 class="text-xl font-bold text-slate-800">공지사항</h2>
+            <span class="bg-slate-100 text-slate-600 text-xs font-medium px-2.5 py-1 rounded-full">총 4건</span>
+          </div>
+        </div>
+
+        <!-- 검색창 -->
+        <div class="relative mb-5">
+          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+          <input type="text" placeholder="공지 제목으로 검색..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-nm-blue/30 focus:border-nm-blue" />
+        </div>
+
+        <!-- 공지 목록 -->
+        <div class="space-y-3">
+          <!-- 공지 카드 1 (핀) -->
+          <div class="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow cursor-pointer">
+            <div class="flex items-start gap-3">
+              <i data-lucide="pin" class="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0"></i>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="bg-red-50 text-red-600 text-xs font-semibold px-2 py-0.5 rounded">중요</span>
+                  <span class="text-base font-semibold text-slate-800">[중요] 2026년 1분기 보증 정책 변경 안내</span>
+                </div>
+                <div class="flex items-center gap-3 mt-2 text-xs text-slate-400">
+                  <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i>2026-03-05</span>
+                  <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i>경영지원팀</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 공지 카드 2 (핀) -->
+          <div class="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow cursor-pointer">
+            <div class="flex items-start gap-3">
+              <i data-lucide="pin" class="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0"></i>
+              <div class="flex-1 min-w-0">
+                <div class="text-base font-semibold text-slate-800">신규 딜러 온보딩 교육 일정</div>
+                <div class="flex items-center gap-3 mt-2 text-xs text-slate-400">
+                  <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i>2026-03-03</span>
+                  <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i>인사팀</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 공지 카드 3 -->
+          <div class="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow cursor-pointer">
+            <div class="flex items-start gap-3">
+              <div class="w-4 h-4 mt-0.5 flex-shrink-0"></div>
+              <div class="flex-1 min-w-0">
+                <div class="text-base font-semibold text-slate-800">시스템 정기 점검 안내 (3/15)</div>
+                <div class="flex items-center gap-3 mt-2 text-xs text-slate-400">
+                  <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i>2026-03-04</span>
+                  <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i>IT팀</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 공지 카드 4 -->
+          <div class="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow cursor-pointer">
+            <div class="flex items-start gap-3">
+              <div class="w-4 h-4 mt-0.5 flex-shrink-0"></div>
+              <div class="flex-1 min-w-0">
+                <div class="text-base font-semibold text-slate-800">클레임 처리 프로세스 개정 안내</div>
+                <div class="flex items-center gap-3 mt-2 text-xs text-slate-400">
+                  <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i>2026-03-01</span>
+                  <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i>서비스팀</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /view-notices -->
+
+      <!-- =============================================
+           뷰 3: 문의하기
+           ============================================= -->
+      <div id="view-inquiries" class="view hidden">
+        <!-- 헤더 -->
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-xl font-bold text-slate-800">문의하기</h2>
+          <button onclick="openModal('modal-new-inquiry')" class="flex items-center gap-2 bg-nm-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            새 문의 작성
+          </button>
+        </div>
+
+        <!-- 필터 탭 -->
+        <div class="flex gap-1 mb-5 bg-white border border-slate-200 rounded-lg p-1 w-fit">
+          <button onclick="filterInquiries(this, 'all')" class="filter-tab active px-4 py-1.5 rounded text-sm font-medium bg-nm-blue text-white">전체</button>
+          <button onclick="filterInquiries(this, '대기중')" class="filter-tab px-4 py-1.5 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">대기중</button>
+          <button onclick="filterInquiries(this, '처리중')" class="filter-tab px-4 py-1.5 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">처리중</button>
+          <button onclick="filterInquiries(this, '완료')" class="filter-tab px-4 py-1.5 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">완료</button>
+        </div>
+
+        <!-- 문의 테이블 -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-xs text-slate-500 uppercase tracking-wider bg-slate-50">
+                <th class="px-4 py-3 text-left font-medium">No</th>
+                <th class="px-4 py-3 text-left font-medium">대분류</th>
+                <th class="px-4 py-3 text-left font-medium">중분류</th>
+                <th class="px-4 py-3 text-left font-medium">소분류</th>
+                <th class="px-4 py-3 text-left font-medium">등록일</th>
+                <th class="px-4 py-3 text-left font-medium">상태</th>
+              </tr>
+            </thead>
+            <tbody id="inquiry-tbody" class="divide-y divide-slate-100">
+              <tr data-status="대기중">
+                <td class="px-4 py-3 text-slate-500">1</td>
+                <td class="px-4 py-3 text-slate-700">보증문의</td>
+                <td class="px-4 py-3 text-slate-600">엔진/변속기</td>
+                <td class="px-4 py-3 text-slate-600">시동 불량</td>
+                <td class="px-4 py-3 text-slate-500">2026-03-09</td>
+                <td class="px-4 py-3"><span class="badge-pending px-2 py-0.5 rounded-full text-xs font-medium">대기중</span></td>
+              </tr>
+              <tr data-status="완료">
+                <td class="px-4 py-3 text-slate-500">2</td>
+                <td class="px-4 py-3 text-slate-700">정비문의</td>
+                <td class="px-4 py-3 text-slate-600">정기점검</td>
+                <td class="px-4 py-3 text-slate-600">엔진오일 교환</td>
+                <td class="px-4 py-3 text-slate-500">2026-03-05</td>
+                <td class="px-4 py-3"><span class="badge-resolved px-2 py-0.5 rounded-full text-xs font-medium">완료</span></td>
+              </tr>
+              <tr data-status="처리중">
+                <td class="px-4 py-3 text-slate-500">3</td>
+                <td class="px-4 py-3 text-slate-700">보증문의</td>
+                <td class="px-4 py-3 text-slate-600">전기/전자</td>
+                <td class="px-4 py-3 text-slate-600">블랙박스 오작동</td>
+                <td class="px-4 py-3 text-slate-500">2026-03-01</td>
+                <td class="px-4 py-3"><span class="badge-inprogress px-2 py-0.5 rounded-full text-xs font-medium">처리중</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- /view-inquiries -->
+
+      <!-- =============================================
+           뷰 4: 문의 관리 (어드민)
+           ============================================= -->
+      <div id="view-admin-inquiries" class="view hidden">
+        <!-- 헤더 -->
+        <div class="flex items-center justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <h2 class="text-xl font-bold text-slate-800">문의 관리</h2>
+            <span class="bg-slate-100 text-slate-600 text-xs font-medium px-2.5 py-1 rounded-full">총 7건</span>
+          </div>
+        </div>
+
+        <!-- 필터 탭 + 검색창 -->
+        <div class="flex items-center justify-between mb-5 gap-4">
+          <div class="flex gap-1 bg-white border border-slate-200 rounded-lg p-1">
+            <button onclick="filterAdminInquiries(this, 'all')" class="admin-filter-tab active px-4 py-1.5 rounded text-sm font-medium bg-nm-blue text-white">전체</button>
+            <button onclick="filterAdminInquiries(this, '대기중')" class="admin-filter-tab px-4 py-1.5 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">대기중</button>
+            <button onclick="filterAdminInquiries(this, '처리중')" class="admin-filter-tab px-4 py-1.5 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">처리중</button>
+            <button onclick="filterAdminInquiries(this, '완료')" class="admin-filter-tab px-4 py-1.5 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">완료</button>
+          </div>
+          <div class="relative">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+            <input type="text" placeholder="검색..." class="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-nm-blue/30 focus:border-nm-blue w-56" />
+          </div>
+        </div>
+
+        <!-- 문의 관리 테이블 -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-xs text-slate-500 uppercase tracking-wider bg-slate-50">
+                <th class="px-4 py-3 text-left font-medium">No</th>
+                <th class="px-4 py-3 text-left font-medium">대분류</th>
+                <th class="px-4 py-3 text-left font-medium">중분류</th>
+                <th class="px-4 py-3 text-left font-medium">소분류</th>
+                <th class="px-4 py-3 text-left font-medium">작성자</th>
+                <th class="px-4 py-3 text-left font-medium">등록일</th>
+                <th class="px-4 py-3 text-left font-medium">상태</th>
+                <th class="px-4 py-3 text-left font-medium">답변일</th>
+                <th class="px-4 py-3 text-left font-medium">답변자</th>
+              </tr>
+            </thead>
+            <tbody id="admin-inquiry-tbody" class="divide-y divide-slate-100">
+              <tr data-status="대기중">
+                <td class="px-4 py-3 text-slate-500">1</td>
+                <td class="px-4 py-3 text-slate-700">보증문의</td>
+                <td class="px-4 py-3 text-slate-600">엔진/변속기</td>
+                <td class="px-4 py-3 text-slate-600">시동 불량</td>
+                <td class="px-4 py-3 text-slate-700">김철수</td>
+                <td class="px-4 py-3 text-slate-500">2026-03-09</td>
+                <td class="px-4 py-3"><span class="badge-pending px-2 py-0.5 rounded-full text-xs font-medium">대기중</span></td>
+                <td class="px-4 py-3 text-slate-400">-</td>
+                <td class="px-4 py-3 text-slate-400">-</td>
+              </tr>
+              <tr data-status="처리중">
+                <td class="px-4 py-3 text-slate-500">2</td>
+                <td class="px-4 py-3 text-slate-700">정비문의</td>
+                <td class="px-4 py-3 text-slate-600">정기점검</td>
+                <td class="px-4 py-3 text-slate-600">엔진오일 교환</td>
+                <td class="px-4 py-3 text-slate-700">이영희</td>
+                <td class="px-4 py-3 text-slate-500">2026-03-09</td>
+                <td class="px-4 py-3"><span class="badge-inprogress px-2 py-0.5 rounded-full text-xs font-medium">처리중</span></td>
+                <td class="px-4 py-3 text-slate-400">-</td>
+                <td class="px-4 py-3 text-slate-600">관리자</td>
+              </tr>
+              <tr data-status="완료">
+                <td class="px-4 py-3 text-slate-500">3</td>
+                <td class="px-4 py-3 text-slate-700">보증문의</td>
+                <td class="px-4 py-3 text-slate-600">전기/전자</td>
+                <td class="px-4 py-3 text-slate-600">블랙박스 오작동</td>
+                <td class="px-4 py-3 text-slate-700">박민준</td>
+                <td class="px-4 py-3 text-slate-500">2026-03-08</td>
+                <td class="px-4 py-3"><span class="badge-resolved px-2 py-0.5 rounded-full text-xs font-medium">완료</span></td>
+                <td class="px-4 py-3 text-slate-500">2026-03-09</td>
+                <td class="px-4 py-3 text-slate-600">관리자</td>
+              </tr>
+              <tr data-status="대기중">
+                <td class="px-4 py-3 text-slate-500">4</td>
+                <td class="px-4 py-3 text-slate-700">부품문의</td>
+                <td class="px-4 py-3 text-slate-600">순정부품</td>
+                <td class="px-4 py-3 text-slate-600">브레이크 패드</td>
+                <td class="px-4 py-3 text-slate-700">최수진</td>
+                <td class="px-4 py-3 text-slate-500">2026-03-08</td>
+                <td class="px-4 py-3"><span class="badge-pending px-2 py-0.5 rounded-full text-xs font-medium">대기중</span></td>
+                <td class="px-4 py-3 text-slate-400">-</td>
+                <td class="px-4 py-3 text-slate-400">-</td>
+              </tr>
+              <tr data-status="처리중">
+                <td class="px-4 py-3 text-slate-500">5</td>
+                <td class="px-4 py-3 text-slate-700">보증문의</td>
+                <td class="px-4 py-3 text-slate-600">제동/조향</td>
+                <td class="px-4 py-3 text-slate-600">핸들 쏠림</td>
+                <td class="px-4 py-3 text-slate-700">정대호</td>
+                <td class="px-4 py-3 text-slate-500">2026-03-07</td>
+                <td class="px-4 py-3"><span class="badge-inprogress px-2 py-0.5 rounded-full text-xs font-medium">처리중</span></td>
+                <td class="px-4 py-3 text-slate-400">-</td>
+                <td class="px-4 py-3 text-slate-600">관리자</td>
+              </tr>
+              <tr data-status="완료">
+                <td class="px-4 py-3 text-slate-500">6</td>
+                <td class="px-4 py-3 text-slate-700">정비문의</td>
+                <td class="px-4 py-3 text-slate-600">사고수리</td>
+                <td class="px-4 py-3 text-slate-600">앞범퍼 교체</td>
+                <td class="px-4 py-3 text-slate-700">윤미래</td>
+                <td class="px-4 py-3 text-slate-500">2026-03-07</td>
+                <td class="px-4 py-3"><span class="badge-resolved px-2 py-0.5 rounded-full text-xs font-medium">완료</span></td>
+                <td class="px-4 py-3 text-slate-500">2026-03-08</td>
+                <td class="px-4 py-3 text-slate-600">관리자</td>
+              </tr>
+              <tr data-status="대기중">
+                <td class="px-4 py-3 text-slate-500">7</td>
+                <td class="px-4 py-3 text-slate-700">부품문의</td>
+                <td class="px-4 py-3 text-slate-600">외장부품</td>
+                <td class="px-4 py-3 text-slate-600">사이드미러</td>
+                <td class="px-4 py-3 text-slate-700">강지원</td>
+                <td class="px-4 py-3 text-slate-500">2026-03-06</td>
+                <td class="px-4 py-3"><span class="badge-pending px-2 py-0.5 rounded-full text-xs font-medium">대기중</span></td>
+                <td class="px-4 py-3 text-slate-400">-</td>
+                <td class="px-4 py-3 text-slate-400">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- /view-admin-inquiries -->
+
+      <!-- =============================================
+           뷰 5: 공지 관리 (어드민)
+           ============================================= -->
+      <div id="view-admin-notices" class="view hidden">
+        <!-- 헤더 -->
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-xl font-bold text-slate-800">공지 관리</h2>
+          <button onclick="openModal('modal-new-notice')" class="flex items-center gap-2 bg-nm-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            새 공지 작성
+          </button>
+        </div>
+
+        <!-- 공지 관리 테이블 -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-xs text-slate-500 uppercase tracking-wider bg-slate-50">
+                <th class="px-4 py-3 text-left font-medium">No</th>
+                <th class="px-4 py-3 text-left font-medium">제목</th>
+                <th class="px-4 py-3 text-center font-medium">핀</th>
+                <th class="px-4 py-3 text-left font-medium">등록일</th>
+                <th class="px-4 py-3 text-left font-medium">작성자</th>
+                <th class="px-4 py-3 text-center font-medium">작업</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr>
+                <td class="px-4 py-3 text-slate-500">1</td>
+                <td class="px-4 py-3 font-medium text-slate-800">[중요] 2026년 1분기 보증 정책 변경 안내</td>
+                <td class="px-4 py-3 text-center"><i data-lucide="pin" class="w-4 h-4 text-red-400 inline-block"></i></td>
+                <td class="px-4 py-3 text-slate-500">2026-03-05</td>
+                <td class="px-4 py-3 text-slate-600">경영지원팀</td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
+                    <button class="px-2.5 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100">삭제</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-slate-500">2</td>
+                <td class="px-4 py-3 font-medium text-slate-800">시스템 정기 점검 안내 (3/15)</td>
+                <td class="px-4 py-3 text-center"><span class="text-slate-300">-</span></td>
+                <td class="px-4 py-3 text-slate-500">2026-03-04</td>
+                <td class="px-4 py-3 text-slate-600">IT팀</td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
+                    <button class="px-2.5 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100">삭제</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-slate-500">3</td>
+                <td class="px-4 py-3 font-medium text-slate-800">신규 딜러 온보딩 교육 일정</td>
+                <td class="px-4 py-3 text-center"><i data-lucide="pin" class="w-4 h-4 text-red-400 inline-block"></i></td>
+                <td class="px-4 py-3 text-slate-500">2026-03-03</td>
+                <td class="px-4 py-3 text-slate-600">인사팀</td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
+                    <button class="px-2.5 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100">삭제</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-slate-500">4</td>
+                <td class="px-4 py-3 font-medium text-slate-800">클레임 처리 프로세스 개정 안내</td>
+                <td class="px-4 py-3 text-center"><span class="text-slate-300">-</span></td>
+                <td class="px-4 py-3 text-slate-500">2026-03-01</td>
+                <td class="px-4 py-3 text-slate-600">서비스팀</td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
+                    <button class="px-2.5 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100">삭제</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- /view-admin-notices -->
+
+      <!-- =============================================
+           뷰 6: 메뉴 관리
+           ============================================= -->
+      <div id="view-admin-menus" class="view hidden">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-xl font-bold text-slate-800">메뉴 관리</h2>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-xs text-slate-500 uppercase tracking-wider bg-slate-50">
+                <th class="px-4 py-3 text-left font-medium">순서</th>
+                <th class="px-4 py-3 text-left font-medium">메뉴명</th>
+                <th class="px-4 py-3 text-left font-medium">경로</th>
+                <th class="px-4 py-3 text-left font-medium">아이콘</th>
+                <th class="px-4 py-3 text-left font-medium">대상</th>
+                <th class="px-4 py-3 text-center font-medium">활성화</th>
+                <th class="px-4 py-3 text-center font-medium">작업</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr>
+                <td class="px-4 py-3 text-slate-500">1</td>
+                <td class="px-4 py-3 font-medium text-slate-800">대시보드</td>
+                <td class="px-4 py-3 text-slate-500 font-mono text-xs">view-dashboard</td>
+                <td class="px-4 py-3 text-slate-500 font-mono text-xs">layout-dashboard</td>
+                <td class="px-4 py-3 text-slate-600">전체</td>
+                <td class="px-4 py-3 text-center"><span class="inline-block w-4 h-4 bg-emerald-500 rounded-full"></span></td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-slate-500">2</td>
+                <td class="px-4 py-3 font-medium text-slate-800">공지사항</td>
+                <td class="px-4 py-3 text-slate-500 font-mono text-xs">view-notices</td>
+                <td class="px-4 py-3 text-slate-500 font-mono text-xs">bell</td>
+                <td class="px-4 py-3 text-slate-600">전체</td>
+                <td class="px-4 py-3 text-center"><span class="inline-block w-4 h-4 bg-emerald-500 rounded-full"></span></td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-slate-500">3</td>
+                <td class="px-4 py-3 font-medium text-slate-800">문의하기</td>
+                <td class="px-4 py-3 text-slate-500 font-mono text-xs">view-inquiries</td>
+                <td class="px-4 py-3 text-slate-500 font-mono text-xs">message-square</td>
+                <td class="px-4 py-3 text-slate-600">전체</td>
+                <td class="px-4 py-3 text-center"><span class="inline-block w-4 h-4 bg-emerald-500 rounded-full"></span></td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-slate-500">4</td>
+                <td class="px-4 py-3 font-medium text-slate-800">문의 관리</td>
+                <td class="px-4 py-3 text-slate-500 font-mono text-xs">view-admin-inquiries</td>
+                <td class="px-4 py-3 text-slate-500 font-mono text-xs">message-square-dot</td>
+                <td class="px-4 py-3 text-slate-600">관리자</td>
+                <td class="px-4 py-3 text-center"><span class="inline-block w-4 h-4 bg-emerald-500 rounded-full"></span></td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-slate-500">5</td>
+                <td class="px-4 py-3 font-medium text-slate-800">공지 관리</td>
+                <td class="px-4 py-3 text-slate-500 font-mono text-xs">view-admin-notices</td>
+                <td class="px-4 py-3 text-slate-500 font-mono text-xs">megaphone</td>
+                <td class="px-4 py-3 text-slate-600">관리자</td>
+                <td class="px-4 py-3 text-center"><span class="inline-block w-4 h-4 bg-emerald-500 rounded-full"></span></td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-slate-500">6</td>
+                <td class="px-4 py-3 font-medium text-slate-800">메뉴 관리</td>
+                <td class="px-4 py-3 text-slate-500 font-mono text-xs">view-admin-menus</td>
+                <td class="px-4 py-3 text-slate-500 font-mono text-xs">settings</td>
+                <td class="px-4 py-3 text-slate-600">관리자</td>
+                <td class="px-4 py-3 text-center"><span class="inline-block w-4 h-4 bg-emerald-500 rounded-full"></span></td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-slate-500">7</td>
+                <td class="px-4 py-3 font-medium text-slate-800">보증번역기</td>
+                <td class="px-4 py-3 text-slate-500 font-mono text-xs">view-translator</td>
+                <td class="px-4 py-3 text-slate-500 font-mono text-xs">languages</td>
+                <td class="px-4 py-3 text-slate-600">전체</td>
+                <td class="px-4 py-3 text-center"><span class="inline-block w-4 h-4 bg-emerald-500 rounded-full"></span></td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- /view-admin-menus -->
+
+      <!-- =============================================
+           뷰 7: 보증번역기
+           ============================================= -->
+      <div id="view-translator" class="view hidden">
+        <!-- 헤더 -->
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-xl font-bold text-slate-800">보증번역기 (Warranty Translator)</h2>
+            <p class="text-sm text-slate-500 mt-1">한국어로 입력하면 우측에 하나의 영문 보증 청구서로 출력됩니다.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="resetTranslator()"
+              class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-200 bg-slate-100">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              초기화
+            </button>
+            <button id="btn-translate" onclick="doTranslate()"
+              class="flex items-center gap-2 bg-nm-blue text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+              <i data-lucide="languages" class="w-4 h-4"></i>
+              번역하기
+            </button>
+          </div>
+        </div>
+
+        <!-- 좌우 레이아웃 (50:50) -->
+        <div class="flex gap-4" style="height: calc(100vh - 185px);">
+
+          <!-- 좌측: 한국어 입력 섹션 6개 -->
+          <div class="w-1/2 flex flex-col min-w-0">
+            <div class="bg-white rounded-xl border border-slate-200 flex flex-col h-full overflow-hidden shadow-sm">
+
+              <!-- 좌측 헤더 -->
+              <div class="flex items-center px-4 py-2 border-b border-slate-100 flex-shrink-0">
+                <span class="font-semibold text-sm text-slate-700">한국어 입력</span>
+              </div>
+
+              <!-- 입력 섹션 스크롤 영역 -->
+              <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
+
+                <div class="bg-slate-50 rounded-lg border border-slate-200 p-3">
+                  <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                    1 · Customer Complaint <span class="font-normal normal-case text-slate-400">/ 고객 불만 사항</span>
+                  </label>
+                  <textarea id="trans-in-1" placeholder="고객 불만 사항 입력..." rows="4"
+                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-nm-blue resize-none"></textarea>
+                </div>
+
+                <div class="bg-slate-50 rounded-lg border border-slate-200 p-3">
+                  <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                    2 · Inspection Result <span class="font-normal normal-case text-slate-400">/ 점검 내용</span>
+                  </label>
+                  <textarea id="trans-in-2" placeholder="점검 내용 입력..." rows="7"
+                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-nm-blue resize-none"></textarea>
+                </div>
+
+                <div class="bg-slate-50 rounded-lg border border-slate-200 p-3">
+                  <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                    3 · Service Solution <span class="font-normal normal-case text-slate-400">/ 서비스 솔루션</span>
+                  </label>
+                  <textarea id="trans-in-3" placeholder="서비스 솔루션 입력..." rows="1"
+                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-nm-blue resize-none"></textarea>
+                </div>
+
+                <div class="bg-slate-50 rounded-lg border border-slate-200 p-3">
+                  <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                    4 · Fault Memory <span class="font-normal normal-case text-slate-400">/ 고장 메모리</span>
+                  </label>
+                  <textarea id="trans-in-4" placeholder="고장 메모리 코드 또는 내용 입력..." rows="1"
+                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-nm-blue resize-none"></textarea>
+                </div>
+
+                <div class="bg-slate-50 rounded-lg border border-slate-200 p-3">
+                  <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                    5 · Test Plan <span class="font-normal normal-case text-slate-400">/ 테스트 플랜</span>
+                  </label>
+                  <textarea id="trans-in-5" placeholder="테스트 플랜 입력..." rows="1"
+                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-nm-blue resize-none"></textarea>
+                </div>
+
+                <div class="bg-slate-50 rounded-lg border border-slate-200 p-3">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      6 · Action Taken <span class="font-normal normal-case text-slate-400">/ 조치 사항</span>
+                    </label>
+                    <div class="flex items-center gap-1.5">
+                      <button onclick="document.getElementById('trans-in-6').value='부품을 교체하였습니다.'"
+                        class="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors font-medium">
+                        교체
+                      </button>
+                      <button onclick="document.getElementById('trans-in-6').value='개선 조치를 수행하였습니다.'"
+                        class="text-xs px-2 py-0.5 rounded bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 transition-colors font-medium">
+                        개선
+                      </button>
+                    </div>
+                  </div>
+                  <textarea id="trans-in-6" placeholder="조치 사항 입력..." rows="1"
+                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-nm-blue resize-none"></textarea>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+
+          <!-- 우측: 통합 영문 출력 문서 (동일 비율) -->
+          <div class="w-1/2 flex flex-col min-w-0">
+            <div class="bg-white rounded-xl border border-slate-200 flex flex-col flex-1 overflow-hidden shadow-sm">
+
+              <!-- 문서 헤더 -->
+              <div class="flex items-center justify-between px-4 py-2 border-b border-slate-100 flex-shrink-0">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="file-text" class="w-4 h-4 text-nm-blue"></i>
+                  <span class="font-semibold text-sm text-slate-700">Warranty Claim Report</span>
+                </div>
+                <button onclick="copyResults()"
+                  class="flex items-center gap-1.5 text-xs text-slate-500 hover:text-nm-blue transition-colors px-2.5 py-1.5 rounded-md hover:bg-slate-100">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  복사
+                </button>
+              </div>
+
+              <!-- 문서 본문 -->
+              <div id="trans-output-doc" class="flex-1 overflow-y-auto p-5 text-sm">
+
+                <!-- 번역 전 플레이스홀더 -->
+                <div id="trans-placeholder" class="flex flex-col items-center justify-center h-full text-center text-slate-400">
+                  <i data-lucide="file-text" class="w-12 h-12 mb-3 text-slate-200"></i>
+                  <p class="text-sm leading-relaxed">번역하기 버튼을 클릭하면<br>여기에 영문 출력물이 표시됩니다.</p>
+                </div>
+
+                <!-- 번역 결과 (번역 후 표시) -->
+                <div id="trans-result-container" class="hidden space-y-6 leading-relaxed">
+
+                  <div id="trans-block-1">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Customer Complaint</p>
+                    <div class="border-l-2 border-nm-blue pl-3">
+                      <p id="trans-result-1" class="text-slate-700 whitespace-pre-wrap text-sm"></p>
+                    </div>
+                  </div>
+
+                  <div id="trans-block-2">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Inspection Result</p>
+                    <div class="border-l-2 border-nm-blue pl-3">
+                      <p id="trans-result-2" class="text-slate-700 whitespace-pre-wrap text-sm"></p>
+                    </div>
+                  </div>
+
+                  <div id="trans-block-3">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Service Solution</p>
+                    <div class="border-l-2 border-nm-blue pl-3">
+                      <p id="trans-result-3" class="text-slate-700 whitespace-pre-wrap text-sm"></p>
+                    </div>
+                  </div>
+
+                  <div id="trans-block-4">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Fault Memory</p>
+                    <div class="border-l-2 border-nm-blue pl-3">
+                      <p id="trans-result-4" class="text-slate-700 whitespace-pre-wrap text-sm"></p>
+                    </div>
+                  </div>
+
+                  <div id="trans-block-5">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Test Plan</p>
+                    <div class="border-l-2 border-nm-blue pl-3">
+                      <p id="trans-result-5" class="text-slate-700 whitespace-pre-wrap text-sm"></p>
+                    </div>
+                  </div>
+
+                  <div id="trans-block-6">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Action Taken</p>
+                    <div class="border-l-2 border-nm-blue pl-3">
+                      <p id="trans-result-6" class="text-slate-700 whitespace-pre-wrap text-sm"></p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /view-translator -->
+
+    </main>
+  </div>
+</div><!-- /최상위 레이아웃 -->
+
+<!-- =============================================
+     모달: 새 문의 작성
+     ============================================= -->
+<div id="modal-new-inquiry" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-lg font-semibold text-slate-800">새 문의 작성</h3>
+      <button onclick="closeModal('modal-new-inquiry')" class="text-slate-400 hover:text-slate-600">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <!-- 제목 -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">제목</label>
+        <input type="text" id="inq-title" placeholder="문의 제목을 입력하세요"
+          class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-nm-blue/30 focus:border-nm-blue" />
+      </div>
+
+      <!-- 대분류 -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">대분류</label>
+        <select id="inq-cat1" onchange="updateCat2()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-nm-blue/30 focus:border-nm-blue">
+          <option value="">선택하세요</option>
+          <option value="보증문의">보증문의</option>
+          <option value="정비문의">정비문의</option>
+          <option value="부품문의">부품문의</option>
+        </select>
+      </div>
+
+      <!-- 중분류 (동적) -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">중분류</label>
+        <select id="inq-cat2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-nm-blue/30 focus:border-nm-blue">
+          <option value="">대분류를 먼저 선택하세요</option>
+        </select>
+      </div>
+
+      <!-- 소분류 -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">소분류</label>
+        <input type="text" id="inq-cat3" placeholder="소분류를 입력하세요 (예: 시동 불량)"
+          class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-nm-blue/30 focus:border-nm-blue" />
+      </div>
+
+      <!-- 내용 -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">내용</label>
+        <textarea id="inq-content" placeholder="문의 내용을 상세히 입력하세요" rows="4"
+          class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-nm-blue/30 focus:border-nm-blue resize-none"></textarea>
+      </div>
+    </div>
+
+    <!-- 버튼 -->
+    <div class="flex justify-end gap-3 mt-6">
+      <button onclick="closeModal('modal-new-inquiry')" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200">취소</button>
+      <button onclick="submitInquiry()" class="px-4 py-2 bg-nm-blue text-white rounded-lg text-sm font-medium hover:bg-blue-700">제출</button>
+    </div>
+  </div>
+</div>
+
+<!-- =============================================
+     모달: 새 공지 작성
+     ============================================= -->
+<div id="modal-new-notice" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-lg font-semibold text-slate-800">새 공지 작성</h3>
+      <button onclick="closeModal('modal-new-notice')" class="text-slate-400 hover:text-slate-600">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <!-- 제목 -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">제목</label>
+        <input type="text" id="notice-title" placeholder="공지 제목을 입력하세요"
+          class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-nm-blue/30 focus:border-nm-blue" />
+      </div>
+
+      <!-- 내용 -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">내용</label>
+        <textarea id="notice-content" placeholder="공지 내용을 입력하세요" rows="5"
+          class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-nm-blue/30 focus:border-nm-blue resize-none"></textarea>
+      </div>
+
+      <!-- 핀 고정 -->
+      <div class="flex items-center gap-2">
+        <input type="checkbox" id="notice-pin" class="w-4 h-4 rounded border-slate-300 text-nm-blue focus:ring-nm-blue" />
+        <label for="notice-pin" class="text-sm text-slate-700 cursor-pointer">상단 핀 고정</label>
+      </div>
+    </div>
+
+    <!-- 버튼 -->
+    <div class="flex justify-end gap-3 mt-6">
+      <button onclick="closeModal('modal-new-notice')" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200">취소</button>
+      <button onclick="submitNotice()" class="px-4 py-2 bg-nm-blue text-white rounded-lg text-sm font-medium hover:bg-blue-700">등록</button>
+    </div>
+  </div>
+</div>
+
+<!-- =============================================
+     JavaScript
+     ============================================= -->
+<script>
+  /* -----------------------------------------------
+     중분류 데이터
+     ----------------------------------------------- */
+  const CAT2 = {
+    '보증문의': ['엔진/변속기', '전기/전자', '차체/외장', '에어컨/히터', '제동/조향', '기타'],
+    '정비문의': ['정기점검', '소모품 교환', '사고수리', '판금/도장', '기타'],
+    '부품문의': ['순정부품', '소모품', '외장부품', '내장부품', '기타'],
+  };
+
+  /* -----------------------------------------------
+     뷰 전환 함수
+     ----------------------------------------------- */
+  function showView(viewId) {
+    // 모든 .view 숨기기
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+    // 선택한 뷰 표시
+    document.getElementById(viewId).classList.remove('hidden');
+    // 사이드바 active 상태 업데이트
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.toggle('active', item.dataset.view === viewId);
+    });
+    // 헤더 제목 업데이트
+    const titles = {
+      'view-dashboard':        '대시보드',
+      'view-notices':          '공지사항',
+      'view-inquiries':        '문의하기',
+      'view-admin-inquiries':  '문의 관리',
+      'view-admin-notices':    '공지 관리',
+      'view-admin-menus':      '메뉴 관리',
+      'view-translator':       '보증번역기',
+    };
+    document.getElementById('page-title').textContent = titles[viewId] || '';
+  }
+
+  /* -----------------------------------------------
+     모달 열기 / 닫기
+     ----------------------------------------------- */
+  function openModal(modalId) {
+    document.getElementById(modalId).classList.remove('hidden');
+  }
+
+  function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+  }
+
+  // 모달 바깥 클릭 시 닫기
+  document.querySelectorAll('[id^="modal-"]').forEach(modal => {
+    modal.addEventListener('click', function(e) {
+      if (e.target === this) closeModal(this.id);
+    });
+  });
+
+  /* -----------------------------------------------
+     문의하기 - 중분류 동적 업데이트
+     ----------------------------------------------- */
+  function updateCat2() {
+    const cat1 = document.getElementById('inq-cat1').value;
+    const cat2Select = document.getElementById('inq-cat2');
+    cat2Select.innerHTML = '';
+
+    if (!cat1 || !CAT2[cat1]) {
+      cat2Select.innerHTML = '<option value="">대분류를 먼저 선택하세요</option>';
+      return;
+    }
+
+    // 기본 옵션
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = '선택하세요';
+    cat2Select.appendChild(defaultOpt);
+
+    // 중분류 옵션 추가
+    CAT2[cat1].forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item;
+      opt.textContent = item;
+      cat2Select.appendChild(opt);
+    });
+  }
+
+  /* -----------------------------------------------
+     문의 제출 (시뮬레이션)
+     ----------------------------------------------- */
+  function submitInquiry() {
+    const title = document.getElementById('inq-title').value.trim();
+    const cat1  = document.getElementById('inq-cat1').value;
+    const cat2  = document.getElementById('inq-cat2').value;
+    const cat3  = document.getElementById('inq-cat3').value.trim();
+
+    if (!title || !cat1 || !cat2) {
+      alert('제목, 대분류, 중분류를 입력해 주세요.');
+      return;
+    }
+
+    // 현재 날짜
+    const today = new Date().toISOString().slice(0, 10);
+
+    // 테이블에 행 추가
+    const tbody = document.getElementById('inquiry-tbody');
+    const rowCount = tbody.querySelectorAll('tr').length + 1;
+    const tr = document.createElement('tr');
+    tr.dataset.status = '대기중';
+    tr.innerHTML = `
+      <td class="px-4 py-3 text-slate-500">${rowCount}</td>
+      <td class="px-4 py-3 text-slate-700">${cat1}</td>
+      <td class="px-4 py-3 text-slate-600">${cat2}</td>
+      <td class="px-4 py-3 text-slate-600">${cat3 || '-'}</td>
+      <td class="px-4 py-3 text-slate-500">${today}</td>
+      <td class="px-4 py-3"><span class="badge-pending px-2 py-0.5 rounded-full text-xs font-medium">대기중</span></td>
+    `;
+    tbody.appendChild(tr);
+
+    // 폼 초기화 및 모달 닫기
+    ['inq-title', 'inq-cat3', 'inq-content'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('inq-cat1').value = '';
+    document.getElementById('inq-cat2').innerHTML = '<option value="">대분류를 먼저 선택하세요</option>';
+    closeModal('modal-new-inquiry');
+  }
+
+  /* -----------------------------------------------
+     공지 제출 (시뮬레이션)
+     ----------------------------------------------- */
+  function submitNotice() {
+    const title = document.getElementById('notice-title').value.trim();
+    if (!title) {
+      alert('공지 제목을 입력해 주세요.');
+      return;
+    }
+    alert('공지가 등록되었습니다.');
+    document.getElementById('notice-title').value = '';
+    document.getElementById('notice-content').value = '';
+    document.getElementById('notice-pin').checked = false;
+    closeModal('modal-new-notice');
+  }
+
+  /* -----------------------------------------------
+     문의하기 필터 탭
+     ----------------------------------------------- */
+  function filterInquiries(btn, status) {
+    // 탭 버튼 스타일
+    document.querySelectorAll('.filter-tab').forEach(b => {
+      b.classList.remove('bg-nm-blue', 'text-white');
+      b.classList.add('text-slate-600');
+    });
+    btn.classList.add('bg-nm-blue', 'text-white');
+    btn.classList.remove('text-slate-600');
+
+    // 행 표시/숨김
+    document.querySelectorAll('#inquiry-tbody tr').forEach(tr => {
+      const show = status === 'all' || tr.dataset.status === status;
+      tr.style.display = show ? '' : 'none';
+    });
+  }
+
+  /* -----------------------------------------------
+     문의 관리 필터 탭
+     ----------------------------------------------- */
+  function filterAdminInquiries(btn, status) {
+    document.querySelectorAll('.admin-filter-tab').forEach(b => {
+      b.classList.remove('bg-nm-blue', 'text-white');
+      b.classList.add('text-slate-600');
+    });
+    btn.classList.add('bg-nm-blue', 'text-white');
+    btn.classList.remove('text-slate-600');
+
+    document.querySelectorAll('#admin-inquiry-tbody tr').forEach(tr => {
+      const show = status === 'all' || tr.dataset.status === status;
+      tr.style.display = show ? '' : 'none';
+    });
+  }
+
+  /* -----------------------------------------------
+     보증번역기 - MyMemory API 호출
+     ----------------------------------------------- */
+  async function translateText(text) {
+    if (!text.trim()) return '';
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ko|en`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return data.responseData.translatedText;
+  }
+
+  /* 번역하기 버튼 클릭 */
+  async function doTranslate() {
+    const btn = document.getElementById('btn-translate');
+    btn.textContent = '번역 중...';
+    btn.disabled = true;
+
+    try {
+      // 6개 섹션 동시 번역 요청
+      const promises = [1, 2, 3, 4, 5, 6].map(async (n) => {
+        const input = document.getElementById(`trans-in-${n}`).value.trim();
+        const result = input ? await translateText(input) : '';
+        document.getElementById(`trans-result-${n}`).textContent = result;
+      });
+      await Promise.all(promises);
+
+      // 플레이스홀더 숨기고 결과 문서 표시
+      document.getElementById('trans-placeholder').classList.add('hidden');
+      document.getElementById('trans-result-container').classList.remove('hidden');
+    } catch (e) {
+      alert('번역 중 오류가 발생했습니다. 네트워크 상태를 확인해 주세요.');
+    } finally {
+      btn.innerHTML = '<i data-lucide="languages" class="w-4 h-4 inline-block mr-1.5"></i>번역하기';
+      btn.disabled = false;
+      lucide.createIcons();
+    }
+  }
+
+  /* 초기화 버튼 */
+  function resetTranslator() {
+    for (let n = 1; n <= 6; n++) {
+      document.getElementById(`trans-in-${n}`).value = '';
+      document.getElementById(`trans-result-${n}`).textContent = '';
+    }
+    document.getElementById('trans-placeholder').classList.remove('hidden');
+    document.getElementById('trans-result-container').classList.add('hidden');
+  }
+
+  /* 결과 복사 버튼 */
+  function copyResults() {
+    const labels = ['Customer Complaint', 'Inspection Result', 'Service Solution', 'Fault Memory', 'Test Plan', 'Action Taken'];
+    const lines = [];
+    for (let n = 1; n <= 6; n++) {
+      const val = document.getElementById(`trans-result-${n}`).textContent.trim();
+      if (val) lines.push(`[${labels[n - 1]}]\n${val}`);
+    }
+    if (!lines.length) {
+      alert('복사할 번역 결과가 없습니다. 먼저 번역을 실행하세요.');
+      return;
+    }
+    navigator.clipboard.writeText(lines.join('\n\n')).then(() => {
+      alert('번역 결과가 클립보드에 복사되었습니다.');
+    }).catch(() => {
+      alert('복사에 실패했습니다. 브라우저 권한을 확인해 주세요.');
+    });
+  }
+
+  /* -----------------------------------------------
+     Lucide 아이콘 초기화 (마지막에 호출)
+     ----------------------------------------------- */
+  lucide.createIcons();
+</script>
+</body>
+</html>
