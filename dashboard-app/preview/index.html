@@ -101,6 +101,53 @@
 <body class="font-sans antialiased">
 
 <!-- =============================================
+     로그인 화면
+     ============================================= -->
+<div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center" style="background:#1e3a5f;">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8">
+    <!-- 로고 -->
+    <div class="text-center mb-8">
+      <div class="text-2xl font-bold text-slate-800">National Motors</div>
+      <div class="text-sm text-slate-500 mt-1">사내 보증번역 시스템</div>
+    </div>
+
+    <!-- 관리자 로그인 폼 -->
+    <div id="login-form">
+      <div class="mb-4">
+        <label class="block text-xs font-semibold text-slate-500 mb-1.5">이메일</label>
+        <input id="login-email" type="email" placeholder="이메일 입력"
+          class="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500" />
+      </div>
+      <div class="mb-2">
+        <label class="block text-xs font-semibold text-slate-500 mb-1.5">비밀번호</label>
+        <input id="login-pw" type="password" placeholder="비밀번호 입력"
+          onkeydown="if(event.key==='Enter') doLogin()"
+          class="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500" />
+      </div>
+      <p id="login-error" class="hidden text-xs text-red-500 mb-3">이메일 또는 비밀번호가 올바르지 않습니다.</p>
+      <button onclick="doLogin()"
+        class="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors mt-2">
+        관리자 로그인
+      </button>
+    </div>
+
+    <!-- 구분선 -->
+    <div class="flex items-center gap-3 my-5">
+      <div class="flex-1 h-px bg-slate-200"></div>
+      <span class="text-xs text-slate-400">또는</span>
+      <div class="flex-1 h-px bg-slate-200"></div>
+    </div>
+
+    <!-- 일반 사용자 -->
+    <button onclick="enterAsUser()"
+      class="w-full py-2.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors">
+      번역기 바로 사용하기
+    </button>
+    <p class="text-center text-xs text-slate-400 mt-3">일반 사용자는 보증번역기만 이용 가능합니다</p>
+  </div>
+</div>
+
+<!-- =============================================
      최상위 레이아웃
      ============================================= -->
 <div class="flex h-screen overflow-hidden bg-slate-50">
@@ -118,33 +165,33 @@
 
     <!-- 네비게이션 메뉴 -->
     <nav class="flex-1 px-3 py-4 space-y-1">
-      <div class="nav-item active" data-view="view-dashboard" onclick="showView('view-dashboard')">
+      <div class="nav-item admin-only active" data-view="view-dashboard" onclick="showView('view-dashboard')">
         <i data-lucide="layout-dashboard"></i>
         <span>대시보드</span>
       </div>
-      <div class="nav-item" data-view="view-notices" onclick="showView('view-notices')">
+      <div class="nav-item admin-only" data-view="view-notices" onclick="showView('view-notices')">
         <i data-lucide="bell"></i>
         <span>공지사항</span>
       </div>
-      <div class="nav-item" data-view="view-inquiries" onclick="showView('view-inquiries')">
+      <div class="nav-item admin-only" data-view="view-inquiries" onclick="showView('view-inquiries')">
         <i data-lucide="message-square"></i>
         <span>문의하기</span>
       </div>
 
-      <!-- 구분선 -->
-      <div class="pt-3 pb-1 px-1">
+      <!-- 구분선 (관리자만) -->
+      <div class="admin-only pt-3 pb-1 px-1">
         <span class="text-blue-400/60 text-xs uppercase tracking-wider font-medium">관리자</span>
       </div>
 
-      <div class="nav-item" data-view="view-admin-inquiries" onclick="showView('view-admin-inquiries')">
+      <div class="nav-item admin-only" data-view="view-admin-inquiries" onclick="showView('view-admin-inquiries')">
         <i data-lucide="message-square-dot"></i>
         <span>문의 관리</span>
       </div>
-      <div class="nav-item" data-view="view-admin-notices" onclick="showView('view-admin-notices')">
+      <div class="nav-item admin-only" data-view="view-admin-notices" onclick="showView('view-admin-notices')">
         <i data-lucide="megaphone"></i>
         <span>공지 관리</span>
       </div>
-      <div class="nav-item" data-view="view-admin-menus" onclick="showView('view-admin-menus')">
+      <div class="nav-item admin-only" data-view="view-admin-menus" onclick="showView('view-admin-menus')">
         <i data-lucide="settings"></i>
         <span>메뉴 관리</span>
       </div>
@@ -157,11 +204,17 @@
     <!-- 사용자 정보 -->
     <div class="sidebar-profile px-4 py-4 border-t border-white/10">
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">A</div>
-        <div class="min-w-0">
-          <div class="text-white text-xs font-medium truncate">admin@nationalmotors.co.kr</div>
-          <span class="inline-block mt-0.5 px-2 py-0.5 bg-blue-500/30 text-blue-200 text-xs rounded-full">슈퍼관리자</span>
+        <div id="sidebar-avatar" class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">A</div>
+        <div class="min-w-0 flex-1">
+          <div id="sidebar-name" class="text-white text-xs font-medium truncate">관리자</div>
+          <span id="sidebar-role" class="inline-block mt-0.5 px-2 py-0.5 bg-blue-500/30 text-blue-200 text-xs rounded-full">관리자</span>
         </div>
+        <button onclick="doLogout()" title="로그아웃"
+          class="text-white/40 hover:text-white transition-colors flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+          </svg>
+        </button>
       </div>
     </div>
   </aside>
@@ -1623,6 +1676,66 @@
      Lucide 아이콘 초기화 (마지막에 호출)
      ----------------------------------------------- */
   lucide.createIcons();
+
+  /* -----------------------------------------------
+     인증 (로그인 / 로그아웃)
+     ----------------------------------------------- */
+  const ADMIN_EMAIL = 'jhl@nationalmotors.co.kr';
+  const ADMIN_PW    = '1qaz2wsxQ!';
+
+  function applyRole(role) {
+    const isAdmin = role === 'admin';
+    // 관리자 전용 메뉴 표시/숨김
+    document.querySelectorAll('.admin-only').forEach(el => {
+      el.style.display = isAdmin ? '' : 'none';
+    });
+    // 사이드바 프로필 업데이트
+    if (isAdmin) {
+      document.getElementById('sidebar-avatar').textContent = 'J';
+      document.getElementById('sidebar-name').textContent   = 'jhl@nationalmotors.co.kr';
+      document.getElementById('sidebar-role').textContent   = '관리자';
+    } else {
+      document.getElementById('sidebar-avatar').textContent = 'U';
+      document.getElementById('sidebar-name').textContent   = '일반 사용자';
+      document.getElementById('sidebar-role').textContent   = '번역기 전용';
+    }
+    // 일반 사용자는 번역기 뷰로 바로 이동
+    if (!isAdmin) showView('view-translator');
+    // 로그인 화면 숨기기
+    document.getElementById('login-screen').style.display = 'none';
+    sessionStorage.setItem('nm_role', role);
+  }
+
+  function doLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const pw    = document.getElementById('login-pw').value;
+    if (email === ADMIN_EMAIL && pw === ADMIN_PW) {
+      applyRole('admin');
+    } else {
+      document.getElementById('login-error').classList.remove('hidden');
+    }
+  }
+
+  function enterAsUser() {
+    applyRole('user');
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem('nm_role');
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-pw').value = '';
+    document.getElementById('login-error').classList.add('hidden');
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+
+  // 페이지 로드 시 세션 확인
+  (function() {
+    const saved = sessionStorage.getItem('nm_role');
+    if (saved) {
+      applyRole(saved);
+    }
+    // 세션 없으면 로그인 화면 유지 (기본 표시 상태)
+  })();
 </script>
 </body>
 </html>
