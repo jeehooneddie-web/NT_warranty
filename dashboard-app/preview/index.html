@@ -910,7 +910,7 @@
                   <!-- STAGE2/3 미니폼 -->
                   <div id="wty-form-stage" class="hidden mb-2 p-2.5 bg-white rounded-lg border border-blue-100">
                     <p class="text-xs text-slate-500 mb-2 font-medium" id="wty-stage-label">STAGE2</p>
-                    <div class="flex items-center gap-2 flex-wrap">
+                    <div class="flex items-center gap-2 flex-wrap mb-2">
                       <label class="text-xs text-slate-600">Labor</label>
                       <input id="wty-stage-labor" type="number" min="0" max="100" placeholder="0"
                         class="w-16 px-2 py-1 border border-slate-200 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-nm-blue" />
@@ -919,8 +919,13 @@
                       <input id="wty-stage-part" type="number" min="0" max="100" placeholder="0"
                         class="w-16 px-2 py-1 border border-slate-200 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-nm-blue" />
                       <span class="text-xs text-slate-500">%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <label class="text-xs text-slate-600 whitespace-nowrap">Auth no.</label>
+                      <input id="wty-stage-auth" type="text" placeholder="예) 22102108400"
+                        class="flex-1 px-2 py-1 border border-slate-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-nm-blue" />
                       <button onclick="applyStage()"
-                        class="ml-auto text-xs px-3 py-1 bg-nm-blue text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">적용</button>
+                        class="text-xs px-3 py-1 bg-nm-blue text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">적용</button>
                     </div>
                   </div>
 
@@ -1269,7 +1274,10 @@
     const label = document.getElementById('wty-stage-label').textContent;
     const labor = document.getElementById('wty-stage-labor').value || '0';
     const part  = document.getElementById('wty-stage-part').value  || '0';
-    document.getElementById('trans-in-0').value = `<${label}: labor ${labor}%, Part ${part}%>`;
+    const auth  = document.getElementById('wty-stage-auth').value.trim();
+    let result = `<${label} Labor ${labor}%, part ${part}%>`;
+    if (auth) result += `\n<Auth no. ${auth}>`;
+    document.getElementById('trans-in-0').value = result;
     document.getElementById('wty-form-stage').classList.add('hidden');
   }
 
