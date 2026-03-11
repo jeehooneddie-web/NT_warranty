@@ -1062,7 +1062,7 @@
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
                       3 · Service Solution <span class="font-normal normal-case text-slate-400">/ 서비스 솔루션</span>
                     </label>
-                    <button onclick="document.getElementById('trans-in-3').value='없음'"
+                    <button onclick="document.getElementById('trans-in-3').value='None'"
                       class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-500 border border-indigo-200 hover:bg-indigo-100 transition-colors font-semibold tracking-wide">
                       N/A
                     </button>
@@ -1076,7 +1076,7 @@
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
                       4 · Fault Memory <span class="font-normal normal-case text-slate-400">/ 고장 메모리</span>
                     </label>
-                    <button onclick="document.getElementById('trans-in-4').value='없음'"
+                    <button onclick="document.getElementById('trans-in-4').value='None'"
                       class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-500 border border-indigo-200 hover:bg-indigo-100 transition-colors font-semibold tracking-wide">
                       N/A
                     </button>
@@ -1090,7 +1090,7 @@
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
                       5 · Test Plan <span class="font-normal normal-case text-slate-400">/ 테스트 플랜</span>
                     </label>
-                    <button onclick="document.getElementById('trans-in-5').value='없음'"
+                    <button onclick="document.getElementById('trans-in-5').value='None'"
                       class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-500 border border-indigo-200 hover:bg-indigo-100 transition-colors font-semibold tracking-wide">
                       N/A
                     </button>
@@ -1105,11 +1105,11 @@
                       6 · Action Taken <span class="font-normal normal-case text-slate-400">/ 조치 사항</span>
                     </label>
                     <div class="flex items-center gap-1.5">
-                      <button onclick="document.getElementById('trans-in-6').value='부품을 교체하였습니다.'"
+                      <button onclick="document.getElementById('trans-in-6').value='Replaced'"
                         class="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors font-medium">
                         교체
                       </button>
-                      <button onclick="document.getElementById('trans-in-6').value='개선 조치를 수행하였습니다.'"
+                      <button onclick="document.getElementById('trans-in-6').value='Improved'"
                         class="text-xs px-2 py-0.5 rounded bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 transition-colors font-medium">
                         개선
                       </button>
@@ -1626,7 +1626,8 @@
       // 7개 섹션 동시 번역 요청
       const promises = [0, 1, 2, 3, 4, 5, 6].map(async (n) => {
         const input = document.getElementById(`trans-in-${n}`).value.trim();
-        const result = input ? await translateText(input) : '';
+        // 0번(Warranty Type)은 번역 없이 그대로 출력
+        const result = input ? (n === 0 ? input : await translateText(input)) : '';
         document.getElementById(`trans-result-${n}`).textContent = result;
       });
       await Promise.all(promises);
