@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="google" content="notranslate" />
   <title>National Motors 사내 관리 시스템</title>
 
   <!-- Tailwind CSS CDN -->
@@ -1154,7 +1155,7 @@
                 <div id="trans-result-container" class="hidden space-y-6 leading-relaxed">
 
                   <div id="trans-block-0">
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Warranty Type</p>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2" translate="no">Warranty Type</p>
                     <div class="border-l-2 border-nm-blue pl-3">
                       <p id="trans-result-0" class="text-slate-700 whitespace-pre-wrap text-sm"></p>
                     </div>
@@ -1624,10 +1625,14 @@
 
     try {
       // 7개 섹션 동시 번역 요청
-      const promises = [0, 1, 2, 3, 4, 5, 6].map(async (n) => {
+      // 0번(Warranty Type): 번역 없이 그대로 출력
+      const wtyVal = document.getElementById('trans-in-0').value.trim();
+      document.getElementById('trans-result-0').textContent = wtyVal;
+
+      // 1~6번: 번역
+      const promises = [1, 2, 3, 4, 5, 6].map(async (n) => {
         const input = document.getElementById(`trans-in-${n}`).value.trim();
-        // 0번(Warranty Type)은 번역 없이 그대로 출력
-        const result = input ? (n === 0 ? input : await translateText(input)) : '';
+        const result = input ? await translateText(input) : '';
         document.getElementById(`trans-result-${n}`).textContent = result;
       });
       await Promise.all(promises);
