@@ -68,6 +68,22 @@
     /* 카드 호버 */
     .notice-card:hover { background: #f8fafc; }
 
+    /* Warranty Type 버튼 선택 상태 */
+    .wty-btn { transition: background 0.15s, transform 0.1s; }
+    .wty-btn.wty-active {
+      background: #f59e0b !important;
+      color: #fff !important;
+      box-shadow: 0 0 0 2px #f59e0b55;
+      transform: scale(1.05);
+    }
+    /* STAGE3 KR COST / DLR COST 선택 상태 */
+    .stage3-extra-btn { transition: background 0.15s; }
+    .stage3-extra-btn.extra-active {
+      background: #6366f1 !important;
+      color: #fff !important;
+      border-color: #6366f1 !important;
+    }
+
     /* 사이드바 접기 */
     aside { transition: width 0.25s ease; }
     aside.sidebar-collapsed { width: 60px !important; }
@@ -910,9 +926,9 @@
                       <p class="text-xs text-slate-500 font-medium" id="wty-stage-label">STAGE2</p>
                       <div id="wty-stage3-extras" class="hidden flex gap-1">
                         <button id="btn-krcot" onclick="toggleStage3Extra('KR COST')"
-                          class="text-xs px-2 py-0.5 rounded-full border border-slate-300 bg-slate-100 text-slate-600 hover:bg-indigo-100 hover:text-indigo-600 hover:border-indigo-300 transition-colors font-semibold">KR COST</button>
+                          class="stage3-extra-btn text-xs px-2 py-0.5 rounded-full border border-slate-300 bg-slate-100 text-slate-600 font-semibold">KR COST</button>
                         <button id="btn-dlrcost" onclick="toggleStage3Extra('DLR COST')"
-                          class="text-xs px-2 py-0.5 rounded-full border border-slate-300 bg-slate-100 text-slate-600 hover:bg-indigo-100 hover:text-indigo-600 hover:border-indigo-300 transition-colors font-semibold">DLR COST</button>
+                          class="stage3-extra-btn text-xs px-2 py-0.5 rounded-full border border-slate-300 bg-slate-100 text-slate-600 font-semibold">DLR COST</button>
                       </div>
                     </div>
                     <div class="flex items-center gap-2 flex-wrap mb-2">
@@ -1273,6 +1289,15 @@
       const confirmed = confirm('스테이지2 문의 완료하였습니까?');
       if (!confirmed) return;
     }
+
+    // 메인 버튼 선택 표시 업데이트
+    document.querySelectorAll('.wty-btn').forEach(b => b.classList.remove('wty-active'));
+    const clicked = [...document.querySelectorAll('.wty-btn')].find(b =>
+      b.textContent.trim().toLowerCase() === type.toLowerCase() ||
+      (type === 'PartWarranty' && b.textContent.trim() === 'Part warranty')
+    );
+    if (clicked) clicked.classList.add('wty-active');
+
     const direct = { BSI: '<BSI>', Warranty: '<WTY>', BRI: '<BRI>', WP: '<WP>' };
     if (direct[type]) {
       document.getElementById('trans-in-0').value = direct[type];
@@ -1281,17 +1306,11 @@
       document.getElementById('wty-stage-labor').value = '';
       document.getElementById('wty-stage-part').value = '';
       document.getElementById('wty-stage-auth').value = '';
-      // STAGE3일 때만 KRCOT/DLRCOST 버튼 표시
       const extras = document.getElementById('wty-stage3-extras');
       if (type === 'STAGE3') {
         extras.classList.remove('hidden');
         extras.classList.add('flex');
-        // 선택 초기화
-        ['btn-krcot','btn-dlrcost'].forEach(id => {
-          const b = document.getElementById(id);
-          b.classList.remove('bg-indigo-500','text-white','border-indigo-500');
-          b.classList.add('bg-slate-100','text-slate-600','border-slate-300');
-        });
+        document.querySelectorAll('.stage3-extra-btn').forEach(b => b.classList.remove('extra-active'));
       } else {
         extras.classList.add('hidden');
         extras.classList.remove('flex');
@@ -1303,21 +1322,11 @@
   }
 
   function toggleStage3Extra(val) {
-    const ids = { KRCOT: 'btn-krcot', DLRCOST: 'btn-dlrcost' };
-    const otherId = val === 'KRCOT' ? 'btn-dlrcost' : 'btn-krcot';
-    const btn = document.getElementById(ids[val]);
-    const isActive = btn.classList.contains('bg-indigo-500');
-    // 둘 다 초기화
-    [ids[val], otherId].forEach(id => {
-      const b = document.getElementById(id);
-      b.classList.remove('bg-indigo-500','text-white','border-indigo-500');
-      b.classList.add('bg-slate-100','text-slate-600','border-slate-300');
-    });
-    // 클릭한 버튼 토글
-    if (!isActive) {
-      btn.classList.add('bg-indigo-500','text-white','border-indigo-500');
-      btn.classList.remove('bg-slate-100','text-slate-600','border-slate-300');
-    }
+    const btns = document.querySelectorAll('.stage3-extra-btn');
+    const btn = val === 'KR COST' ? document.getElementById('btn-krcot') : document.getElementById('btn-dlrcost');
+    const isActive = btn.classList.contains('extra-active');
+    btns.forEach(b => b.classList.remove('extra-active'));
+    if (!isActive) btn.classList.add('extra-active');
   }
 
   function applyStage() {
@@ -1328,8 +1337,8 @@
     // STAGE3 옵션 확인
     let extra = '';
     if (label === 'STAGE3') {
-      if (document.getElementById('btn-krcot').classList.contains('bg-indigo-500')) extra = ' KRCOT';
-      else if (document.getElementById('btn-dlrcost').classList.contains('bg-indigo-500')) extra = ' DLRCOST';
+      if (document.getElementById('btn-krcot').classList.contains('extra-active')) extra = ' KR COST';
+      else if (document.getElementById('btn-dlrcost').classList.contains('extra-active')) extra = ' DLR COST';
     }
     let result = `<${label}${extra} Labor ${labor}%, part ${part}%>`;
     if (auth) result += `\n<Auth no. ${auth}>`;
