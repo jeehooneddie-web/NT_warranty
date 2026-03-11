@@ -886,6 +886,31 @@
               <!-- 입력 섹션 스크롤 영역 -->
               <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
 
+                <!-- 0 · Warranty Type -->
+                <div class="bg-slate-50 rounded-lg border border-slate-200 p-3">
+                  <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    0 · Warranty Type
+                  </label>
+                  <div class="flex flex-wrap gap-1.5 mb-2">
+                    <button onclick="document.getElementById('trans-in-0').value='BSI'"
+                      class="text-xs px-2.5 py-1 rounded-full bg-nm-blue text-white hover:bg-blue-700 transition-colors font-semibold">BSI</button>
+                    <button onclick="document.getElementById('trans-in-0').value='Warranty'"
+                      class="text-xs px-2.5 py-1 rounded-full bg-nm-blue text-white hover:bg-blue-700 transition-colors font-semibold">Warranty</button>
+                    <button onclick="document.getElementById('trans-in-0').value='BRI'"
+                      class="text-xs px-2.5 py-1 rounded-full bg-nm-blue text-white hover:bg-blue-700 transition-colors font-semibold">BRI</button>
+                    <button onclick="document.getElementById('trans-in-0').value='STAGE2'"
+                      class="text-xs px-2.5 py-1 rounded-full bg-nm-blue text-white hover:bg-blue-700 transition-colors font-semibold">STAGE2</button>
+                    <button onclick="document.getElementById('trans-in-0').value='STAGE3'"
+                      class="text-xs px-2.5 py-1 rounded-full bg-nm-blue text-white hover:bg-blue-700 transition-colors font-semibold">STAGE3</button>
+                    <button onclick="document.getElementById('trans-in-0').value='WP'"
+                      class="text-xs px-2.5 py-1 rounded-full bg-nm-blue text-white hover:bg-blue-700 transition-colors font-semibold">WP</button>
+                    <button onclick="document.getElementById('trans-in-0').value='Part warranty'"
+                      class="text-xs px-2.5 py-1 rounded-full bg-nm-blue text-white hover:bg-blue-700 transition-colors font-semibold">Part warranty</button>
+                  </div>
+                  <textarea id="trans-in-0" placeholder="Warranty Type 입력 또는 위 버튼 선택..." rows="1"
+                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-nm-blue resize-none"></textarea>
+                </div>
+
                 <div class="bg-slate-50 rounded-lg border border-slate-200 p-3">
                   <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
                     1 · Customer Complaint <span class="font-normal normal-case text-slate-400">/ 고객 불만 사항</span>
@@ -997,6 +1022,13 @@
 
                 <!-- 번역 결과 (번역 후 표시) -->
                 <div id="trans-result-container" class="hidden space-y-6 leading-relaxed">
+
+                  <div id="trans-block-0">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Warranty Type</p>
+                    <div class="border-l-2 border-nm-blue pl-3">
+                      <p id="trans-result-0" class="text-slate-700 whitespace-pre-wrap text-sm"></p>
+                    </div>
+                  </div>
 
                   <div id="trans-block-1">
                     <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Customer Complaint</p>
@@ -1378,8 +1410,8 @@
     btn.disabled = true;
 
     try {
-      // 6개 섹션 동시 번역 요청
-      const promises = [1, 2, 3, 4, 5, 6].map(async (n) => {
+      // 7개 섹션 동시 번역 요청
+      const promises = [0, 1, 2, 3, 4, 5, 6].map(async (n) => {
         const input = document.getElementById(`trans-in-${n}`).value.trim();
         const result = input ? await translateText(input) : '';
         document.getElementById(`trans-result-${n}`).textContent = result;
@@ -1400,7 +1432,7 @@
 
   /* 초기화 버튼 */
   function resetTranslator() {
-    for (let n = 1; n <= 6; n++) {
+    for (let n = 0; n <= 6; n++) {
       document.getElementById(`trans-in-${n}`).value = '';
       document.getElementById(`trans-result-${n}`).textContent = '';
     }
@@ -1410,11 +1442,11 @@
 
   /* 결과 복사 버튼 */
   function copyResults() {
-    const labels = ['Customer Complaint', 'Inspection Result', 'Service Solution', 'Fault Memory', 'Test Plan', 'Action Taken'];
+    const labels = ['Warranty Type', 'Customer Complaint', 'Inspection Result', 'Service Solution', 'Fault Memory', 'Test Plan', 'Action Taken'];
     const lines = [];
-    for (let n = 1; n <= 6; n++) {
+    for (let n = 0; n <= 6; n++) {
       const val = document.getElementById(`trans-result-${n}`).textContent.trim();
-      if (val) lines.push(`[${labels[n - 1]}]\n${val}`);
+      if (val) lines.push(`[${labels[n]}]\n${val}`);
     }
     if (!lines.length) {
       alert('복사할 번역 결과가 없습니다. 먼저 번역을 실행하세요.');
