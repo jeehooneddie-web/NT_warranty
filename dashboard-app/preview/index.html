@@ -1106,15 +1106,15 @@
                       6 · Action Taken <span class="font-normal normal-case text-slate-400">/ 조치 사항</span>
                     </label>
                     <div class="flex items-center gap-1.5">
-                      <button onclick="document.getElementById('trans-in-6').value='Replaced'"
+                      <button onclick="setActionTaken('Replaced')"
                         class="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors font-medium">
                         교체
                       </button>
-                      <button onclick="document.getElementById('trans-in-6').value='Improved'"
+                      <button onclick="setActionTaken('Improved')"
                         class="text-xs px-2 py-0.5 rounded bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 transition-colors font-medium">
                         개선
                       </button>
-                      <button onclick="document.getElementById('trans-in-6').value='updated new programing'"
+                      <button onclick="setActionTaken('updated new programing')"
                         class="text-xs px-2 py-0.5 rounded bg-purple-50 text-purple-600 border border-purple-200 hover:bg-purple-100 transition-colors font-medium">
                         프로그램
                       </button>
@@ -1657,6 +1657,14 @@
     }
     document.getElementById('trans-placeholder').classList.remove('hidden');
     document.getElementById('trans-result-container').classList.add('hidden');
+  }
+
+  /* 조치사항 버튼 - 값 설정 후 커서를 끝으로 이동 */
+  function setActionTaken(text) {
+    const el = document.getElementById('trans-in-6');
+    el.value = text;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
   }
 
   /* 결과 복사 버튼 */
