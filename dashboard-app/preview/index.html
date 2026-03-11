@@ -905,7 +905,16 @@
 
                   <!-- STAGE2/3 미니폼 -->
                   <div id="wty-form-stage" class="hidden mb-2 p-2.5 bg-white rounded-lg border border-blue-100">
-                    <p class="text-xs text-slate-500 mb-2 font-medium" id="wty-stage-label">STAGE2</p>
+                    <!-- 라벨 + STAGE3 전용 버튼 -->
+                    <div class="flex items-center gap-1.5 mb-2">
+                      <p class="text-xs text-slate-500 font-medium" id="wty-stage-label">STAGE2</p>
+                      <div id="wty-stage3-extras" class="hidden flex gap-1">
+                        <button id="btn-krcot" onclick="toggleStage3Extra('KRCOT')"
+                          class="text-xs px-2 py-0.5 rounded-full border border-slate-300 bg-slate-100 text-slate-600 hover:bg-indigo-100 hover:text-indigo-600 hover:border-indigo-300 transition-colors font-semibold">KRCOT</button>
+                        <button id="btn-dlrcost" onclick="toggleStage3Extra('DLRCOST')"
+                          class="text-xs px-2 py-0.5 rounded-full border border-slate-300 bg-slate-100 text-slate-600 hover:bg-indigo-100 hover:text-indigo-600 hover:border-indigo-300 transition-colors font-semibold">DLRCOST</button>
+                      </div>
+                    </div>
                     <div class="flex items-center gap-2 flex-wrap mb-2">
                       <label class="text-xs text-slate-600">Labor</label>
                       <input id="wty-stage-labor" type="number" min="0" max="100" placeholder="0"
@@ -930,19 +939,27 @@
                     <div class="grid grid-cols-2 gap-2">
                       <div>
                         <p class="text-xs font-semibold text-slate-500 mb-1">Prev F/date (이전 수리일)</p>
-                        <input id="wty-prev-date" type="text" placeholder="YYYY-MM-DD"
-                          class="w-full px-2 py-1 border border-slate-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-nm-blue"
-                          onfocus="if(this.type==='text'&&!this.dataset.switched){this.type='date';this.dataset.switched='1'}"
-                          onblur="if(!this.value){this.type='text';delete this.dataset.switched}" />
+                        <div class="flex gap-1">
+                          <input id="wty-prev-date" type="text" placeholder="YYYY-MM-DD"
+                            class="flex-1 px-2 py-1 border border-slate-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-nm-blue" />
+                          <button onclick="document.getElementById('wty-prev-date-picker').showPicker()" title="달력 선택"
+                            class="px-1.5 border border-slate-200 rounded bg-slate-50 hover:bg-slate-100 text-slate-500 text-xs">📅</button>
+                          <input id="wty-prev-date-picker" type="date" class="sr-only"
+                            onchange="document.getElementById('wty-prev-date').value=this.value" />
+                        </div>
                         <input id="wty-prev-km" type="number" placeholder="이전 주행거리 (km)"
                           class="w-full mt-1 px-2 py-1 border border-slate-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-nm-blue" />
                       </div>
                       <div>
                         <p class="text-xs font-semibold text-slate-500 mb-1">Part wty (보증 시작일)</p>
-                        <input id="wty-part-date" type="text" placeholder="YYYY-MM-DD"
-                          class="w-full px-2 py-1 border border-slate-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-nm-blue"
-                          onfocus="if(this.type==='text'&&!this.dataset.switched){this.type='date';this.dataset.switched='1'}"
-                          onblur="if(!this.value){this.type='text';delete this.dataset.switched}" />
+                        <div class="flex gap-1">
+                          <input id="wty-part-date" type="text" placeholder="YYYY-MM-DD"
+                            class="flex-1 px-2 py-1 border border-slate-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-nm-blue" />
+                          <button onclick="document.getElementById('wty-part-date-picker').showPicker()" title="달력 선택"
+                            class="px-1.5 border border-slate-200 rounded bg-slate-50 hover:bg-slate-100 text-slate-500 text-xs">📅</button>
+                          <input id="wty-part-date-picker" type="date" class="sr-only"
+                            onchange="document.getElementById('wty-part-date').value=this.value" />
+                        </div>
                         <input id="wty-part-km" type="number" placeholder="현재 주행거리 (km)"
                           class="w-full mt-1 px-2 py-1 border border-slate-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-nm-blue" />
                       </div>
@@ -1249,7 +1266,6 @@
      Warranty Type 버튼 함수
      ----------------------------------------------- */
   function setWarrantyType(type) {
-    // 미니폼 모두 숨기기
     document.getElementById('wty-form-stage').classList.add('hidden');
     document.getElementById('wty-form-part').classList.add('hidden');
 
@@ -1264,9 +1280,43 @@
       document.getElementById('wty-stage-label').textContent = type;
       document.getElementById('wty-stage-labor').value = '';
       document.getElementById('wty-stage-part').value = '';
+      document.getElementById('wty-stage-auth').value = '';
+      // STAGE3일 때만 KRCOT/DLRCOST 버튼 표시
+      const extras = document.getElementById('wty-stage3-extras');
+      if (type === 'STAGE3') {
+        extras.classList.remove('hidden');
+        extras.classList.add('flex');
+        // 선택 초기화
+        ['btn-krcot','btn-dlrcost'].forEach(id => {
+          const b = document.getElementById(id);
+          b.classList.remove('bg-indigo-500','text-white','border-indigo-500');
+          b.classList.add('bg-slate-100','text-slate-600','border-slate-300');
+        });
+      } else {
+        extras.classList.add('hidden');
+        extras.classList.remove('flex');
+      }
       document.getElementById('wty-form-stage').classList.remove('hidden');
     } else if (type === 'PartWarranty') {
       document.getElementById('wty-form-part').classList.remove('hidden');
+    }
+  }
+
+  function toggleStage3Extra(val) {
+    const ids = { KRCOT: 'btn-krcot', DLRCOST: 'btn-dlrcost' };
+    const otherId = val === 'KRCOT' ? 'btn-dlrcost' : 'btn-krcot';
+    const btn = document.getElementById(ids[val]);
+    const isActive = btn.classList.contains('bg-indigo-500');
+    // 둘 다 초기화
+    [ids[val], otherId].forEach(id => {
+      const b = document.getElementById(id);
+      b.classList.remove('bg-indigo-500','text-white','border-indigo-500');
+      b.classList.add('bg-slate-100','text-slate-600','border-slate-300');
+    });
+    // 클릭한 버튼 토글
+    if (!isActive) {
+      btn.classList.add('bg-indigo-500','text-white','border-indigo-500');
+      btn.classList.remove('bg-slate-100','text-slate-600','border-slate-300');
     }
   }
 
@@ -1275,7 +1325,13 @@
     const labor = document.getElementById('wty-stage-labor').value || '0';
     const part  = document.getElementById('wty-stage-part').value  || '0';
     const auth  = document.getElementById('wty-stage-auth').value.trim();
-    let result = `<${label} Labor ${labor}%, part ${part}%>`;
+    // STAGE3 옵션 확인
+    let extra = '';
+    if (label === 'STAGE3') {
+      if (document.getElementById('btn-krcot').classList.contains('bg-indigo-500')) extra = ' KRCOT';
+      else if (document.getElementById('btn-dlrcost').classList.contains('bg-indigo-500')) extra = ' DLRCOST';
+    }
+    let result = `<${label}${extra} Labor ${labor}%, part ${part}%>`;
     if (auth) result += `\n<Auth no. ${auth}>`;
     document.getElementById('trans-in-0').value = result;
     document.getElementById('wty-form-stage').classList.add('hidden');
