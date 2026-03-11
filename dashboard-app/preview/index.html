@@ -1671,7 +1671,7 @@
       alert('복사할 번역 결과가 없습니다. 먼저 번역을 실행하세요.');
       return;
     }
-    navigator.clipboard.writeText(lines.join('\n\n')).then(() => {
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
       alert('번역 결과가 클립보드에 복사되었습니다.');
     }).catch(() => {
       alert('복사에 실패했습니다. 브라우저 권한을 확인해 주세요.');
