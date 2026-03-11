@@ -852,11 +852,8 @@
            ============================================= -->
       <div id="view-translator" class="view hidden">
         <!-- 헤더 -->
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="text-xl font-bold text-slate-800">보증번역기 (Warranty Translator) <span class="text-xs text-slate-400 font-normal">v4</span></h2>
-            <p class="text-sm text-slate-500 mt-1">한국어로 입력하면 우측에 하나의 영문 보증 청구서로 출력됩니다.</p>
-          </div>
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-base font-bold text-slate-800">보증번역기 <span class="text-xs text-slate-400 font-normal">Warranty Translator</span></h2>
           <div class="flex items-center gap-2">
             <button onclick="resetTranslator()"
               class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-200 bg-slate-100">
@@ -1251,6 +1248,10 @@
     document.getElementById('wty-form-stage').classList.add('hidden');
     document.getElementById('wty-form-part').classList.add('hidden');
 
+    if (type === 'WP') {
+      const confirmed = confirm('스테이지2 문의 완료하였습니까?');
+      if (!confirmed) return;
+    }
     const direct = { BSI: '<BSI>', Warranty: '<WTY>', BRI: '<BRI>', WP: '<WP>' };
     if (direct[type]) {
       document.getElementById('trans-in-0').value = direct[type];
@@ -1272,11 +1273,16 @@
     document.getElementById('wty-form-stage').classList.add('hidden');
   }
 
+  function formatKm(val) {
+    const num = parseInt(val, 10);
+    return isNaN(num) ? '0' : num.toLocaleString('en-US');
+  }
+
   function applyPartWarranty() {
     const prevDate = document.getElementById('wty-prev-date').value || 'YYYY-MM-DD';
-    const prevKm   = document.getElementById('wty-prev-km').value   || '0000000';
+    const prevKm   = formatKm(document.getElementById('wty-prev-km').value);
     const partDate = document.getElementById('wty-part-date').value || 'YYYY-MM-DD';
-    const partKm   = document.getElementById('wty-part-km').value   || '0000000';
+    const partKm   = formatKm(document.getElementById('wty-part-km').value);
     document.getElementById('trans-in-0').value =
       `<Prev F/date:${prevDate}, ${prevKm}km>\n<Part wty:${partDate}, ${partKm}km>`;
     document.getElementById('wty-form-part').classList.add('hidden');
