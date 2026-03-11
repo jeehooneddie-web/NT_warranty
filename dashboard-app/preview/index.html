@@ -93,6 +93,46 @@
     .expand-btn { display:none; }
     .expand-btn.show { display:inline-flex; }
 
+    /* ── 테마 시스템 ── */
+    #view-translator { transition: background 0.2s; }
+
+    /* 테마 팔레트 드롭다운 */
+    #theme-palette { display:none; position:absolute; right:0; top:calc(100% + 6px); background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:8px; box-shadow:0 8px 24px rgba(0,0,0,0.12); z-index:100; flex-direction:column; gap:4px; min-width:130px; }
+    #theme-palette.open { display:flex; }
+    .theme-opt { display:flex; align-items:center; gap:8px; padding:5px 8px; border-radius:7px; cursor:pointer; font-size:12px; color:#475569; transition:background 0.15s; border:none; background:transparent; width:100%; text-align:left; }
+    .theme-opt:hover { background:#f1f5f9; }
+    .theme-opt.active { background:#eff6ff; color:#1d4ed8; font-weight:600; }
+    .theme-dot { width:14px; height:14px; border-radius:50%; border:1.5px solid rgba(0,0,0,0.1); flex-shrink:0; }
+
+    /* ── Light (기본) ── */
+    #view-translator.theme-light { --tr-bg:#f8fafc; --tr-panel:#ffffff; --tr-section:#f8fafc; --tr-input:#ffffff; --tr-text:#1e293b; --tr-text2:#64748b; --tr-border:#e2e8f0; --tr-border2:#f1f5f9; --tr-label:#94a3b8; }
+
+    /* ── Dark ── */
+    #view-translator.theme-dark { --tr-bg:#0f172a; --tr-panel:#1e293b; --tr-section:#162032; --tr-input:#0f172a; --tr-text:#e2e8f0; --tr-text2:#94a3b8; --tr-border:#334155; --tr-border2:#1e293b; --tr-label:#64748b; }
+
+    /* ── Warm ── */
+    #view-translator.theme-warm { --tr-bg:#fdf6ee; --tr-panel:#fffbf5; --tr-section:#fdf0e0; --tr-input:#fffbf5; --tr-text:#431407; --tr-text2:#92400e; --tr-border:#fcd5a0; --tr-border2:#fde8c8; --tr-label:#b45309; }
+
+    /* ── Forest ── */
+    #view-translator.theme-forest { --tr-bg:#f0fdf4; --tr-panel:#ffffff; --tr-section:#dcfce7; --tr-input:#ffffff; --tr-text:#14532d; --tr-text2:#166534; --tr-border:#86efac; --tr-border2:#bbf7d0; --tr-label:#15803d; }
+
+    /* ── Ocean ── */
+    #view-translator.theme-ocean { --tr-bg:#eff6ff; --tr-panel:#ffffff; --tr-section:#dbeafe; --tr-input:#ffffff; --tr-text:#1e3a5f; --tr-text2:#1d4ed8; --tr-border:#bfdbfe; --tr-border2:#dbeafe; --tr-label:#3b82f6; }
+
+    /* 테마 변수 적용 */
+    #view-translator { background: var(--tr-bg, #f8fafc); }
+    #view-translator .bg-white   { background: var(--tr-panel, #fff) !important; }
+    #view-translator .bg-slate-50{ background: var(--tr-section, #f8fafc) !important; }
+    #view-translator textarea    { background: var(--tr-input, #fff) !important; color: var(--tr-text, #1e293b) !important; border-color: var(--tr-border, #e2e8f0) !important; }
+    #view-translator .border-slate-200 { border-color: var(--tr-border, #e2e8f0) !important; }
+    #view-translator .border-slate-100 { border-color: var(--tr-border2, #f1f5f9) !important; }
+    #view-translator .text-slate-800, #view-translator .text-slate-700 { color: var(--tr-text, #1e293b) !important; }
+    #view-translator .text-slate-600, #view-translator .text-slate-500 { color: var(--tr-text2, #64748b) !important; }
+    #view-translator .text-slate-400 { color: var(--tr-label, #94a3b8) !important; }
+    #view-translator .shadow-sm { box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important; }
+    /* Dark 테마 전용 placeholder */
+    #view-translator.theme-dark textarea::placeholder { color: #475569; }
+
     /* 사이드바 접기 */
     aside { transition: width 0.25s ease; }
     aside.sidebar-collapsed { width: 60px !important; }
@@ -945,6 +985,20 @@
         <div class="flex items-center justify-between mb-1">
           <h2 class="text-sm font-bold text-slate-800">보증번역기 <span class="text-xs text-slate-400 font-normal">Warranty Translator</span></h2>
           <div class="flex items-center gap-2">
+            <!-- 테마 선택 -->
+            <div class="relative">
+              <button onclick="toggleThemePalette()" title="테마 변경"
+                class="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 transition-colors px-2.5 py-1 rounded-lg hover:bg-slate-200 bg-slate-100">
+                <i data-lucide="palette" class="w-3.5 h-3.5"></i>
+              </button>
+              <div id="theme-palette">
+                <button class="theme-opt active" onclick="applyTheme('light')"><span class="theme-dot" style="background:#fff;border-color:#cbd5e1"></span>Light</button>
+                <button class="theme-opt" onclick="applyTheme('dark')"><span class="theme-dot" style="background:#1e293b"></span>Dark</button>
+                <button class="theme-opt" onclick="applyTheme('warm')"><span class="theme-dot" style="background:#fcd5a0"></span>Warm</button>
+                <button class="theme-opt" onclick="applyTheme('forest')"><span class="theme-dot" style="background:#86efac"></span>Forest</button>
+                <button class="theme-opt" onclick="applyTheme('ocean')"><span class="theme-dot" style="background:#bfdbfe"></span>Ocean</button>
+              </div>
+            </div>
             <button onclick="resetTranslator()"
               class="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 transition-colors px-2.5 py-1 rounded-lg hover:bg-slate-200 bg-slate-100">
               <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
@@ -1686,6 +1740,46 @@
     document.getElementById('trans-placeholder').classList.remove('hidden');
     document.getElementById('trans-result-container').classList.add('hidden');
   }
+
+  /* ── 테마 ── */
+  const THEMES = ['light','dark','warm','forest','ocean'];
+  function applyTheme(name) {
+    const el = document.getElementById('view-translator');
+    THEMES.forEach(t => el.classList.remove('theme-' + t));
+    el.classList.add('theme-' + name);
+    localStorage.setItem('nm_theme', name);
+    // 팔레트 active 상태
+    document.querySelectorAll('.theme-opt').forEach((btn, i) => {
+      btn.classList.toggle('active', THEMES[i] === name);
+    });
+    // 확장 모달 배경도 테마에 맞게
+    const modal = document.getElementById('expand-modal-inner');
+    if (name === 'dark') {
+      modal.style.background = '#1e293b';
+      document.getElementById('expand-textarea').style.background = '#0f172a';
+      document.getElementById('expand-textarea').style.color = '#e2e8f0';
+    } else {
+      modal.style.background = '';
+      document.getElementById('expand-textarea').style.background = '';
+      document.getElementById('expand-textarea').style.color = '';
+    }
+    document.getElementById('theme-palette').classList.remove('open');
+  }
+  function toggleThemePalette() {
+    document.getElementById('theme-palette').classList.toggle('open');
+  }
+  // 팔레트 외부 클릭 시 닫기
+  document.addEventListener('click', function(e) {
+    const palette = document.getElementById('theme-palette');
+    if (!palette.contains(e.target) && !e.target.closest('[onclick="toggleThemePalette()"]')) {
+      palette.classList.remove('open');
+    }
+  });
+  // 저장된 테마 복원
+  (function() {
+    const saved = localStorage.getItem('nm_theme') || 'light';
+    applyTheme(saved);
+  })();
 
   /* 점검내용 자동 높이 + 확장 버튼 표시 */
   const EXPAND_THRESHOLD = 120; // px - 이 높이 초과 시 확장 버튼 노출
