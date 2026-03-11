@@ -67,6 +67,19 @@
 
     /* 카드 호버 */
     .notice-card:hover { background: #f8fafc; }
+
+    /* 사이드바 접기 */
+    aside { transition: width 0.25s ease; }
+    aside.sidebar-collapsed { width: 60px !important; }
+    aside.sidebar-collapsed .sidebar-logo,
+    aside.sidebar-collapsed .sidebar-profile,
+    aside.sidebar-collapsed .nav-item span { display: none; }
+    aside.sidebar-collapsed .nav-item {
+      justify-content: center;
+      padding: 0.6rem 0;
+    }
+    aside.sidebar-collapsed .nav-item i,
+    aside.sidebar-collapsed .nav-item svg { margin: 0; }
   </style>
 </head>
 <body class="font-sans antialiased">
@@ -82,7 +95,7 @@
   <aside class="w-[260px] flex-shrink-0 flex flex-col overflow-y-auto" style="background:#1e3a5f;">
 
     <!-- 로고 영역 -->
-    <div class="px-5 py-6 border-b border-white/10">
+    <div class="sidebar-logo px-5 py-6 border-b border-white/10">
       <div class="text-white font-bold text-xl leading-tight">National Motors</div>
       <div class="text-blue-300 text-xs mt-1">사내 관리 시스템</div>
     </div>
@@ -126,7 +139,7 @@
     </nav>
 
     <!-- 사용자 정보 -->
-    <div class="px-4 py-4 border-t border-white/10">
+    <div class="sidebar-profile px-4 py-4 border-t border-white/10">
       <div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">A</div>
         <div class="min-w-0">
@@ -1161,6 +1174,14 @@
       'view-translator':       '보증번역기',
     };
     document.getElementById('page-title').textContent = titles[viewId] || '';
+
+    // 보증번역기 진입 시 사이드바 자동 접기, 다른 페이지는 자동 펼치기
+    const sidebar = document.querySelector('aside');
+    if (viewId === 'view-translator') {
+      sidebar.classList.add('sidebar-collapsed');
+    } else {
+      sidebar.classList.remove('sidebar-collapsed');
+    }
   }
 
   /* -----------------------------------------------
