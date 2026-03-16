@@ -1256,8 +1256,7 @@
                 <!-- 번역 결과 (번역 후 표시) -->
                 <div id="trans-result-container" class="hidden space-y-6 leading-relaxed">
 
-                  <div id="trans-block-0" class="hidden">
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2" translate="no">Warranty Type</p>
+                  <div id="trans-block-0">
                     <div class="border-l-2 border-nm-blue pl-3">
                       <p id="trans-result-0" class="text-slate-700 whitespace-pre-wrap text-sm"></p>
                     </div>
@@ -1822,11 +1821,11 @@
 
   /* 결과 복사 버튼 */
   function copyResults() {
-    const labels = ['Warranty Type', 'Customer Complaint', 'Inspection Result', 'Service Solution', 'Fault Memory', 'Test Plan', 'Action Taken'];
+    const labels = [null, 'Customer Complaint', 'Inspection Result', 'Service Solution', 'Fault Memory', 'Test Plan', 'Action Taken'];
     const lines = [];
     for (let n = 0; n <= 6; n++) {
       const val = document.getElementById(`trans-result-${n}`).textContent.trim();
-      if (val) lines.push(`[${labels[n]}]\n${val}`);
+      if (val) lines.push(labels[n] ? `[${labels[n]}]\n${val}` : val);
     }
     if (!lines.length) {
       alert('복사할 번역 결과가 없습니다. 먼저 번역을 실행하세요.');
