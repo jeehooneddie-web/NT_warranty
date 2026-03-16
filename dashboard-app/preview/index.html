@@ -2263,7 +2263,7 @@
 
   function getMonthLabel(m) {
     const [y, mo] = m.split('-');
-    return `'${y.slice(1)}.${mo}`;
+    return `${y}.${mo}`;
   }
 
   function fmt억원(v) { return (v/100000000).toFixed(1)+'억원'; }
