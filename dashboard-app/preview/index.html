@@ -1623,6 +1623,7 @@
             <div class="flex gap-2">
               <button onclick="setDefectTab('top')" id="dtab-top" class="sales-pill active">상위 20개</button>
               <button onclick="setDefectTab('unmatched')" id="dtab-unmatched" class="sales-pill">미매칭 코드 <span id="dtab-unmatched-cnt" class="ml-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full"></span></button>
+              <button onclick="exportUnmatchedCSV()" id="btn-export-unmatched" class="hidden ml-2 px-3 py-1 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">⬇ CSV 내보내기</button>
             </div>
             <div class="flex gap-2" id="dsort-buttons">
               <button onclick="setDefectSort('count')" id="dsort-count" class="sales-pill active">건수순</button>
@@ -2865,9 +2866,27 @@ const BRANCH_DATA = {
     dTabMode = tab;
     document.getElementById('dtab-top').className       = 'sales-pill' + (tab==='top'?' active':'');
     document.getElementById('dtab-unmatched').className = 'sales-pill' + (tab==='unmatched'?' active':'');
-    const sortBtns = document.getElementById('dsort-buttons');
-    if (sortBtns) sortBtns.style.display = tab==='unmatched' ? 'none' : '';
+    const sortBtns  = document.getElementById('dsort-buttons');
+    const exportBtn = document.getElementById('btn-export-unmatched');
+    if (sortBtns)  sortBtns.style.display  = tab==='unmatched' ? 'none' : '';
+    if (exportBtn) exportBtn.classList.toggle('hidden', tab!=='unmatched');
     renderTopDefect();
+  }
+
+  function exportUnmatchedCSV() {
+    const BOM = '\uFEFF';
+    const header = '결함코드,결함설명,건수,금액';
+    const rows = DEFECT_UNMATCHED.map(u =>
+      `${u.code},,${u.count},${u.amount}`
+    );
+    const csv = BOM + [header, ...rows].join('\r\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = '미매칭_디펙트코드.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   function renderTopDefect() {
