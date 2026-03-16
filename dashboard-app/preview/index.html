@@ -159,6 +159,7 @@
     aside.sidebar-collapsed { width: 60px !important; }
     aside.sidebar-collapsed .sidebar-logo,
     aside.sidebar-collapsed .sidebar-profile,
+    aside.sidebar-collapsed .sidebar-warranty,
     aside.sidebar-collapsed .nav-item span { display: none; }
     aside.sidebar-collapsed .nav-item {
       justify-content: center;
@@ -282,6 +283,20 @@
         <span>보증번역기</span>
       </div>
     </nav>
+
+    <!-- 보증기간 조회 위젯 -->
+    <div class="sidebar-warranty px-3 pb-3 border-t border-white/10 pt-3">
+      <div class="text-blue-300 text-xs font-semibold uppercase tracking-wider mb-2 px-1">보증기간 조회</div>
+      <input id="warranty-input" type="text" maxlength="14" placeholder="00 00 00 00 00"
+        oninput="lookupWarranty(this)"
+        class="w-full bg-white/10 text-white text-sm px-3 py-2 rounded-lg border border-white/20 focus:outline-none focus:border-white/50 placeholder-white/30 tracking-widest" />
+      <div id="warranty-result" class="hidden mt-2 rounded-lg p-3 text-center">
+        <div id="warranty-years" class="text-white font-bold text-base"></div>
+        <div id="warranty-km" class="text-blue-200 text-xs mt-0.5"></div>
+        <div id="warranty-code" class="text-white/40 text-xs mt-1"></div>
+      </div>
+      <div id="warranty-no-match" class="hidden mt-2 text-white/40 text-xs text-center py-2">매칭 코드 없음</div>
+    </div>
 
     <!-- 사용자 정보 -->
     <div class="sidebar-profile px-4 py-4 border-t border-white/10">
@@ -1810,6 +1825,90 @@
   document.getElementById('expand-modal').addEventListener('click', function(e) {
     if (e.target === this) closeExpandModal();
   });
+
+  /* ── 보증기간 조회 ── */
+  const WARRANTY_DB = [
+    // 3Years / 60,000km
+    {code:'21210339',years:'3 Years',km:'60,000km'},
+    {code:'331202',years:'3 Years',km:'60,000km'},
+    {code:'315000',years:'3 Years',km:'60,000km'},
+    {code:'123600',years:'3 Years',km:'60,000km'},
+    {code:'331005',years:'3 Years',km:'60,000km'},
+    {code:'331006',years:'3 Years',km:'60,000km'},
+    {code:'331008',years:'3 Years',km:'60,000km'},
+    {code:'123500',years:'3 Years',km:'60,000km'},
+    {code:'123300',years:'3 Years',km:'60,000km'},
+    {code:'123701',years:'3 Years',km:'60,000km'},
+    {code:'614402',years:'3 Years',km:'60,000km'},
+    {code:'645200',years:'3 Years',km:'60,000km'},
+    {code:'3314',years:'3 Years',km:'60,000km'},
+    {code:'2611',years:'3 Years',km:'60,000km'},
+    {code:'2620',years:'3 Years',km:'60,000km'},
+    {code:'3310',years:'3 Years',km:'60,000km'},
+    {code:'11',years:'3 Years',km:'60,000km'},
+    {code:'23',years:'3 Years',km:'60,000km'},
+    {code:'24',years:'3 Years',km:'60,000km'},
+    {code:'27',years:'3 Years',km:'60,000km'},
+    {code:'28',years:'3 Years',km:'60,000km'},
+    // 5Years / 80,000km
+    {code:'111226',years:'5 Years',km:'80,000km'},
+    {code:'116112',years:'5 Years',km:'80,000km'},
+    {code:'116505',years:'5 Years',km:'80,000km'},
+    {code:'116509',years:'5 Years',km:'80,000km'},
+    {code:'139001',years:'5 Years',km:'80,000km'},
+    {code:'161404',years:'5 Years',km:'80,000km'},
+    {code:'161407',years:'5 Years',km:'80,000km'},
+    {code:'175101',years:'5 Years',km:'80,000km'},
+    {code:'175102',years:'5 Years',km:'80,000km'},
+    {code:'1171',years:'5 Years',km:'80,000km'},
+    {code:'1172',years:'5 Years',km:'80,000km'},
+    {code:'1178',years:'5 Years',km:'80,000km'},
+    {code:'1213',years:'5 Years',km:'80,000km'},
+    {code:'1351',years:'5 Years',km:'80,000km'},
+    {code:'1353',years:'5 Years',km:'80,000km'},
+    {code:'1354',years:'5 Years',km:'80,000km'},
+    {code:'1362',years:'5 Years',km:'80,000km'},
+    {code:'1364',years:'5 Years',km:'80,000km'},
+    {code:'1612',years:'5 Years',km:'80,000km'},
+    {code:'1613',years:'5 Years',km:'80,000km'},
+    // 7Years / 120,000km
+    {code:'183000',years:'7 Years',km:'120,000km'},
+    {code:'183001',years:'7 Years',km:'120,000km'},
+    {code:'183003',years:'7 Years',km:'120,000km'},
+    {code:'183004',years:'7 Years',km:'120,000km'},
+    {code:'1214',years:'7 Years',km:'120,000km'},
+    {code:'1361',years:'7 Years',km:'120,000km'},
+    {code:'1832',years:'7 Years',km:'120,000km'},
+    {code:'1619',years:'7 Years',km:'120,000km'},
+  ];
+
+  function lookupWarranty(el) {
+    // 숫자만 추출 후 자동 포맷 (2자리씩 공백)
+    const digits = el.value.replace(/\D/g, '').slice(0, 10);
+    el.value = digits.match(/.{1,2}/g)?.join(' ') || '';
+
+    const result   = document.getElementById('warranty-result');
+    const noMatch  = document.getElementById('warranty-no-match');
+    result.classList.add('hidden');
+    noMatch.classList.add('hidden');
+
+    if (digits.length < 2) return;
+
+    // 가장 긴 prefix 매칭 (내림차순 정렬 후 탐색)
+    const sorted = [...WARRANTY_DB].sort((a,b) => b.code.length - a.code.length);
+    const match  = sorted.find(w => digits.startsWith(w.code));
+
+    if (match) {
+      document.getElementById('warranty-years').textContent = match.years;
+      document.getElementById('warranty-km').textContent    = match.km;
+      document.getElementById('warranty-code').textContent  = `Code: ${match.code}`;
+      const colors = {'3 Years':'bg-blue-500/30','5 Years':'bg-amber-500/30','7 Years':'bg-emerald-500/30'};
+      result.className = `mt-2 rounded-lg p-3 text-center ${colors[match.years] || 'bg-white/10'}`;
+      result.classList.remove('hidden');
+    } else {
+      noMatch.classList.remove('hidden');
+    }
+  }
 
   /* 조치사항 버튼 - 값 설정 후 커서를 끝으로 이동 */
   function setActionTaken(text) {
