@@ -1614,7 +1614,7 @@
               합계 표시
             </button>
           </div>
-          <div style="height:340px;position:relative;background:#2d2d2d;border-radius:12px;padding:12px 8px 8px;">
+          <div style="height:340px;position:relative;">
             <canvas id="sales-chart"></canvas>
           </div>
         </div>
@@ -2372,18 +2372,18 @@
         interaction: { mode:'index', intersect:false },
         scales: {
           x: { stacked:true, grid:{display:false},
-            ticks:{ font:{size:10}, color:'#aaaaaa' },
-            border:{ color:'#555' }
+            ticks:{ font:{size:10, weight:'400'}, color:'#94a3b8' },
+            border:{ color:'#e2e8f0' }
           },
-          y: { stacked:true, grid:{color:'rgba(255,255,255,0.08)'}, border:{dash:[4,4], color:'transparent'},
-            ticks:{ callback: v => salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(), font:{size:10}, color:'#aaaaaa' }
+          y: { stacked:true, grid:{color:'#f1f5f9'}, border:{dash:[4,4], color:'transparent'},
+            ticks:{ callback: v => salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(), font:{size:10, weight:'400'}, color:'#94a3b8' }
           }
         },
         plugins: {
-          legend:{ position:'bottom', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:8, padding:18, font:{size:11}, color:'#dddddd',
+          legend:{ position:'bottom', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:8, padding:18, font:{size:11, weight:'400'}, color:'#64748b',
             filter: item => item.text !== '합계'
           }},
-          tooltip:{ backgroundColor:'rgba(20,20,20,0.92)', padding:12, cornerRadius:10, titleFont:{size:12,weight:'700'}, bodyFont:{size:11},
+          tooltip:{ backgroundColor:'rgba(15,23,42,0.88)', padding:12, cornerRadius:10, titleFont:{size:12,weight:'600'}, bodyFont:{size:11},
             filter: item => item.dataset.label !== '합계',
             callbacks:{ label: c => ` ${c.dataset.label}: ${salesMode==='amount' ? Math.round(c.raw/1000000).toLocaleString()+'백만원' : c.raw.toLocaleString()+'건'}` }
           },
