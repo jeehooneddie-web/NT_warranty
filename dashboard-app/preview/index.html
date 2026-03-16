@@ -12,6 +12,7 @@
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 
   <!-- 브랜드 색상 설정 -->
   <script>
@@ -2255,7 +2256,7 @@
   const ALL_MONTHS = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02','26-03','26-04','26-05','26-06','26-07','26-08','26-09','26-10','26-11','26-12'];
   const DATA_MONTHS = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02'];
   const SALES_TYPES = ['BSI','Warranty','TC/RECALL','WP','LOCAL TC'];
-  const SALES_COLORS = {'BSI':'#3b82f6','Warranty':'#10b981','TC/RECALL':'#f59e0b','WP':'#8b5cf6','LOCAL TC':'#94a3b8'};
+  const SALES_COLORS = {'BSI':'#0f2744','Warranty':'#1e3a5f','TC/RECALL':'#1d4ed8','WP':'#3b82f6','LOCAL TC':'#93c5fd'};
   let salesMode = 'amount';
   let salesChart = null;
   let activeBranches = new Set(ALL_BRANCHES);
@@ -2292,35 +2293,74 @@
   }
 
   function buildSalesChartData() {
-    return {
-      labels: ALL_MONTHS.map(getMonthLabel),
-      datasets: [...activeTypes].map(type => ({
-        label: type,
-        data: ALL_MONTHS.map(m => {
-          if (!DATA_MONTHS.includes(m)) return null;
-          let v=0;
-          for (const br of activeBranches) {
-            const d = BRANCH_DATA[br]?.[m]?.[type];
+    const barDatasets = [...activeTypes].map(type => ({
+      type: 'bar',
+      label: type,
+      data: ALL_MONTHS.map(m => {
+        if (!DATA_MONTHS.includes(m)) return null;
+        let v=0;
+        for (const br of activeBranches) {
+          const d = BRANCH_DATA[br]?.[m]?.[type];
+          if (d) v += salesMode==='amount' ? d.total : d.count;
+        }
+        return v||null;
+      }),
+      backgroundColor: SALES_COLORS[type],
+      borderRadius: 2,
+      borderSkipped: false,
+      maxBarThickness: 22,
+      datalabels: {
+        display: ctx => { const v=ctx.dataset.data[ctx.dataIndex]; return v && (salesMode==='amount' ? v>=80000000 : v>=80); },
+        color: '#fff',
+        font: { size: 9, weight: '700' },
+        formatter: v => salesMode==='amount' ? Math.round(v/10000).toLocaleString() : v.toLocaleString(),
+        anchor: 'center', align: 'center',
+      }
+    }));
+    // Total 라인
+    const totalDataset = {
+      type: 'line',
+      label: 'Total',
+      data: ALL_MONTHS.map(m => {
+        if (!DATA_MONTHS.includes(m)) return null;
+        let v=0;
+        for (const br of activeBranches)
+          for (const t of activeTypes) {
+            const d = BRANCH_DATA[br]?.[m]?.[t];
             if (d) v += salesMode==='amount' ? d.total : d.count;
           }
-          return v||null;
-        }),
-        backgroundColor: SALES_COLORS[type],
-        borderRadius: 3,
-        borderSkipped: false,
-      }))
+        return v||null;
+      }),
+      borderColor: '#f97316',
+      backgroundColor: '#f97316',
+      borderWidth: 2,
+      pointRadius: 3,
+      pointBackgroundColor: '#f97316',
+      tension: 0.3,
+      order: -1,
+      yAxisID: 'y',
+      datalabels: {
+        display: true,
+        color: '#f97316',
+        font: { size: 9, weight: '700' },
+        formatter: v => salesMode==='amount' ? Math.round(v/10000).toLocaleString() : v.toLocaleString(),
+        anchor: 'end', align: 'top', offset: 4,
+      }
     };
+    return { labels: ALL_MONTHS.map(getMonthLabel), datasets: [...barDatasets, totalDataset] };
   }
 
   function initSalesChart() {
     const ctx = document.getElementById('sales-chart');
     if (!ctx) return;
     if (salesChart) { salesChart.destroy(); salesChart=null; }
+    Chart.register(ChartDataLabels);
     salesChart = new Chart(ctx, {
       type: 'bar',
       data: buildSalesChartData(),
       options: {
         responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 28 } },
         interaction: { mode:'index', intersect:false },
         scales: {
           x: { stacked:true, grid:{display:false}, ticks:{font:{size:10},color:'#94a3b8'} },
@@ -2329,10 +2369,11 @@
           }
         },
         plugins: {
-          legend:{ position:'top', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:7, padding:16, font:{size:11}, color:'#475569' }},
+          legend:{ position:'top', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:7, padding:14, font:{size:11}, color:'#475569' }},
           tooltip:{ backgroundColor:'rgba(15,23,42,0.85)', padding:12, cornerRadius:10, titleFont:{size:12}, bodyFont:{size:11},
             callbacks:{ label: c => ` ${c.dataset.label}: ${salesMode==='amount' ? Math.round(c.raw/10000).toLocaleString()+'만원' : c.raw.toLocaleString()+'건'}` }
-          }
+          },
+          datalabels: { display: false }
         }
       }
     });
