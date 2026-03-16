@@ -1627,13 +1627,19 @@
           <!-- 상위 20개: 두 차트 -->
           <div id="defect-top-area" class="grid grid-cols-2 divide-x divide-slate-200 dark:divide-slate-700">
             <div class="p-4">
-              <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 text-center">매출 기준 TOP 20</p>
+              <div class="flex items-center justify-between mb-3">
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">매출 기준 TOP 20</p>
+                <span class="text-xs text-slate-400">단위: 백만원</span>
+              </div>
               <div style="height:560px; position:relative;">
                 <canvas id="defect-chart-amount"></canvas>
               </div>
             </div>
             <div class="p-4">
-              <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 text-center">건수 기준 TOP 20</p>
+              <div class="flex items-center justify-between mb-3">
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">건수 기준 TOP 20</p>
+                <span class="text-xs text-slate-400">단위: 건</span>
+              </div>
               <div style="height:560px; position:relative;">
                 <canvas id="defect-chart-count"></canvas>
               </div>
@@ -2983,14 +2989,14 @@ const BRANCH_DATA = {
           display: true,
           anchor: 'end',
           align: 'end',
-          color: '#ffffff',
-          font: { weight: 'bold', size: 10 },
+          color: '#94a3b8',
+          font: { size: 10 },
           formatter: (value, ctx) => {
             const total = ctx.chart.data.datasets.reduce((s, ds) => s + (ds.data[ctx.dataIndex] || 0), 0);
             if (!total) return null;
             return metric === 'amount'
-              ? (total / 1000000).toFixed(1) + 'M'
-              : total.toLocaleString() + '건';
+              ? Math.round(total / 1000000).toLocaleString()
+              : total.toLocaleString();
           }
         } : { display: false }
       }));
@@ -3015,7 +3021,7 @@ const BRANCH_DATA = {
                   const v = ctx.raw;
                   if (!v) return null;
                   return metric === 'amount'
-                    ? `${ctx.dataset.label}: ₩${(v/1000000).toFixed(2)}M`
+                    ? `${ctx.dataset.label}: ${Math.round(v/1000000).toLocaleString()}백만원`
                     : `${ctx.dataset.label}: ${v.toLocaleString()}건`;
                 }
               }
@@ -3029,8 +3035,8 @@ const BRANCH_DATA = {
                 color: tickCol,
                 maxTicksLimit: 6,
                 callback: v => metric === 'amount'
-                  ? (v/1000000).toFixed(0)+'M'
-                  : v.toLocaleString()+'건'
+                  ? Math.round(v/1000000).toLocaleString()
+                  : v.toLocaleString()
               }
             },
             y: {
