@@ -10,6 +10,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <!-- 브랜드 색상 설정 -->
   <script>
@@ -284,6 +286,10 @@
       <div class="nav-item" data-view="view-warranty" onclick="showView('view-warranty')">
         <i data-lucide="shield-check"></i>
         <span>보증기간 조회</span>
+      </div>
+      <div class="nav-item admin-only" data-view="view-sales" onclick="showView('view-sales')">
+        <i data-lucide="bar-chart-2"></i>
+        <span>보증 매출</span>
       </div>
     </nav>
 
@@ -1512,6 +1518,99 @@
         </div>
       </div><!-- /view-warranty -->
 
+      <!-- =============================================
+           뷰: 보증 매출 현황
+           ============================================= -->
+      <div id="view-sales" class="view hidden">
+
+        <!-- 상단 헤더 + 토글 -->
+        <div class="mb-5 flex items-center justify-between">
+          <p class="text-sm text-slate-500">2025.01 ~ 2026.02 · 취소 제외 · Claim 상세_전체 기준</p>
+          <div class="flex gap-2">
+            <button id="btn-sales-amount" onclick="setSalesMode('amount')"
+              class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-nm-blue text-white">금액(만원)</button>
+            <button id="btn-sales-count" onclick="setSalesMode('count')"
+              class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600">건수</button>
+          </div>
+        </div>
+
+        <!-- 요약 카드 4개 -->
+        <div class="grid grid-cols-4 gap-4 mb-5">
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+            <div class="flex items-start justify-between mb-3">
+              <div class="text-sm text-slate-500 font-medium">26년 2월 총 매출</div>
+              <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center text-nm-blue">
+                <i data-lucide="trending-up" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div id="sales-stat-month" class="text-2xl font-bold text-slate-800 mb-1">—</div>
+            <div id="sales-stat-mom" class="text-xs text-slate-400">—</div>
+          </div>
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+            <div class="flex items-start justify-between mb-3">
+              <div class="text-sm text-slate-500 font-medium">26년 2월 총 건수</div>
+              <div class="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center text-green-600">
+                <i data-lucide="file-check" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div id="sales-stat-count" class="text-2xl font-bold text-slate-800 mb-1">—</div>
+            <div class="text-xs text-slate-400">건</div>
+          </div>
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+            <div class="flex items-start justify-between mb-3">
+              <div class="text-sm text-slate-500 font-medium">2025년 누계</div>
+              <div class="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center text-purple-600">
+                <i data-lucide="calendar" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div id="sales-stat-year25" class="text-2xl font-bold text-slate-800 mb-1">—</div>
+            <div class="text-xs text-slate-400">12개월 합계</div>
+          </div>
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+            <div class="flex items-start justify-between mb-3">
+              <div class="text-sm text-slate-500 font-medium">2026년 누계 (1~2월)</div>
+              <div class="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center text-amber-600">
+                <i data-lucide="calendar-check" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div id="sales-stat-year26" class="text-2xl font-bold text-slate-800 mb-1">—</div>
+            <div class="text-xs text-slate-400">2개월 합계</div>
+          </div>
+        </div>
+
+        <!-- 차트 -->
+        <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5 mb-5">
+          <h3 class="text-sm font-semibold text-slate-700 mb-4">월별 보증 청구 현황</h3>
+          <div style="height:300px;position:relative;">
+            <canvas id="sales-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- 상세 테이블 -->
+        <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+          <div class="px-5 py-4 border-b border-slate-100">
+            <h3 class="text-sm font-semibold text-slate-700">월별 Warranty Type 상세</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs border-collapse">
+              <thead>
+                <tr class="bg-blue-600 text-white">
+                  <th class="px-4 py-2.5 text-left font-semibold whitespace-nowrap border border-blue-700">월</th>
+                  <th class="px-4 py-2.5 text-right font-semibold whitespace-nowrap border border-blue-700">BSI</th>
+                  <th class="px-4 py-2.5 text-right font-semibold whitespace-nowrap border border-blue-700">Warranty</th>
+                  <th class="px-4 py-2.5 text-right font-semibold whitespace-nowrap border border-blue-700">TC/RECALL</th>
+                  <th class="px-4 py-2.5 text-right font-semibold whitespace-nowrap border border-blue-700">WP</th>
+                  <th class="px-4 py-2.5 text-right font-semibold whitespace-nowrap border border-blue-700">LOCAL TC</th>
+                  <th class="px-4 py-2.5 text-right font-semibold whitespace-nowrap border border-blue-700 bg-blue-800">합계</th>
+                </tr>
+              </thead>
+              <tbody id="sales-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /view-sales -->
+
     </main>
   </div>
 </div><!-- /최상위 레이아웃 -->
@@ -1738,8 +1837,12 @@
       'view-admin-menus':      '메뉴 관리',
       'view-translator':       '보증번역기',
       'view-warranty':         '보증기간 조회',
+      'view-sales':            '보증 매출 현황',
     };
     document.getElementById('page-title').textContent = titles[viewId] || '';
+
+    // 보증 매출 차트 초기화
+    if (viewId === 'view-sales') setTimeout(initSalesChart, 50);
 
     // 보증번역기 진입 시 사이드바 자동 접기, 다른 페이지는 자동 펼치기
     const sidebar = document.querySelector('aside');
@@ -2110,6 +2213,130 @@
     } else {
       noMatch.classList.remove('hidden');
     }
+  }
+
+  /* ── 보증 매출 대시보드 ── */
+  const SALES_DATA = {
+    "25-01":{"BSI":{"count":5030,"total":632690015},"LOCAL TC":{"count":183,"total":12306112},"TC/RECALL":{"count":807,"total":579283119},"WP":{"count":34,"total":41896300},"Warranty":{"count":386,"total":494004952}},
+    "25-02":{"BSI":{"count":5986,"total":742657923},"LOCAL TC":{"count":217,"total":14613509},"TC/RECALL":{"count":798,"total":603572309},"WP":{"count":44,"total":40985945},"Warranty":{"count":439,"total":459559135}},
+    "25-03":{"BSI":{"count":5982,"total":734375951},"LOCAL TC":{"count":230,"total":15534776},"TC/RECALL":{"count":1033,"total":526198078},"WP":{"count":45,"total":41313182},"Warranty":{"count":463,"total":410650502}},
+    "25-04":{"BSI":{"count":6426,"total":813219271},"LOCAL TC":{"count":283,"total":18594400},"TC/RECALL":{"count":820,"total":547441339},"WP":{"count":38,"total":32860300},"Warranty":{"count":529,"total":563008486}},
+    "25-05":{"BSI":{"count":6745,"total":875915092},"LOCAL TC":{"count":111,"total":7403952},"TC/RECALL":{"count":684,"total":548118989},"WP":{"count":37,"total":30174965},"Warranty":{"count":418,"total":510092451}},
+    "25-06":{"BSI":{"count":6184,"total":803128232},"LOCAL TC":{"count":243,"total":17403281},"TC/RECALL":{"count":438,"total":392273794},"WP":{"count":27,"total":31718325},"Warranty":{"count":456,"total":575908630}},
+    "25-07":{"BSI":{"count":7246,"total":909812658},"LOCAL TC":{"count":340,"total":22379582},"TC/RECALL":{"count":486,"total":468782232},"WP":{"count":61,"total":67532330},"Warranty":{"count":568,"total":686629917}},
+    "25-08":{"BSI":{"count":6617,"total":849697597},"LOCAL TC":{"count":271,"total":14692760},"TC/RECALL":{"count":613,"total":386293713},"WP":{"count":67,"total":80720098},"Warranty":{"count":459,"total":652764360}},
+    "25-09":{"BSI":{"count":6664,"total":838692481},"LOCAL TC":{"count":257,"total":13743106},"TC/RECALL":{"count":846,"total":440259798},"WP":{"count":66,"total":66921635},"Warranty":{"count":433,"total":555484039}},
+    "25-10":{"BSI":{"count":7118,"total":930216233},"LOCAL TC":{"count":296,"total":16914592},"TC/RECALL":{"count":714,"total":251815466},"WP":{"count":48,"total":71591260},"Warranty":{"count":379,"total":463822964}},
+    "25-11":{"BSI":{"count":6547,"total":862745044},"LOCAL TC":{"count":286,"total":16592068},"TC/RECALL":{"count":686,"total":306381366},"WP":{"count":63,"total":97719600},"Warranty":{"count":437,"total":549874829}},
+    "25-12":{"BSI":{"count":6502,"total":867038550},"LOCAL TC":{"count":206,"total":11807962},"TC/RECALL":{"count":984,"total":367117868},"WP":{"count":63,"total":64554045},"Warranty":{"count":418,"total":607298305}},
+    "26-01":{"BSI":{"count":6360,"total":820232580},"LOCAL TC":{"count":177,"total":12551559},"TC/RECALL":{"count":836,"total":312553219},"WP":{"count":79,"total":101866555},"Warranty":{"count":444,"total":545342707}},
+    "26-02":{"BSI":{"count":5471,"total":716467420},"LOCAL TC":{"count":144,"total":10320768},"TC/RECALL":{"count":654,"total":309194890},"WP":{"count":83,"total":93298496},"Warranty":{"count":405,"total":648755902}}
+  };
+  const SALES_MONTHS = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02'];
+  const SALES_MONTHS_KO = ['25.01','25.02','25.03','25.04','25.05','25.06','25.07','25.08','25.09','25.10','25.11','25.12','26.01','26.02'];
+  const SALES_TYPES = ['BSI','Warranty','TC/RECALL','WP','LOCAL TC'];
+  const SALES_COLORS = {'BSI':'#3b82f6','Warranty':'#10b981','TC/RECALL':'#f59e0b','WP':'#8b5cf6','LOCAL TC':'#94a3b8'};
+  let salesMode = 'amount';
+  let salesChart = null;
+
+  function fmt억원(v) { return (v/100000000).toFixed(1)+'억원'; }
+
+  function buildSalesChartData() {
+    return {
+      labels: SALES_MONTHS_KO,
+      datasets: SALES_TYPES.map(type => ({
+        label: type,
+        data: SALES_MONTHS.map(m => {
+          const d = SALES_DATA[m][type];
+          return d ? (salesMode === 'amount' ? d.total : d.count) : 0;
+        }),
+        backgroundColor: SALES_COLORS[type],
+      }))
+    };
+  }
+
+  function initSalesChart() {
+    const ctx = document.getElementById('sales-chart');
+    if (!ctx) return;
+    if (salesChart) { salesChart.destroy(); salesChart = null; }
+    salesChart = new Chart(ctx, {
+      type: 'bar',
+      data: buildSalesChartData(),
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          x: { stacked: true, grid: { display: false } },
+          y: {
+            stacked: true,
+            ticks: { callback: v => salesMode === 'amount' ? Math.round(v/10000).toLocaleString()+'만' : v.toLocaleString() }
+          }
+        },
+        plugins: {
+          legend: { position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 14, font: { size: 11 } } },
+          tooltip: {
+            callbacks: {
+              label: c => ` ${c.dataset.label}: ${salesMode === 'amount' ? Math.round(c.raw/10000).toLocaleString()+'만원' : c.raw.toLocaleString()+'건'}`
+            }
+          }
+        }
+      }
+    });
+    updateSalesStats();
+    renderSalesTable();
+  }
+
+  function setSalesMode(mode) {
+    salesMode = mode;
+    const active = 'px-3 py-1.5 text-xs font-semibold rounded-lg bg-nm-blue text-white';
+    const inactive = 'px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600';
+    document.getElementById('btn-sales-amount').className = mode === 'amount' ? active : inactive;
+    document.getElementById('btn-sales-count').className  = mode === 'count'  ? active : inactive;
+    if (salesChart) {
+      salesChart.data = buildSalesChartData();
+      salesChart.options.scales.y.ticks.callback = v => mode === 'amount' ? Math.round(v/10000).toLocaleString()+'만' : v.toLocaleString();
+      salesChart.update();
+    }
+    renderSalesTable();
+  }
+
+  function updateSalesStats() {
+    const latest = SALES_DATA['26-02'], prev = SALES_DATA['26-01'];
+    const sum = (obj, key) => SALES_TYPES.reduce((s,t) => s + (obj[t]?.[key]||0), 0);
+    const latestAmt = sum(latest,'total'), prevAmt = sum(prev,'total');
+    const momPct = ((latestAmt - prevAmt) / prevAmt * 100).toFixed(1);
+    document.getElementById('sales-stat-month').textContent = fmt억원(latestAmt);
+    const momEl = document.getElementById('sales-stat-mom');
+    momEl.textContent = (momPct >= 0 ? '▲' : '▼') + Math.abs(momPct) + '% 전월 대비';
+    momEl.className = 'text-xs ' + (momPct >= 0 ? 'text-emerald-600' : 'text-red-500');
+    document.getElementById('sales-stat-count').textContent = sum(latest,'count').toLocaleString();
+    const t25 = SALES_MONTHS.filter(m=>m.startsWith('25')).reduce((s,m)=>s+sum(SALES_DATA[m],'total'),0);
+    const t26 = SALES_MONTHS.filter(m=>m.startsWith('26')).reduce((s,m)=>s+sum(SALES_DATA[m],'total'),0);
+    document.getElementById('sales-stat-year25').textContent = fmt억원(t25);
+    document.getElementById('sales-stat-year26').textContent = fmt억원(t26);
+  }
+
+  function renderSalesTable() {
+    const tbody = document.getElementById('sales-table-body');
+    if (!tbody) return;
+    const isAmt = salesMode === 'amount';
+    tbody.innerHTML = SALES_MONTHS.map((m, i) => {
+      const rowTotal = SALES_TYPES.reduce((s,t) => s + (SALES_DATA[m][t] ? (isAmt ? SALES_DATA[m][t].total : SALES_DATA[m][t].count) : 0), 0);
+      const cells = SALES_TYPES.map(t => {
+        const d = SALES_DATA[m][t];
+        const v = d ? (isAmt ? d.total : d.count) : 0;
+        return `<td class="px-4 py-1.5 text-right text-slate-700 whitespace-nowrap border border-slate-200">${isAmt ? Math.round(v/10000).toLocaleString() : v.toLocaleString()}</td>`;
+      }).join('');
+      const yr = m.startsWith('26') ? '26' : '25';
+      const mo = parseInt(m.split('-')[1]);
+      const bg = i % 2 === 0 ? '' : 'bg-slate-50';
+      return `<tr class="${bg} hover:bg-blue-50">
+        <td class="px-4 py-1.5 font-semibold text-slate-800 whitespace-nowrap border border-slate-200">${yr}년 ${mo}월</td>
+        ${cells}
+        <td class="px-4 py-1.5 text-right font-bold text-blue-700 whitespace-nowrap border border-slate-200 bg-blue-50">${isAmt ? Math.round(rowTotal/10000).toLocaleString()+'만원' : rowTotal.toLocaleString()+'건'}</td>
+      </tr>`;
+    }).join('');
   }
 
   /* 조치사항 버튼 - 값 설정 후 커서를 끝으로 이동 */
