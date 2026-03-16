@@ -2340,23 +2340,28 @@
       return v||null;
     });
     const totalDataset = {
-      type: 'bar',
+      type: 'line',
       label: '합계',
-      data: totalVals.map(() => null), // 막대 없음
+      data: totalVals,
+      borderColor: 'transparent',
       backgroundColor: 'transparent',
-      maxBarThickness: 28,
+      borderWidth: 0,
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      tension: 0,
+      order: -1,
       datalabels: {
-        display: () => activeBranches.size === ALL_BRANCHES.length ? true : showTotalLabels,
+        display: ctx => {
+          const v = totalVals[ctx.dataIndex];
+          if (!v) return false;
+          return activeBranches.size === ALL_BRANCHES.length ? true : showTotalLabels;
+        },
         color: '#0f172a',
         font: { size: 10, weight: '800' },
         textStrokeColor: '#fff',
         textStrokeWidth: 3,
-        formatter: (_, ctx) => {
-          const v = totalVals[ctx.dataIndex];
-          if (!v) return '';
-          return salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString();
-        },
-        anchor: 'end', align: 'top', offset: 2,
+        formatter: v => v ? (salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString()) : '',
+        anchor: 'end', align: 'top', offset: 4,
       }
     };
     return { labels: ALL_MONTHS.map(getMonthLabel), datasets: [...barDatasets, totalDataset] };
