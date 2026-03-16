@@ -2372,10 +2372,10 @@
     });
     const totalDataset = {
       type: 'line',
-      label: '합계',
+      label: 'Total',
       data: totalVals,
       borderColor: '#ffffff',
-      backgroundColor: 'transparent',
+      backgroundColor: '#ffffff',
       borderWidth: 0,
       pointRadius: 0,
       pointHoverRadius: 0,
@@ -2417,12 +2417,12 @@
           legend:{ position:'bottom', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:8, padding:18, font:{size:11, weight:'400'},
             color: '#cbd5e1',
             generateLabels: chart => Chart.defaults.plugins.legend.labels.generateLabels(chart).map(l => {
-              if (l.text === '합계') l.fontColor = '#ffffff';
+              if (l.text === 'Total') { l.fontColor = '#ffffff'; l.fillStyle = '#ffffff'; l.strokeStyle = '#ffffff'; }
               return l;
             })
           }},
           tooltip:{ backgroundColor:'rgba(15,23,42,0.88)', padding:12, cornerRadius:10, titleFont:{size:12,weight:'600'}, bodyFont:{size:11},
-            filter: item => item.dataset.label !== '합계',
+            filter: item => item.dataset.label !== 'Total',
             callbacks:{ label: c => ` ${c.dataset.label}: ${salesMode==='amount' ? Math.round(c.raw/1000000).toLocaleString()+'백만원' : c.raw.toLocaleString()+'건'}` }
           },
           datalabels: { display: false }
