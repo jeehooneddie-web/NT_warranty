@@ -1605,10 +1605,16 @@
         <!-- 차트 -->
         <div class="sales-card p-6 mb-4">
           <div class="flex items-center justify-between mb-5">
-            <h3 class="text-sm font-semibold text-slate-800">월별 보증 청구 현황</h3>
-            <span class="text-xs text-slate-400">2025.01 — 2026.12</span>
+            <div>
+              <h3 class="text-sm font-semibold text-slate-800">월별 보증매출</h3>
+              <span class="text-xs text-slate-400">단위: 백만원 · 2025.01 — 2026.12</span>
+            </div>
+            <button onclick="toggleSalesTotal()" id="btn-sales-total"
+              class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors">
+              합계 표시
+            </button>
           </div>
-          <div style="height:280px;position:relative;">
+          <div style="height:300px;position:relative;">
             <canvas id="sales-chart"></canvas>
           </div>
         </div>
@@ -2256,7 +2262,8 @@
   const ALL_MONTHS = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02','26-03','26-04','26-05','26-06','26-07','26-08','26-09','26-10','26-11','26-12'];
   const DATA_MONTHS = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02'];
   const SALES_TYPES = ['BSI','Warranty','TC/RECALL','WP','LOCAL TC'];
-  const SALES_COLORS = {'BSI':'#0f2744','Warranty':'#1e3a5f','TC/RECALL':'#1d4ed8','WP':'#3b82f6','LOCAL TC':'#93c5fd'};
+  const SALES_COLORS = {'BSI':'#1e3a5f','Warranty':'#1e63c8','TC/RECALL':'#3b82f6','WP':'#60a5fa','LOCAL TC':'#bfdbfe'};
+  let showTotalLabels = false;
   let salesMode = 'amount';
   let salesChart = null;
   let activeBranches = new Set(ALL_BRANCHES);
@@ -2306,45 +2313,50 @@
         return v||null;
       }),
       backgroundColor: SALES_COLORS[type],
-      borderRadius: 2,
-      borderSkipped: false,
-      maxBarThickness: 22,
+      borderRadius: 3,
+      borderSkipped: 'bottom',
+      maxBarThickness: 28,
       datalabels: {
-        display: ctx => { const v=ctx.dataset.data[ctx.dataIndex]; return v && (salesMode==='amount' ? v>=80000000 : v>=80); },
-        color: '#fff',
+        display: ctx => {
+          const v = ctx.dataset.data[ctx.dataIndex];
+          return v && (salesMode==='amount' ? v>=100000000 : v>=100);
+        },
+        color: ctx => {
+          const bg = SALES_COLORS[ctx.dataset.label];
+          return ['#bfdbfe','#60a5fa'].includes(bg) ? '#1e3a5f' : '#fff';
+        },
         font: { size: 9, weight: '700' },
-        formatter: v => salesMode==='amount' ? Math.round(v/10000).toLocaleString() : v.toLocaleString(),
+        formatter: v => salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(),
         anchor: 'center', align: 'center',
       }
     }));
-    // Total 라인
+    // 합계 라벨 전용 투명 데이터셋 (라인 없음)
+    const totalVals = ALL_MONTHS.map(m => {
+      if (!DATA_MONTHS.includes(m)) return null;
+      let v=0;
+      for (const br of activeBranches)
+        for (const t of activeTypes) {
+          const d = BRANCH_DATA[br]?.[m]?.[t];
+          if (d) v += salesMode==='amount' ? d.total : d.count;
+        }
+      return v||null;
+    });
     const totalDataset = {
-      type: 'line',
-      label: 'Total',
-      data: ALL_MONTHS.map(m => {
-        if (!DATA_MONTHS.includes(m)) return null;
-        let v=0;
-        for (const br of activeBranches)
-          for (const t of activeTypes) {
-            const d = BRANCH_DATA[br]?.[m]?.[t];
-            if (d) v += salesMode==='amount' ? d.total : d.count;
-          }
-        return v||null;
-      }),
-      borderColor: '#f97316',
-      backgroundColor: '#f97316',
-      borderWidth: 2,
-      pointRadius: 3,
-      pointBackgroundColor: '#f97316',
-      tension: 0.3,
-      order: -1,
-      yAxisID: 'y',
+      type: 'bar',
+      label: '합계',
+      data: totalVals.map(() => null), // 막대 없음
+      backgroundColor: 'transparent',
+      maxBarThickness: 28,
       datalabels: {
-        display: true,
-        color: '#f97316',
-        font: { size: 9, weight: '700' },
-        formatter: v => salesMode==='amount' ? Math.round(v/10000).toLocaleString() : v.toLocaleString(),
-        anchor: 'end', align: 'top', offset: 4,
+        display: showTotalLabels,
+        color: '#1e3a5f',
+        font: { size: 10, weight: '800' },
+        formatter: (_, ctx) => {
+          const v = totalVals[ctx.dataIndex];
+          if (!v) return '';
+          return salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString();
+        },
+        anchor: 'end', align: 'top', offset: 2,
       }
     };
     return { labels: ALL_MONTHS.map(getMonthLabel), datasets: [...barDatasets, totalDataset] };
@@ -2365,13 +2377,16 @@
         scales: {
           x: { stacked:true, grid:{display:false}, ticks:{font:{size:10},color:'#94a3b8'} },
           y: { stacked:true, grid:{color:'#f1f5f9'}, border:{dash:[4,4]},
-            ticks:{ callback: v => salesMode==='amount' ? Math.round(v/10000).toLocaleString()+'만' : v.toLocaleString(), font:{size:10}, color:'#94a3b8' }
+            ticks:{ callback: v => salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(), font:{size:10}, color:'#94a3b8' }
           }
         },
         plugins: {
-          legend:{ position:'top', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:7, padding:14, font:{size:11}, color:'#475569' }},
-          tooltip:{ backgroundColor:'rgba(15,23,42,0.85)', padding:12, cornerRadius:10, titleFont:{size:12}, bodyFont:{size:11},
-            callbacks:{ label: c => ` ${c.dataset.label}: ${salesMode==='amount' ? Math.round(c.raw/10000).toLocaleString()+'만원' : c.raw.toLocaleString()+'건'}` }
+          legend:{ position:'top', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:7, padding:14, font:{size:11}, color:'#475569',
+            filter: item => item.text !== '합계'
+          }},
+          tooltip:{ backgroundColor:'rgba(15,23,42,0.9)', padding:12, cornerRadius:12, titleFont:{size:12,weight:'700'}, bodyFont:{size:11},
+            filter: item => item.dataset.label !== '합계',
+            callbacks:{ label: c => ` ${c.dataset.label}: ${salesMode==='amount' ? Math.round(c.raw/1000000).toLocaleString()+'백만원' : c.raw.toLocaleString()+'건'}` }
           },
           datalabels: { display: false }
         }
@@ -2384,7 +2399,7 @@
   function updateSalesChart() {
     if (!salesChart) return;
     salesChart.data = buildSalesChartData();
-    salesChart.options.scales.y.ticks.callback = v => salesMode==='amount' ? Math.round(v/10000).toLocaleString()+'만' : v.toLocaleString();
+    salesChart.options.scales.y.ticks.callback = v => salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString();
     salesChart.update();
     updateSalesKPIs();
     renderSalesTable();
@@ -2479,6 +2494,14 @@
     });
     const allEl = document.getElementById('ftype-all');
     if (allEl) allEl.className = 'sales-pill'+(activeTypes.size===SALES_TYPES.length?' active':'');
+    updateSalesChart();
+  }
+
+  function toggleSalesTotal() {
+    showTotalLabels = !showTotalLabels;
+    const btn = document.getElementById('btn-sales-total');
+    if (btn) btn.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors '
+      + (showTotalLabels ? 'bg-nm-blue text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200');
     updateSalesChart();
   }
 
