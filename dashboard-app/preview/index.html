@@ -1320,36 +1320,201 @@
            뷰: 보증기간 조회
            ============================================= -->
       <div id="view-warranty" class="view hidden">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center justify-between mb-3">
           <h2 class="text-sm font-bold text-slate-800">보증기간 조회 <span class="text-xs text-slate-400 font-normal">Warranty Period Lookup</span></h2>
         </div>
 
-        <div class="max-w-md mx-auto mt-8">
-          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Defect Code 입력</label>
-            <input id="warranty-input" type="text" maxlength="14" placeholder="00 00 00 00 00"
-              oninput="lookupWarranty(this)"
-              class="w-full px-4 py-3 border border-slate-200 rounded-xl text-lg tracking-widest text-center text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-nm-blue focus:border-nm-blue" />
-            <p class="text-xs text-slate-400 text-center mt-2">숫자 입력 시 자동 조회됩니다</p>
+        <div class="flex gap-4" style="height:calc(100vh - 160px);">
 
-            <!-- 결과 -->
-            <div id="warranty-result" class="hidden mt-5 rounded-xl p-5 text-center">
-              <p class="text-xs text-slate-500 mb-1">매칭 코드</p>
-              <p id="warranty-code" class="text-sm font-mono font-bold text-slate-600 mb-3"></p>
-              <div class="flex justify-center gap-6">
-                <div>
-                  <p class="text-xs text-slate-400 mb-0.5">보증기간</p>
-                  <p id="warranty-years" class="text-2xl font-bold text-nm-blue"></p>
+          <!-- 좌측: 코드 조회 -->
+          <div class="w-72 flex-shrink-0 flex flex-col gap-3">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Defect Code 입력</label>
+              <input id="warranty-input" type="text" maxlength="14" placeholder="00 00 00 00 00"
+                oninput="lookupWarranty(this)"
+                class="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-base tracking-widest text-center text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-nm-blue focus:border-nm-blue" />
+              <p class="text-xs text-slate-400 text-center mt-1.5">숫자 입력 시 자동 조회</p>
+              <div id="warranty-result" class="hidden mt-3 rounded-lg p-4 text-center">
+                <p class="text-xs text-slate-500 mb-0.5">매칭 코드</p>
+                <p id="warranty-code" class="text-sm font-mono font-bold text-slate-700 mb-3"></p>
+                <div class="flex justify-center gap-5">
+                  <div>
+                    <p class="text-xs text-slate-400 mb-0.5">보증기간</p>
+                    <p id="warranty-years" class="text-xl font-bold text-nm-blue"></p>
+                  </div>
+                  <div class="w-px bg-slate-200"></div>
+                  <div>
+                    <p class="text-xs text-slate-400 mb-0.5">주행거리</p>
+                    <p id="warranty-km" class="text-xl font-bold text-nm-blue"></p>
+                  </div>
                 </div>
-                <div class="w-px bg-slate-200"></div>
-                <div>
-                  <p class="text-xs text-slate-400 mb-0.5">주행거리</p>
-                  <p id="warranty-km" class="text-2xl font-bold text-nm-blue"></p>
+              </div>
+              <div id="warranty-no-match" class="hidden mt-3 text-center text-slate-400 text-sm py-3">매칭 코드 없음</div>
+            </div>
+
+            <!-- 범례 -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">보증 기준</p>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0"></span>
+                  <span class="text-xs text-slate-600">동력 계통 — 3년 / 60,000km</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-amber-500 flex-shrink-0"></span>
+                  <span class="text-xs text-slate-600">배기가스 계통 — 5년 / 80,000km</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                  <span class="text-xs text-slate-600">배기가스 계통 — 7년 / 120,000km</span>
                 </div>
               </div>
             </div>
-            <div id="warranty-no-match" class="hidden mt-5 text-center text-slate-400 text-sm py-4">
-              매칭되는 코드가 없습니다
+          </div>
+
+          <!-- 우측: 탭 표 -->
+          <div class="flex-1 flex flex-col min-w-0 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <!-- 탭 -->
+            <div class="flex border-b border-slate-200 flex-shrink-0">
+              <button onclick="switchWarrantyTab('tab-drivetrain')" id="tab-drivetrain"
+                class="warranty-tab active-tab px-4 py-2.5 text-xs font-semibold border-b-2 border-nm-blue text-nm-blue">동력 계통</button>
+              <button onclick="switchWarrantyTab('tab-emission')" id="tab-emission"
+                class="warranty-tab px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700">배기가스 계통</button>
+              <button onclick="switchWarrantyTab('tab-battery')" id="tab-battery"
+                class="warranty-tab px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700">고전압 배터리</button>
+            </div>
+
+            <!-- 동력 계통 탭 -->
+            <div id="tab-drivetrain" class="warranty-tab-content flex-1 overflow-y-auto">
+              <div class="px-4 py-2 bg-blue-50 border-b border-blue-100 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                <span class="text-xs font-semibold text-blue-700">동력 계통 디펙트코드 — 3년 / 60,000km</span>
+              </div>
+              <table class="w-full text-sm">
+                <thead class="sticky top-0 bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 w-28">Defect Code</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-slate-500">Description</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">11*</td><td class="px-4 py-2 text-xs text-slate-700">ENGINE</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">23*</td><td class="px-4 py-2 text-xs text-slate-700">MANUAL TRANSMISSION</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">24*</td><td class="px-4 py-2 text-xs text-slate-700">AUTOMATIC TRANSMISSION</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">27*</td><td class="px-4 py-2 text-xs text-slate-700">Transfer Case</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">28*</td><td class="px-4 py-2 text-xs text-slate-700">DOUBLE CLUTCH GEARBOX (DKG)</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">3314*</td><td class="px-4 py-2 text-xs text-slate-700">LIMITED-SLIP DIFFERENTIAL WITH BEARINGS</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">2611*</td><td class="px-4 py-2 text-xs text-slate-700">PROPELLER SHAFT, SINGLE OR MULTIPLE-SECTION</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">2620*</td><td class="px-4 py-2 text-xs text-slate-700">PROPELLER SHAFT, FRONT</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">3310*</td><td class="px-4 py-2 text-xs text-slate-700">REAR FINAL DRIVE, COMPLETE</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">331202*</td><td class="px-4 py-2 text-xs text-slate-700">INPUT FLANGE (INCL. ROTARY SHAFT SEAL)</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">315000*</td><td class="px-4 py-2 text-xs text-slate-700">Front final drive (* Added upon request from 2012-09)</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">123600*</td><td class="px-4 py-2 text-xs text-slate-700">EME electrical machine electronics / power electronic box / (hybrid / e-vehicle)</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">331005*</td><td class="px-4 py-2 text-xs text-slate-700">Servomotor of rear axle differential HAG (QMVH)</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">331006*</td><td class="px-4 py-2 text-xs text-slate-700">Oil temperature sensor of rear axle differential HAG (QMVH)</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">331008*</td><td class="px-4 py-2 text-xs text-slate-700">Temperature sensor, rear axle differential</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">123500*</td><td class="px-4 py-2 text-xs text-slate-700">Electrical Machine (E-Machine Hybrid / E-vehicle) only for I &amp; hybrid model</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">21210339*</td><td class="px-4 py-2 text-xs text-slate-700">DUAL MASS FLYWHEEL (ZMS) UNPLEASANT NOISES</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">123300*</td><td class="px-4 py-2 text-xs text-slate-700">Electric drive unit_PHEV, BEV</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">123701*</td><td class="px-4 py-2 text-xs text-slate-700">Brush module, electric drive unit (incl. lid)_PHEV, BEV</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">614402*</td><td class="px-4 py-2 text-xs text-slate-700">CCU Combined Charging Unit control unit (Hybrid/E-vehicle)_PHEV, BEV</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">645200*</td><td class="px-4 py-2 text-xs text-slate-700">A/C compressor (mechanical/electrical)_PHEV, BEV</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 배기가스 계통 탭 -->
+            <div id="tab-emission" class="warranty-tab-content hidden flex-1 overflow-y-auto">
+              <div class="px-4 py-2 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                <span class="text-xs font-semibold text-amber-700">배기가스 계통 디펙트코드 — 5년 / 80,000km</span>
+              </div>
+              <table class="w-full text-sm">
+                <thead class="sticky top-0 bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 w-28">Defect Code</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-slate-500">Description</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">111226*</td><td class="px-4 py-2 text-xs text-slate-700">Crankcase ventilation system (oil separator)</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">116112*</td><td class="px-4 py-2 text-xs text-slate-700">Intake manifold</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">116505*</td><td class="px-4 py-2 text-xs text-slate-700">Exhaust turbocharger (ATL)</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">116509*</td><td class="px-4 py-2 text-xs text-slate-700">Circulating air valve (including connection/lines), exhaust turbocharger</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1171*</td><td class="px-4 py-2 text-xs text-slate-700">Exhaust gas recirculation</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1172*</td><td class="px-4 py-2 text-xs text-slate-700">Secondary air system</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1178*</td><td class="px-4 py-2 text-xs text-slate-700">Exhaust control units</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1213*</td><td class="px-4 py-2 text-xs text-slate-700">Ignition coil</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1351*</td><td class="px-4 py-2 text-xs text-slate-700">Injection pump, regulator section, mixture regulator</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1353*</td><td class="px-4 py-2 text-xs text-slate-700">Injectors and lines</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1354*</td><td class="px-4 py-2 text-xs text-slate-700">Throttle valve and controls</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1362*</td><td class="px-4 py-2 text-xs text-slate-700">Sensor for control unit</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1364*</td><td class="px-4 py-2 text-xs text-slate-700">Injector valves, start valves</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">139001*</td><td class="px-4 py-2 text-xs text-slate-700">Fuel tank vent valve</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1612*</td><td class="px-4 py-2 text-xs text-slate-700">Fuel lines</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1613*</td><td class="px-4 py-2 text-xs text-slate-700">Ventilation, emission monitoring</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">161404*</td><td class="px-4 py-2 text-xs text-slate-700">Electric fuel pump in fuel tank (in-tank electric fuel pump)</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">161407*</td><td class="px-4 py-2 text-xs text-slate-700">Fuel pressure regulator</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">175101*</td><td class="px-4 py-2 text-xs text-slate-700">Charge air intercooler</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">175102*</td><td class="px-4 py-2 text-xs text-slate-700">Charge air pipes/hoses</td></tr>
+                </tbody>
+              </table>
+              <div class="px-4 py-2 bg-emerald-50 border-y border-emerald-100 flex items-center gap-2 mt-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span class="text-xs font-semibold text-emerald-700">배기가스 계통 디펙트코드 — 7년 / 120,000km</span>
+              </div>
+              <table class="w-full text-sm">
+                <thead class="sticky top-0 bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 w-28">Defect Code</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-slate-500">Description</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">183000*</td><td class="px-4 py-2 text-xs text-slate-700">Diesel particulate filter (including nitrogen oxide storage catalytic converter)</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">183001*</td><td class="px-4 py-2 text-xs text-slate-700">Intake Pipe (upstream of particulate filter)</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">183003*</td><td class="px-4 py-2 text-xs text-slate-700">SCR catalytic converter</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">183004*</td><td class="px-4 py-2 text-xs text-slate-700">Trap catalytic converter</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1214*</td><td class="px-4 py-2 text-xs text-slate-700">Electronic shift or control units</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1361*</td><td class="px-4 py-2 text-xs text-slate-700">Electronic shift or control units</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1832*</td><td class="px-4 py-2 text-xs text-slate-700">Catalytic converter with mount</td></tr>
+                  <tr><td class="px-4 py-2 font-mono text-xs text-slate-600 font-semibold">1619*</td><td class="px-4 py-2 text-xs text-slate-700">SCR Technology</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 고전압 배터리 탭 -->
+            <div id="tab-battery" class="warranty-tab-content hidden flex-1 overflow-y-auto">
+              <div class="px-4 py-2 bg-purple-50 border-b border-purple-100 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                <span class="text-xs font-semibold text-purple-700">고전압 배터리 보증기간</span>
+              </div>
+              <table class="w-full text-sm">
+                <thead class="sticky top-0 bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-slate-500">Brand</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-slate-500">Generation</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-slate-500">Model</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-slate-500">Type</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-slate-500">Battery Warranty</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-slate-500">비고</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <tr><td class="px-4 py-2 text-xs font-semibold text-slate-700" rowspan="8">BMW</td><td class="px-4 py-2 text-xs text-slate-600" rowspan="7">Gen 3,4</td><td class="px-4 py-2 text-xs text-slate-700">3 series</td><td class="px-4 py-2 text-xs text-slate-500">PHEV</td><td class="px-4 py-2 text-xs text-slate-700">6년 / 100,000km → <span class="font-semibold text-nm-blue">8년 / 200,000km</span></td><td class="px-4 py-2 text-xs text-slate-400">21MY부터 8/20만km</td></tr>
+                  <tr><td class="px-4 py-2 text-xs text-slate-700">5 series</td><td class="px-4 py-2 text-xs text-slate-500">PHEV</td><td class="px-4 py-2 text-xs text-slate-700">6년 / 100,000km → <span class="font-semibold text-nm-blue">8년 / 200,000km</span></td><td class="px-4 py-2 text-xs text-slate-400">21MY부터 8/20만km</td></tr>
+                  <tr><td class="px-4 py-2 text-xs text-slate-700">7 series</td><td class="px-4 py-2 text-xs text-slate-500">PHEV</td><td class="px-4 py-2 text-xs text-slate-700">6년 / 100,000km → <span class="font-semibold text-nm-blue">8년 / 200,000km</span></td><td class="px-4 py-2 text-xs text-slate-400">21MY부터 8/20만km</td></tr>
+                  <tr><td class="px-4 py-2 text-xs text-slate-700">X3</td><td class="px-4 py-2 text-xs text-slate-500">PHEV</td><td class="px-4 py-2 text-xs text-slate-700">6년 / 100,000km → <span class="font-semibold text-nm-blue">8년 / 200,000km</span></td><td class="px-4 py-2 text-xs text-slate-400">21MY부터 8/20만km</td></tr>
+                  <tr><td class="px-4 py-2 text-xs text-slate-700">X5</td><td class="px-4 py-2 text-xs text-slate-500">PHEV</td><td class="px-4 py-2 text-xs text-slate-700">6년 / 100,000km → <span class="font-semibold text-nm-blue">8년 / 200,000km</span></td><td class="px-4 py-2 text-xs text-slate-400">21MY부터 8/20만km</td></tr>
+                  <tr><td class="px-4 py-2 text-xs text-slate-700">i8</td><td class="px-4 py-2 text-xs text-slate-500">PHEV</td><td class="px-4 py-2 text-xs text-slate-700 font-semibold">8년 / 100,000km</td><td class="px-4 py-2 text-xs text-slate-400"></td></tr>
+                  <tr><td class="px-4 py-2 text-xs text-slate-700">i3</td><td class="px-4 py-2 text-xs text-slate-500">BEV</td><td class="px-4 py-2 text-xs text-slate-700 font-semibold">8년 / 100,000km</td><td class="px-4 py-2 text-xs text-slate-400"></td></tr>
+                  <tr><td class="px-4 py-2 text-xs text-slate-600" rowspan="4">Gen 5</td><td class="px-4 py-2 text-xs text-slate-700">i4</td><td class="px-4 py-2 text-xs text-slate-500">BEV</td><td class="px-4 py-2 text-xs text-slate-700 font-semibold">8년 / 160,000km</td><td class="px-4 py-2 text-xs text-slate-400"></td></tr>
+                  <tr><td class="px-4 py-2 text-xs text-slate-700">i7</td><td class="px-4 py-2 text-xs text-slate-500">BEV</td><td class="px-4 py-2 text-xs text-slate-700 font-semibold">8년 / 160,000km</td><td class="px-4 py-2 text-xs text-slate-400"></td></tr>
+                  <tr><td class="px-4 py-2 text-xs text-slate-700">iX</td><td class="px-4 py-2 text-xs text-slate-500">BEV</td><td class="px-4 py-2 text-xs text-slate-700 font-semibold">8년 / 160,000km</td><td class="px-4 py-2 text-xs text-slate-400"></td></tr>
+                  <tr><td class="px-4 py-2 text-xs text-slate-700">iX3</td><td class="px-4 py-2 text-xs text-slate-500">BEV</td><td class="px-4 py-2 text-xs text-slate-700 font-semibold">8년 / 160,000km</td><td class="px-4 py-2 text-xs text-slate-400"></td></tr>
+                  <tr><td class="px-4 py-2 text-xs font-semibold text-slate-700">MINI</td><td class="px-4 py-2 text-xs text-slate-400">—</td><td class="px-4 py-2 text-xs text-slate-700">Cooper</td><td class="px-4 py-2 text-xs text-slate-500">BEV</td><td class="px-4 py-2 text-xs text-slate-700 font-semibold">8년 / 160,000km</td><td class="px-4 py-2 text-xs text-slate-400"></td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -1854,6 +2019,19 @@
   document.getElementById('expand-modal').addEventListener('click', function(e) {
     if (e.target === this) closeExpandModal();
   });
+
+  /* ── 보증기간 탭 전환 ── */
+  function switchWarrantyTab(tabId) {
+    document.querySelectorAll('.warranty-tab-content').forEach(el => el.classList.add('hidden'));
+    document.getElementById(tabId).classList.remove('hidden');
+    document.querySelectorAll('.warranty-tab').forEach(btn => {
+      const isActive = btn.id === tabId;
+      btn.classList.toggle('border-nm-blue', isActive);
+      btn.classList.toggle('text-nm-blue', isActive);
+      btn.classList.toggle('border-transparent', !isActive);
+      btn.classList.toggle('text-slate-500', !isActive);
+    });
+  }
 
   /* ── 보증기간 조회 ── */
   const WARRANTY_DB = [
