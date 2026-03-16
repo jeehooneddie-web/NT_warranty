@@ -1727,10 +1727,10 @@
 
     try {
       // 7개 섹션 동시 번역 요청
-      // 0~6번 번역
+      // 0번 Warranty Type은 이미 영문 포맷 → 번역 없이 그대로 출력
       const promises = [0, 1, 2, 3, 4, 5, 6].map(async (n) => {
         const input = document.getElementById(`trans-in-${n}`).value.trim();
-        const result = input ? await translateText(input) : '';
+        const result = input ? (n === 0 ? input : await translateText(input)) : '';
         document.getElementById(`trans-result-${n}`).textContent = result;
       });
       await Promise.all(promises);
