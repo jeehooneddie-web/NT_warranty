@@ -1525,6 +1525,14 @@
                   </tr>
                 </thead>
                 <tbody>
+                  <!-- 6127 코드 강조 행 -->
+                  <tr id="battery-code-6127" class="bg-purple-100">
+                    <td colspan="6" class="px-3 py-2 border border-purple-300">
+                      <span class="font-mono font-bold text-purple-700 text-sm mr-2">6127*</span>
+                      <span class="text-purple-800 font-semibold">High-voltage battery system</span>
+                      <span class="ml-3 text-purple-600 text-xs">— 8년 / 모델별 상이 (하단 참조)</span>
+                    </td>
+                  </tr>
                   <tr class="bg-white hover:bg-purple-50"><td class="px-3 py-0.5 font-bold text-slate-700 whitespace-nowrap border border-slate-200" rowspan="7">BMW</td><td class="px-3 py-0.5 text-slate-600 whitespace-nowrap border border-slate-200" rowspan="6">Gen 3, 4</td><td class="px-3 py-0.5 text-slate-700 whitespace-nowrap border border-slate-200">3 Series</td><td class="px-3 py-0.5 text-center text-slate-500 whitespace-nowrap border border-slate-200">PHEV</td><td class="px-3 py-0.5 text-center whitespace-nowrap border border-slate-200"><span class="text-slate-400 line-through mr-1">6년/10만km</span><span class="font-bold text-purple-700">8년 / 200,000km</span></td><td class="px-3 py-0.5 text-slate-400 whitespace-nowrap border border-slate-200">21MY~ 8년/20만km</td></tr>
                   <tr class="bg-slate-50 hover:bg-purple-50"><td class="px-3 py-0.5 text-slate-700 whitespace-nowrap border border-slate-200">5 Series</td><td class="px-3 py-0.5 text-center text-slate-500 whitespace-nowrap border border-slate-200">PHEV</td><td class="px-3 py-0.5 text-center whitespace-nowrap border border-slate-200"><span class="text-slate-400 line-through mr-1">6년/10만km</span><span class="font-bold text-purple-700">8년 / 200,000km</span></td><td class="px-3 py-0.5 text-slate-400 whitespace-nowrap border border-slate-200">21MY~ 8년/20만km</td></tr>
                   <tr class="bg-white hover:bg-purple-50"><td class="px-3 py-0.5 text-slate-700 whitespace-nowrap border border-slate-200">7 Series</td><td class="px-3 py-0.5 text-center text-slate-500 whitespace-nowrap border border-slate-200">PHEV</td><td class="px-3 py-0.5 text-center whitespace-nowrap border border-slate-200"><span class="text-slate-400 line-through mr-1">6년/10만km</span><span class="font-bold text-purple-700">8년 / 200,000km</span></td><td class="px-3 py-0.5 text-slate-400 whitespace-nowrap border border-slate-200">21MY~ 8년/20만km</td></tr>
@@ -2255,6 +2263,8 @@
     {code:'1364',years:'5 Years',km:'80,000km'},
     {code:'1612',years:'5 Years',km:'80,000km'},
     {code:'1613',years:'5 Years',km:'80,000km'},
+    // 8Years / 고전압 배터리
+    {code:'6127',years:'8 Years',km:'모델별 상이',battery:true},
     // 7Years / 120,000km
     {code:'183000',years:'7 Years',km:'120,000km'},
     {code:'183001',years:'7 Years',km:'120,000km'},
@@ -2286,9 +2296,17 @@
       document.getElementById('warranty-years').textContent = match.years;
       document.getElementById('warranty-km').textContent    = match.km;
       document.getElementById('warranty-code').textContent  = `Code: ${match.code}`;
-      const colors = {'3 Years':'bg-blue-500/30','5 Years':'bg-amber-500/30','7 Years':'bg-emerald-500/30'};
+      const colors = {'3 Years':'bg-blue-500/30','5 Years':'bg-amber-500/30','7 Years':'bg-emerald-500/30','8 Years':'bg-purple-500/30'};
       result.className = `mt-2 rounded-lg p-3 text-center ${colors[match.years] || 'bg-white/10'}`;
       result.classList.remove('hidden');
+      // 배터리 코드 매칭 시 고전압 배터리 탭 자동 전환
+      if (match.battery) {
+        switchWarrantyTab('content-battery');
+        setTimeout(() => {
+          const row = document.getElementById('battery-code-6127');
+          if (row) row.scrollIntoView({ behavior:'smooth', block:'start' });
+        }, 100);
+      }
     } else {
       noMatch.classList.remove('hidden');
     }
