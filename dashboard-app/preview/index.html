@@ -1579,9 +1579,9 @@
               <button onclick="toggleSalesType('BSI')" id="ftype-BSI" class="sales-pill">BSI</button>
               <button onclick="toggleSalesType('Warranty')" id="ftype-Warranty" class="sales-pill">Warranty</button>
               <button onclick="toggleSalesType('TC/RECALL')" id="ftype-TCRECALL" class="sales-pill">TC/RECALL</button>
+              <button onclick="toggleSalesType('Goodwill')" id="ftype-Goodwill" class="sales-pill">Goodwill</button>
               <button onclick="toggleSalesType('WP')" id="ftype-WP" class="sales-pill">WP</button>
               <button onclick="toggleSalesType('LOCAL TC')" id="ftype-LOCALTC" class="sales-pill">LOCAL TC</button>
-              <button onclick="toggleSalesType('Goodwill')" id="ftype-Goodwill" class="sales-pill">Goodwill</button>
             </div>
           </div>
           <!-- 년도 필터 -->
@@ -2327,7 +2327,7 @@
   const ALL_BRANCHES = ["군산", "목포", "서산", "전주", "평택"];
   const ALL_MONTHS = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02','26-03','26-04','26-05','26-06','26-07','26-08','26-09','26-10','26-11','26-12'];
   const DATA_MONTHS = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02'];
-  const SALES_TYPES = ['BSI','Warranty','TC/RECALL','WP','LOCAL TC','Goodwill'];
+  const SALES_TYPES = ['BSI','Warranty','TC/RECALL','Goodwill','WP','LOCAL TC'];
   const SALES_COLORS = {'BSI':'#1d4ed8','Warranty':'#0891b2','TC/RECALL':'#059669','WP':'#d97706','LOCAL TC':'#dc2626','Goodwill':'#7c3aed'};
   let showTotalLabels = true;
   let salesMode = 'amount';
