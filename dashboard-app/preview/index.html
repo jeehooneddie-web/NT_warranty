@@ -1617,27 +1617,37 @@
           </div>
         </div>
 
-        <!-- 테이블 카드 -->
+        <!-- 그래프 / 미매칭 카드 -->
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700">
-            <div class="flex gap-2">
-              <button onclick="setDefectTab('top')" id="dtab-top" class="sales-pill active">상위 20개</button>
-              <button onclick="setDefectTab('unmatched')" id="dtab-unmatched" class="sales-pill">미매칭 코드 <span id="dtab-unmatched-cnt" class="ml-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full"></span></button>
-              <button onclick="exportUnmatchedCSV()" id="btn-export-unmatched" class="hidden ml-2 px-3 py-1 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">⬇ CSV 내보내기</button>
+          <div class="flex items-center px-5 py-3 border-b border-slate-200 dark:border-slate-700 gap-2">
+            <button onclick="setDefectTab('top')" id="dtab-top" class="sales-pill active">상위 20개</button>
+            <button onclick="setDefectTab('unmatched')" id="dtab-unmatched" class="sales-pill">미매칭 코드 <span id="dtab-unmatched-cnt" class="ml-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full"></span></button>
+            <button onclick="exportUnmatchedCSV()" id="btn-export-unmatched" class="hidden ml-2 px-3 py-1 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">⬇ CSV 내보내기</button>
+          </div>
+          <!-- 상위 20개: 두 차트 -->
+          <div id="defect-top-area" class="grid grid-cols-2 divide-x divide-slate-200 dark:divide-slate-700">
+            <div class="p-4">
+              <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 text-center">매출 기준 TOP 20</p>
+              <div style="height:560px; position:relative;">
+                <canvas id="defect-chart-amount"></canvas>
+              </div>
             </div>
-            <div class="flex gap-2" id="dsort-buttons">
-              <button onclick="setDefectSort('count')" id="dsort-count" class="sales-pill active">건수순</button>
-              <button onclick="setDefectSort('amount')" id="dsort-amount" class="sales-pill">금액순</button>
+            <div class="p-4">
+              <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 text-center">건수 기준 TOP 20</p>
+              <div style="height:560px; position:relative;">
+                <canvas id="defect-chart-count"></canvas>
+              </div>
             </div>
           </div>
-          <div class="overflow-x-auto">
+          <!-- 미매칭 코드 테이블 -->
+          <div id="defect-unmatched-area" class="hidden overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-xs">
                   <th class="px-4 py-2 text-center w-10">순위</th>
                   <th class="px-4 py-2 text-left w-28">결함코드</th>
                   <th class="px-4 py-2 text-left">결함설명</th>
-                  <th class="px-4 py-2 text-right w-24" id="dth-value">건수</th>
+                  <th class="px-4 py-2 text-right w-24">건수</th>
                 </tr>
               </thead>
               <tbody id="defect-tbody"></tbody>
@@ -2854,8 +2864,9 @@ const BRANCH_DATA = {
   let dActiveTypes    = new Set(D_ALL_TYPES);
   let dActiveYears    = new Set(D_ALL_YEARS);
   let dActiveMonths   = new Set(D_ALL_MO);
-  let dSortMode       = 'count'; // 'count' | 'amount'
   let dTabMode        = 'top';   // 'top' | 'unmatched'
+  let dChartAmount    = null;
+  let dChartCount     = null;
 
   function dGetVisibleMonths() {
     const DATA_MO = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02'];
@@ -2866,9 +2877,7 @@ const BRANCH_DATA = {
     dTabMode = tab;
     document.getElementById('dtab-top').className       = 'sales-pill' + (tab==='top'?' active':'');
     document.getElementById('dtab-unmatched').className = 'sales-pill' + (tab==='unmatched'?' active':'');
-    const sortBtns  = document.getElementById('dsort-buttons');
     const exportBtn = document.getElementById('btn-export-unmatched');
-    if (sortBtns)  sortBtns.style.display  = tab==='unmatched' ? 'none' : '';
     if (exportBtn) exportBtn.classList.toggle('hidden', tab!=='unmatched');
     renderTopDefect();
   }
@@ -2893,13 +2902,15 @@ const BRANCH_DATA = {
     const cntEl = document.getElementById('dtab-unmatched-cnt');
     if (cntEl) cntEl.textContent = DEFECT_UNMATCHED.length;
 
-    const tbody = document.getElementById('defect-tbody');
-    const th    = document.getElementById('dth-value');
-    if (!tbody) return;
+    const topArea = document.getElementById('defect-top-area');
+    const umArea  = document.getElementById('defect-unmatched-area');
+    const tbody   = document.getElementById('defect-tbody');
 
     // 미매칭 탭
     if (dTabMode === 'unmatched') {
-      if (th) th.textContent = '건수';
+      if (topArea) topArea.classList.add('hidden');
+      if (umArea)  umArea.classList.remove('hidden');
+      if (!tbody) return;
       if (DEFECT_UNMATCHED.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-slate-400">미매칭 코드 없음</td></tr>';
         return;
@@ -2916,7 +2927,11 @@ const BRANCH_DATA = {
       return;
     }
 
-    // 상위 20개 탭
+    // 상위 20개 차트
+    if (topArea) topArea.classList.remove('hidden');
+    if (umArea)  umArea.classList.add('hidden');
+
+    // 타입별 집계
     const visMo = new Set(dGetVisibleMonths());
     const agg = {};
     for (const row of DEFECT_RAW) {
@@ -2924,36 +2939,97 @@ const BRANCH_DATA = {
       if (!dActiveBranches.has(br)) continue;
       if (!dActiveTypes.has(tp)) continue;
       if (!visMo.has(mo)) continue;
-      if (!agg[code]) agg[code] = {count:0, amount:0};
-      agg[code].count += cnt;
-      agg[code].amount += amt;
+      if (!agg[code]) agg[code] = {};
+      if (!agg[code][tp]) agg[code][tp] = {count:0, amount:0};
+      agg[code][tp].count += cnt;
+      agg[code][tp].amount += amt;
     }
-    if (th) th.textContent = dSortMode === 'count' ? '건수' : '금액';
-    const rows = Object.entries(agg)
-      .sort((a,b) => b[1][dSortMode] - a[1][dSortMode])
-      .slice(0, 20);
-    if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-slate-400">데이터 없음</td></tr>';
-      return;
-    }
-    tbody.innerHTML = rows.map(([code, v], i) => {
-      const desc = DEFECT_DESC[code] || '-';
-      const val  = dSortMode === 'count' ? v.count.toLocaleString()+'건' : '₩'+v.amount.toLocaleString();
-      const bg   = i % 2 === 0 ? '' : 'bg-slate-50 dark:bg-slate-700/30';
-      return `<tr class="${bg} hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors">
-        <td class="px-4 py-2 text-center font-bold text-slate-500 dark:text-slate-400">${i+1}</td>
-        <td class="px-4 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">${code}</td>
-        <td class="px-4 py-2 text-slate-700 dark:text-slate-300 text-xs leading-snug">${desc}</td>
-        <td class="px-4 py-2 text-right font-semibold text-slate-800 dark:text-slate-100">${val}</td>
-      </tr>`;
-    }).join('');
-  }
 
-  function setDefectSort(mode) {
-    dSortMode = mode;
-    document.getElementById('dsort-count').className  = 'sales-pill' + (mode==='count'?' active':'');
-    document.getElementById('dsort-amount').className = 'sales-pill' + (mode==='amount'?' active':'');
-    renderTopDefect();
+    // 전체 합산
+    const totals = {};
+    for (const [code, types] of Object.entries(agg)) {
+      totals[code] = {count:0, amount:0};
+      for (const v of Object.values(types)) {
+        totals[code].count  += v.count;
+        totals[code].amount += v.amount;
+      }
+    }
+
+    // 상위 20개 (낮은 순위가 위로 표시되도록 reverse)
+    const topByAmount = Object.keys(totals).sort((a,b)=>totals[b].amount-totals[a].amount).slice(0,20).reverse();
+    const topByCount  = Object.keys(totals).sort((a,b)=>totals[b].count -totals[a].count ).slice(0,20).reverse();
+
+    const TYPES_ORDER = ['BSI','Warranty','TC/RECALL','Goodwill','WP','LOCAL TC'];
+    const COLORS = {'BSI':'#1d4ed8','Warranty':'#0891b2','TC/RECALL':'#059669','Goodwill':'#7c3aed','WP':'#d97706','LOCAL TC':'#dc2626'};
+    const activeTypes = TYPES_ORDER.filter(tp => dActiveTypes.has(tp));
+
+    const isDark   = document.body.classList.contains('dark');
+    const gridCol  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+    const labelCol = isDark ? '#94a3b8' : '#64748b';
+    const tickCol  = isDark ? '#cbd5e1' : '#334155';
+
+    function makeLabels(codeList) {
+      return codeList.map(code => {
+        const desc = DEFECT_DESC[code] || code;
+        return desc.length > 22 ? desc.slice(0,22)+'…' : desc;
+      });
+    }
+    function makeDatasets(codeList, metric) {
+      return activeTypes.map(tp => ({
+        label: tp,
+        data: codeList.map(code => agg[code]?.[tp]?.[metric] || 0),
+        backgroundColor: COLORS[tp],
+      }));
+    }
+    function buildChart(canvasId, codeList, metric, existing) {
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return null;
+      if (existing) existing.destroy();
+      return new Chart(ctx, {
+        type: 'bar',
+        data: { labels: makeLabels(codeList), datasets: makeDatasets(codeList, metric) },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const v = ctx.raw;
+                  if (!v) return null;
+                  return metric === 'amount'
+                    ? `${ctx.dataset.label}: ₩${v.toLocaleString()}`
+                    : `${ctx.dataset.label}: ${v.toLocaleString()}건`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              stacked: true,
+              grid: { color: gridCol },
+              ticks: {
+                color: tickCol,
+                maxTicksLimit: 6,
+                callback: v => metric === 'amount'
+                  ? (v >= 1000000 ? '₩'+(v/1000000).toFixed(0)+'M' : '₩'+v.toLocaleString())
+                  : v.toLocaleString()+'건'
+              }
+            },
+            y: {
+              stacked: true,
+              grid: { display: false },
+              ticks: { color: labelCol, font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    dChartAmount = buildChart('defect-chart-amount', topByAmount, 'amount', dChartAmount);
+    dChartCount  = buildChart('defect-chart-count',  topByCount,  'count',  dChartCount);
   }
 
   function toggleDefectBranch(br) {
