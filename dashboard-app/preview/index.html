@@ -1610,17 +1610,10 @@
               <h3 class="text-sm font-semibold" style="color:#f1f5f9;">월별 보증매출</h3>
               <span class="text-xs" style="color:#64748b;">단위: 백만원 · 2025.01 — 2026.12</span>
             </div>
-            <div class="flex items-center gap-2">
-              <button onclick="toggleSalesType('all')"
-                class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors"
-                style="border:1px solid #334155;background:#2d3748;color:#cbd5e1;">
-                전체 선택
-              </button>
-              <button onclick="toggleSalesTotal()" id="btn-sales-total"
-                class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-nm-blue text-white transition-colors">
-                합계 표시
-              </button>
-            </div>
+            <button onclick="toggleSalesTotal()" id="btn-sales-total"
+              class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-nm-blue text-white transition-colors">
+              합계 표시
+            </button>
           </div>
           <div style="height:340px;position:relative;">
             <canvas id="sales-chart"></canvas>
@@ -2381,7 +2374,7 @@
       type: 'line',
       label: '합계',
       data: totalVals,
-      borderColor: 'transparent',
+      borderColor: '#ffffff',
       backgroundColor: 'transparent',
       borderWidth: 0,
       pointRadius: 0,
@@ -2421,8 +2414,12 @@
           }
         },
         plugins: {
-          legend:{ position:'bottom', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:8, padding:18, font:{size:11, weight:'400'}, color:'#cbd5e1',
-            filter: item => item.text !== '합계'
+          legend:{ position:'bottom', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:8, padding:18, font:{size:11, weight:'400'},
+            color: '#cbd5e1',
+            generateLabels: chart => Chart.defaults.plugins.legend.labels.generateLabels(chart).map(l => {
+              if (l.text === '합계') l.fontColor = '#ffffff';
+              return l;
+            })
           }},
           tooltip:{ backgroundColor:'rgba(15,23,42,0.88)', padding:12, cornerRadius:10, titleFont:{size:12,weight:'600'}, bodyFont:{size:11},
             filter: item => item.dataset.label !== '합계',
