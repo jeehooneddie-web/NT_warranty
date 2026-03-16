@@ -2262,7 +2262,7 @@
   const ALL_MONTHS = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02','26-03','26-04','26-05','26-06','26-07','26-08','26-09','26-10','26-11','26-12'];
   const DATA_MONTHS = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02'];
   const SALES_TYPES = ['BSI','Warranty','TC/RECALL','WP','LOCAL TC'];
-  const SALES_COLORS = {'BSI':'#1e3a5f','Warranty':'#1e63c8','TC/RECALL':'#3b82f6','WP':'#60a5fa','LOCAL TC':'#bfdbfe'};
+  const SALES_COLORS = {'BSI':'#6366f1','Warranty':'#06b6d4','TC/RECALL':'#10b981','WP':'#f59e0b','LOCAL TC':'#f43f5e'};
   let showTotalLabels = true;
   let salesMode = 'amount';
   let salesChart = null;
@@ -2316,7 +2316,17 @@
       borderRadius: 3,
       borderSkipped: 'bottom',
       maxBarThickness: 28,
-      datalabels: { display: false }
+      datalabels: {
+        display: ctx => {
+          if (activeBranches.size === ALL_BRANCHES.length) return false;
+          const v = ctx.dataset.data[ctx.dataIndex];
+          return v && (salesMode==='amount' ? v>=10000000 : v>=10);
+        },
+        color: '#fff',
+        font: { size: 9, weight: '700' },
+        formatter: v => salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(),
+        anchor: 'center', align: 'center',
+      }
     }));
     // 합계 라벨 전용 투명 데이터셋 (라인 없음)
     const totalVals = ALL_MONTHS.map(m => {
@@ -2337,8 +2347,10 @@
       maxBarThickness: 28,
       datalabels: {
         display: showTotalLabels,
-        color: '#1e3a5f',
+        color: '#0f172a',
         font: { size: 10, weight: '800' },
+        textStrokeColor: '#fff',
+        textStrokeWidth: 3,
         formatter: (_, ctx) => {
           const v = totalVals[ctx.dataIndex];
           if (!v) return '';
