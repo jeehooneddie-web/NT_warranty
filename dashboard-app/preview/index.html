@@ -2216,21 +2216,22 @@
   }
 
   /* ── 보증 매출 대시보드 ── */
+  // 건수: I열(바스크)=1인 행만 카운트 / 금액: 전체 합산
   const SALES_DATA = {
-    "25-01":{"BSI":{"count":5030,"total":632690015},"LOCAL TC":{"count":183,"total":12306112},"TC/RECALL":{"count":807,"total":579283119},"WP":{"count":34,"total":41896300},"Warranty":{"count":386,"total":494004952}},
-    "25-02":{"BSI":{"count":5986,"total":742657923},"LOCAL TC":{"count":217,"total":14613509},"TC/RECALL":{"count":798,"total":603572309},"WP":{"count":44,"total":40985945},"Warranty":{"count":439,"total":459559135}},
-    "25-03":{"BSI":{"count":5982,"total":734375951},"LOCAL TC":{"count":230,"total":15534776},"TC/RECALL":{"count":1033,"total":526198078},"WP":{"count":45,"total":41313182},"Warranty":{"count":463,"total":410650502}},
-    "25-04":{"BSI":{"count":6426,"total":813219271},"LOCAL TC":{"count":283,"total":18594400},"TC/RECALL":{"count":820,"total":547441339},"WP":{"count":38,"total":32860300},"Warranty":{"count":529,"total":563008486}},
-    "25-05":{"BSI":{"count":6745,"total":875915092},"LOCAL TC":{"count":111,"total":7403952},"TC/RECALL":{"count":684,"total":548118989},"WP":{"count":37,"total":30174965},"Warranty":{"count":418,"total":510092451}},
-    "25-06":{"BSI":{"count":6184,"total":803128232},"LOCAL TC":{"count":243,"total":17403281},"TC/RECALL":{"count":438,"total":392273794},"WP":{"count":27,"total":31718325},"Warranty":{"count":456,"total":575908630}},
-    "25-07":{"BSI":{"count":7246,"total":909812658},"LOCAL TC":{"count":340,"total":22379582},"TC/RECALL":{"count":486,"total":468782232},"WP":{"count":61,"total":67532330},"Warranty":{"count":568,"total":686629917}},
-    "25-08":{"BSI":{"count":6617,"total":849697597},"LOCAL TC":{"count":271,"total":14692760},"TC/RECALL":{"count":613,"total":386293713},"WP":{"count":67,"total":80720098},"Warranty":{"count":459,"total":652764360}},
-    "25-09":{"BSI":{"count":6664,"total":838692481},"LOCAL TC":{"count":257,"total":13743106},"TC/RECALL":{"count":846,"total":440259798},"WP":{"count":66,"total":66921635},"Warranty":{"count":433,"total":555484039}},
-    "25-10":{"BSI":{"count":7118,"total":930216233},"LOCAL TC":{"count":296,"total":16914592},"TC/RECALL":{"count":714,"total":251815466},"WP":{"count":48,"total":71591260},"Warranty":{"count":379,"total":463822964}},
-    "25-11":{"BSI":{"count":6547,"total":862745044},"LOCAL TC":{"count":286,"total":16592068},"TC/RECALL":{"count":686,"total":306381366},"WP":{"count":63,"total":97719600},"Warranty":{"count":437,"total":549874829}},
-    "25-12":{"BSI":{"count":6502,"total":867038550},"LOCAL TC":{"count":206,"total":11807962},"TC/RECALL":{"count":984,"total":367117868},"WP":{"count":63,"total":64554045},"Warranty":{"count":418,"total":607298305}},
-    "26-01":{"BSI":{"count":6360,"total":820232580},"LOCAL TC":{"count":177,"total":12551559},"TC/RECALL":{"count":836,"total":312553219},"WP":{"count":79,"total":101866555},"Warranty":{"count":444,"total":545342707}},
-    "26-02":{"BSI":{"count":5471,"total":716467420},"LOCAL TC":{"count":144,"total":10320768},"TC/RECALL":{"count":654,"total":309194890},"WP":{"count":83,"total":93298496},"Warranty":{"count":405,"total":648755902}}
+    "25-01":{"BSI":{"count":1590,"total":632690015},"LOCAL TC":{"count":183,"total":12306112},"TC/RECALL":{"count":720,"total":579283119},"WP":{"count":32,"total":41896300},"Warranty":{"count":351,"total":494004952}},
+    "25-02":{"BSI":{"count":1910,"total":742657923},"LOCAL TC":{"count":217,"total":14613509},"TC/RECALL":{"count":711,"total":603572309},"WP":{"count":40,"total":40985945},"Warranty":{"count":404,"total":459559135}},
+    "25-03":{"BSI":{"count":1917,"total":734375951},"LOCAL TC":{"count":230,"total":15534776},"TC/RECALL":{"count":916,"total":526198078},"WP":{"count":40,"total":41313182},"Warranty":{"count":417,"total":410650502}},
+    "25-04":{"BSI":{"count":2044,"total":813219271},"LOCAL TC":{"count":283,"total":18594400},"TC/RECALL":{"count":740,"total":547441339},"WP":{"count":34,"total":32860300},"Warranty":{"count":475,"total":563008486}},
+    "25-05":{"BSI":{"count":2085,"total":875915092},"LOCAL TC":{"count":111,"total":7403952},"TC/RECALL":{"count":622,"total":548118989},"WP":{"count":33,"total":30174965},"Warranty":{"count":374,"total":510092451}},
+    "25-06":{"BSI":{"count":1905,"total":803128232},"LOCAL TC":{"count":243,"total":17403281},"TC/RECALL":{"count":386,"total":392273794},"WP":{"count":25,"total":31718325},"Warranty":{"count":412,"total":575908630}},
+    "25-07":{"BSI":{"count":2308,"total":909812658},"LOCAL TC":{"count":340,"total":22379582},"TC/RECALL":{"count":428,"total":468782232},"WP":{"count":50,"total":67532330},"Warranty":{"count":515,"total":686629917}},
+    "25-08":{"BSI":{"count":2073,"total":849697597},"LOCAL TC":{"count":266,"total":14692760},"TC/RECALL":{"count":568,"total":386293713},"WP":{"count":55,"total":80720098},"Warranty":{"count":407,"total":652764360}},
+    "25-09":{"BSI":{"count":2049,"total":838692481},"LOCAL TC":{"count":251,"total":13743106},"TC/RECALL":{"count":778,"total":440259798},"WP":{"count":59,"total":66921635},"Warranty":{"count":384,"total":555484039}},
+    "25-10":{"BSI":{"count":2075,"total":930216233},"LOCAL TC":{"count":292,"total":16914592},"TC/RECALL":{"count":675,"total":251815466},"WP":{"count":38,"total":71591260},"Warranty":{"count":344,"total":463822964}},
+    "25-11":{"BSI":{"count":1930,"total":862745044},"LOCAL TC":{"count":285,"total":16592068},"TC/RECALL":{"count":647,"total":306381366},"WP":{"count":54,"total":97719600},"Warranty":{"count":384,"total":549874829}},
+    "25-12":{"BSI":{"count":1972,"total":867038550},"LOCAL TC":{"count":205,"total":11807962},"TC/RECALL":{"count":908,"total":367117868},"WP":{"count":56,"total":64554045},"Warranty":{"count":387,"total":607298305}},
+    "26-01":{"BSI":{"count":1970,"total":820232580},"LOCAL TC":{"count":177,"total":12551559},"TC/RECALL":{"count":789,"total":312553219},"WP":{"count":72,"total":101866555},"Warranty":{"count":406,"total":545342707}},
+    "26-02":{"BSI":{"count":1711,"total":716467420},"LOCAL TC":{"count":144,"total":10320768},"TC/RECALL":{"count":618,"total":309194890},"WP":{"count":71,"total":93298496},"Warranty":{"count":364,"total":648755902}}
   };
   const SALES_MONTHS = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02'];
   const SALES_MONTHS_KO = ['25.01','25.02','25.03','25.04','25.05','25.06','25.07','25.08','25.09','25.10','25.11','25.12','26.01','26.02'];
