@@ -1604,15 +1604,16 @@
         </div>
 
         <!-- 차트 -->
-        <div class="sales-card p-6 mb-4">
+        <div class="p-6 mb-4" style="background:#1e2433;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,0.18);">
           <div class="flex items-center justify-between mb-5">
             <div>
-              <h3 class="text-sm font-semibold text-slate-800">월별 보증매출</h3>
-              <span class="text-xs text-slate-400">단위: 백만원 · 2025.01 — 2026.12</span>
+              <h3 class="text-sm font-semibold" style="color:#f1f5f9;">월별 보증매출</h3>
+              <span class="text-xs" style="color:#64748b;">단위: 백만원 · 2025.01 — 2026.12</span>
             </div>
             <div class="flex items-center gap-2">
               <button onclick="toggleSalesType('all')"
-                class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+                class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors"
+                style="border:1px solid #334155;background:#2d3748;color:#cbd5e1;">
                 전체 선택
               </button>
               <button onclick="toggleSalesTotal()" id="btn-sales-total"
@@ -2389,7 +2390,7 @@
       order: -1,
       datalabels: {
         display: ctx => !!totalVals[ctx.dataIndex],
-        color: '#0f172a',
+        color: '#ffffff',
         font: { size: 10, weight: '700' },
         formatter: v => v ? (salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString()) : '',
         anchor: 'end', align: 'top', offset: 5,
@@ -2412,15 +2413,15 @@
         interaction: { mode:'index', intersect:false },
         scales: {
           x: { stacked:true, grid:{display:false},
-            ticks:{ font:{size:10, weight:'400'}, color:'#0f172a' },
-            border:{ color:'#e2e8f0' }
+            ticks:{ font:{size:10, weight:'400'}, color:'#94a3b8' },
+            border:{ color:'#334155' }
           },
-          y: { stacked:true, grid:{color:'#f1f5f9'}, border:{dash:[4,4], color:'transparent'},
-            ticks:{ callback: v => (salesMode==='amount'||salesMode==='totalamount') ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(), font:{size:10, weight:'400'}, color:'#0f172a' }
+          y: { stacked:true, grid:{color:'#2d3748'}, border:{dash:[4,4], color:'transparent'},
+            ticks:{ callback: v => (salesMode==='amount'||salesMode==='totalamount') ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(), font:{size:10, weight:'400'}, color:'#94a3b8' }
           }
         },
         plugins: {
-          legend:{ position:'bottom', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:8, padding:18, font:{size:11, weight:'400'}, color:'#0f172a',
+          legend:{ position:'bottom', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:8, padding:18, font:{size:11, weight:'400'}, color:'#cbd5e1',
             filter: item => item.text !== '합계'
           }},
           tooltip:{ backgroundColor:'rgba(15,23,42,0.88)', padding:12, cornerRadius:10, titleFont:{size:12,weight:'600'}, bodyFont:{size:11},
