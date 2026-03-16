@@ -176,7 +176,7 @@
       cursor: pointer; transition: all 0.15s ease; border: none; outline: none;
     }
     .sales-pill.active { background: #1d4ed8; color: #fff; }
-    .sales-pill:not(.active) { background: #f1f5f9; color: #64748b; }
+    .sales-pill:not(.active) { background: #f1f5f9; color: #0f172a; }
     .sales-pill:not(.active):hover { background: #e2e8f0; }
     .sales-seg { padding: 6px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; }
     .sales-seg.active { background: #fff; color: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -1610,10 +1610,16 @@
               <h3 class="text-sm font-semibold text-slate-800">월별 보증매출</h3>
               <span class="text-xs text-slate-400">단위: 백만원 · 2025.01 — 2026.12</span>
             </div>
-            <button onclick="toggleSalesTotal()" id="btn-sales-total"
-              class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-nm-blue text-white transition-colors">
-              합계 표시
-            </button>
+            <div class="flex items-center gap-2">
+              <button onclick="toggleSalesType('all')"
+                class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+                전체 선택
+              </button>
+              <button onclick="toggleSalesTotal()" id="btn-sales-total"
+                class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-nm-blue text-white transition-colors">
+                합계 표시
+              </button>
+            </div>
           </div>
           <div style="height:340px;position:relative;">
             <canvas id="sales-chart"></canvas>
