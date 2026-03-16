@@ -1614,7 +1614,7 @@
               합계 표시
             </button>
           </div>
-          <div style="height:300px;position:relative;">
+          <div style="height:340px;position:relative;background:#2d2d2d;border-radius:12px;padding:12px 8px 8px;">
             <canvas id="sales-chart"></canvas>
           </div>
         </div>
@@ -2315,17 +2315,14 @@
       backgroundColor: SALES_COLORS[type],
       borderRadius: 3,
       borderSkipped: 'bottom',
-      maxBarThickness: 28,
+      maxBarThickness: 22,
       datalabels: {
-        display: ctx => {
-          if (activeBranches.size === ALL_BRANCHES.length) return false;
-          const v = ctx.dataset.data[ctx.dataIndex];
-          return v && (salesMode==='amount' ? v>=10000000 : v>=10);
-        },
+        display: ctx => { const v = ctx.dataset.data[ctx.dataIndex]; return v && v > 0; },
         color: '#fff',
         font: { size: 9, weight: '700' },
         formatter: v => salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(),
         anchor: 'center', align: 'center',
+        clamp: true,
       }
     }));
     // 합계 라벨 전용 투명 데이터셋 (라인 없음)
@@ -2351,17 +2348,11 @@
       tension: 0,
       order: -1,
       datalabels: {
-        display: ctx => {
-          const v = totalVals[ctx.dataIndex];
-          if (!v) return false;
-          return activeBranches.size === ALL_BRANCHES.length ? true : showTotalLabels;
-        },
-        color: '#0f172a',
+        display: ctx => !!totalVals[ctx.dataIndex],
+        color: '#ffffff',
         font: { size: 10, weight: '800' },
-        textStrokeColor: '#fff',
-        textStrokeWidth: 3,
         formatter: v => v ? (salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString()) : '',
-        anchor: 'end', align: 'top', offset: 4,
+        anchor: 'end', align: 'top', offset: 5,
       }
     };
     return { labels: ALL_MONTHS.map(getMonthLabel), datasets: [...barDatasets, totalDataset] };
@@ -2377,19 +2368,22 @@
       data: buildSalesChartData(),
       options: {
         responsive: true, maintainAspectRatio: false,
-        layout: { padding: { top: 28 } },
+        layout: { padding: { top: 32, left: 4, right: 4, bottom: 4 } },
         interaction: { mode:'index', intersect:false },
         scales: {
-          x: { stacked:true, grid:{display:false}, ticks:{font:{size:10},color:'#94a3b8'} },
-          y: { stacked:true, grid:{color:'#f1f5f9'}, border:{dash:[4,4]},
-            ticks:{ callback: v => salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(), font:{size:10}, color:'#94a3b8' }
+          x: { stacked:true, grid:{display:false},
+            ticks:{ font:{size:10}, color:'#aaaaaa' },
+            border:{ color:'#555' }
+          },
+          y: { stacked:true, grid:{color:'rgba(255,255,255,0.08)'}, border:{dash:[4,4], color:'transparent'},
+            ticks:{ callback: v => salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(), font:{size:10}, color:'#aaaaaa' }
           }
         },
         plugins: {
-          legend:{ position:'top', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:7, padding:14, font:{size:11}, color:'#475569',
+          legend:{ position:'bottom', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:8, padding:18, font:{size:11}, color:'#dddddd',
             filter: item => item.text !== '합계'
           }},
-          tooltip:{ backgroundColor:'rgba(15,23,42,0.9)', padding:12, cornerRadius:12, titleFont:{size:12,weight:'700'}, bodyFont:{size:11},
+          tooltip:{ backgroundColor:'rgba(20,20,20,0.92)', padding:12, cornerRadius:10, titleFont:{size:12,weight:'700'}, bodyFont:{size:11},
             filter: item => item.dataset.label !== '합계',
             callbacks:{ label: c => ` ${c.dataset.label}: ${salesMode==='amount' ? Math.round(c.raw/1000000).toLocaleString()+'백만원' : c.raw.toLocaleString()+'건'}` }
           },
