@@ -2955,18 +2955,17 @@ const BRANCH_DATA = {
       }
     }
 
-    // 상위 20개 (낮은 순위가 위로 표시되도록 reverse)
-    const topByAmount = Object.keys(totals).sort((a,b)=>totals[b].amount-totals[a].amount).slice(0,20).reverse();
-    const topByCount  = Object.keys(totals).sort((a,b)=>totals[b].count -totals[a].count ).slice(0,20).reverse();
+    // 상위 20개 (높은 값이 위에 표시되도록 내림차순)
+    const topByAmount = Object.keys(totals).sort((a,b)=>totals[b].amount-totals[a].amount).slice(0,20);
+    const topByCount  = Object.keys(totals).sort((a,b)=>totals[b].count -totals[a].count ).slice(0,20);
 
     const TYPES_ORDER = ['BSI','Warranty','TC/RECALL','Goodwill','WP','LOCAL TC'];
     const COLORS = {'BSI':'#1d4ed8','Warranty':'#0891b2','TC/RECALL':'#059669','Goodwill':'#7c3aed','WP':'#d97706','LOCAL TC':'#dc2626'};
     const activeTypes = TYPES_ORDER.filter(tp => dActiveTypes.has(tp));
 
-    const isDark   = document.body.classList.contains('dark');
-    const gridCol  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
-    const labelCol = isDark ? '#94a3b8' : '#64748b';
-    const tickCol  = isDark ? '#cbd5e1' : '#334155';
+    const isDark  = document.body.classList.contains('dark');
+    const gridCol = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+    const tickCol = isDark ? '#cbd5e1' : '#334155';
 
     function makeLabels(codeList) {
       return codeList.map(code => {
@@ -2975,10 +2974,25 @@ const BRANCH_DATA = {
       });
     }
     function makeDatasets(codeList, metric) {
-      return activeTypes.map(tp => ({
+      const nTypes = activeTypes.length;
+      return activeTypes.map((tp, idx) => ({
         label: tp,
         data: codeList.map(code => agg[code]?.[tp]?.[metric] || 0),
         backgroundColor: COLORS[tp],
+        datalabels: idx === nTypes - 1 ? {
+          display: true,
+          anchor: 'end',
+          align: 'end',
+          color: '#ffffff',
+          font: { weight: 'bold', size: 10 },
+          formatter: (value, ctx) => {
+            const total = ctx.chart.data.datasets.reduce((s, ds) => s + (ds.data[ctx.dataIndex] || 0), 0);
+            if (!total) return null;
+            return metric === 'amount'
+              ? (total / 1000000).toFixed(1) + 'M'
+              : total.toLocaleString() + '건';
+          }
+        } : { display: false }
       }));
     }
     function buildChart(canvasId, codeList, metric, existing) {
@@ -2992,6 +3006,7 @@ const BRANCH_DATA = {
           indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
+          layout: { padding: { right: 48 } },
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -3000,7 +3015,7 @@ const BRANCH_DATA = {
                   const v = ctx.raw;
                   if (!v) return null;
                   return metric === 'amount'
-                    ? `${ctx.dataset.label}: ₩${v.toLocaleString()}`
+                    ? `${ctx.dataset.label}: ₩${(v/1000000).toFixed(2)}M`
                     : `${ctx.dataset.label}: ${v.toLocaleString()}건`;
                 }
               }
@@ -3014,14 +3029,14 @@ const BRANCH_DATA = {
                 color: tickCol,
                 maxTicksLimit: 6,
                 callback: v => metric === 'amount'
-                  ? (v >= 1000000 ? '₩'+(v/1000000).toFixed(0)+'M' : '₩'+v.toLocaleString())
+                  ? (v/1000000).toFixed(0)+'M'
                   : v.toLocaleString()+'건'
               }
             },
             y: {
               stacked: true,
               grid: { display: false },
-              ticks: { color: labelCol, font: { size: 10 } }
+              ticks: { color: '#ffffff', font: { size: 10 } }
             }
           }
         }
