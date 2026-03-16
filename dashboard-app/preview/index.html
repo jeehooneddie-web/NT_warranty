@@ -1564,7 +1564,7 @@
             </div>
           </div>
           <!-- 타입 필터 -->
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">타입</span>
             <div class="flex gap-2 flex-wrap">
               <button onclick="toggleSalesType('all')" id="ftype-all" class="sales-pill active">전체</button>
@@ -1573,6 +1573,34 @@
               <button onclick="toggleSalesType('TC/RECALL')" id="ftype-TCRECALL" class="sales-pill">TC/RECALL</button>
               <button onclick="toggleSalesType('WP')" id="ftype-WP" class="sales-pill">WP</button>
               <button onclick="toggleSalesType('LOCAL TC')" id="ftype-LOCALTC" class="sales-pill">LOCAL TC</button>
+            </div>
+          </div>
+          <!-- 년도 필터 -->
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">년도</span>
+            <div class="flex gap-2 flex-wrap">
+              <button onclick="toggleSalesYear('all')" id="fyear-all" class="sales-pill active">전체</button>
+              <button onclick="toggleSalesYear('25')" id="fyear-25" class="sales-pill">2025</button>
+              <button onclick="toggleSalesYear('26')" id="fyear-26" class="sales-pill">2026</button>
+            </div>
+          </div>
+          <!-- 월별 필터 -->
+          <div class="flex items-center gap-3">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">월별</span>
+            <div class="flex gap-1.5 flex-wrap">
+              <button onclick="toggleSalesMonth('all')" id="fmonth-all" class="sales-pill active">전체</button>
+              <button onclick="toggleSalesMonth('01')" id="fmonth-01" class="sales-pill">1월</button>
+              <button onclick="toggleSalesMonth('02')" id="fmonth-02" class="sales-pill">2월</button>
+              <button onclick="toggleSalesMonth('03')" id="fmonth-03" class="sales-pill">3월</button>
+              <button onclick="toggleSalesMonth('04')" id="fmonth-04" class="sales-pill">4월</button>
+              <button onclick="toggleSalesMonth('05')" id="fmonth-05" class="sales-pill">5월</button>
+              <button onclick="toggleSalesMonth('06')" id="fmonth-06" class="sales-pill">6월</button>
+              <button onclick="toggleSalesMonth('07')" id="fmonth-07" class="sales-pill">7월</button>
+              <button onclick="toggleSalesMonth('08')" id="fmonth-08" class="sales-pill">8월</button>
+              <button onclick="toggleSalesMonth('09')" id="fmonth-09" class="sales-pill">9월</button>
+              <button onclick="toggleSalesMonth('10')" id="fmonth-10" class="sales-pill">10월</button>
+              <button onclick="toggleSalesMonth('11')" id="fmonth-11" class="sales-pill">11월</button>
+              <button onclick="toggleSalesMonth('12')" id="fmonth-12" class="sales-pill">12월</button>
             </div>
           </div>
         </div>
@@ -2285,6 +2313,51 @@
   let salesChart = null;
   let activeBranches = new Set(ALL_BRANCHES);
   let activeTypes = new Set(SALES_TYPES);
+  const ALL_YEARS = ['25','26'];
+  const ALL_MO    = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+  let activeYears  = new Set(ALL_YEARS);
+  let activeMonths = new Set(ALL_MO);
+
+  function getVisibleMonths() {
+    return ALL_MONTHS.filter(m => activeYears.has(m.slice(0,2)) && activeMonths.has(m.slice(3,5)));
+  }
+
+  function getLatestDataMonth() {
+    const vis = getVisibleMonths().filter(m => DATA_MONTHS.includes(m));
+    return vis[vis.length - 1] || DATA_MONTHS[DATA_MONTHS.length - 1];
+  }
+
+  function toggleSalesYear(yr) {
+    if (yr === 'all') {
+      activeYears = new Set(ALL_YEARS);
+    } else {
+      if (activeYears.size === ALL_YEARS.length) { activeYears = new Set([yr]); }
+      else if (activeYears.has(yr) && activeYears.size === 1) { activeYears = new Set(ALL_YEARS); }
+      else { activeYears.has(yr) ? activeYears.delete(yr) : activeYears.add(yr); }
+    }
+    ALL_YEARS.forEach(y => {
+      const el = document.getElementById('fyear-'+y);
+      if (el) el.className = 'sales-pill'+(activeYears.has(y) && activeYears.size < ALL_YEARS.length ? ' active' : '');
+    });
+    document.getElementById('fyear-all').className = 'sales-pill'+(activeYears.size === ALL_YEARS.length ? ' active' : '');
+    updateSalesChart();
+  }
+
+  function toggleSalesMonth(mo) {
+    if (mo === 'all') {
+      activeMonths = new Set(ALL_MO);
+    } else {
+      if (activeMonths.size === ALL_MO.length) { activeMonths = new Set([mo]); }
+      else if (activeMonths.has(mo) && activeMonths.size === 1) { activeMonths = new Set(ALL_MO); }
+      else { activeMonths.has(mo) ? activeMonths.delete(mo) : activeMonths.add(mo); }
+    }
+    ALL_MO.forEach(m => {
+      const el = document.getElementById('fmonth-'+m);
+      if (el) el.className = 'sales-pill'+(activeMonths.has(m) && activeMonths.size < ALL_MO.length ? ' active' : '');
+    });
+    document.getElementById('fmonth-all').className = 'sales-pill'+(activeMonths.size === ALL_MO.length ? ' active' : '');
+    updateSalesChart();
+  }
 
   function getMonthLabel(m) {
     const [y, mo] = m.split('-');
@@ -2317,9 +2390,10 @@
   }
 
   function buildSalesChartData() {
+    const visMonths = getVisibleMonths();
     // 전체 금액 모드: 타입 구분 없이 월별 합계 단일 바
     if (salesMode === 'totalamount') {
-      const totalVals = ALL_MONTHS.map(m => {
+      const totalVals = visMonths.map(m => {
         if (!DATA_MONTHS.includes(m)) return null;
         let v=0;
         for (const br of activeBranches)
@@ -2330,30 +2404,23 @@
         return v||null;
       });
       return {
-        labels: ALL_MONTHS.map(getMonthLabel),
+        labels: visMonths.map(getMonthLabel),
         datasets: [{
-          type: 'bar',
-          label: '전체 금액',
-          data: totalVals,
-          backgroundColor: '#1d4ed8',
-          borderRadius: 3,
-          borderSkipped: 'bottom',
-          maxBarThickness: 28,
+          type: 'bar', label: '전체 금액', data: totalVals,
+          backgroundColor: '#1d4ed8', borderRadius: 3, borderSkipped: 'bottom', maxBarThickness: 28,
           datalabels: {
             display: ctx => !!totalVals[ctx.dataIndex],
             font: { size: 10, weight: '700' },
             formatter: v => v ? Math.round(v/1000000).toLocaleString() : '',
-            anchor: 'end', align: 'top', offset: 4,
-            color: '#0f172a',
+            anchor: 'end', align: 'top', offset: 4, color: '#0f172a',
           }
         }]
       };
     }
 
     const barDatasets = [...activeTypes].map(type => ({
-      type: 'bar',
-      label: type,
-      data: ALL_MONTHS.map(m => {
+      type: 'bar', label: type,
+      data: visMonths.map(m => {
         if (!DATA_MONTHS.includes(m)) return null;
         let v=0;
         for (const br of activeBranches) {
@@ -2363,20 +2430,15 @@
         return v||null;
       }),
       backgroundColor: SALES_COLORS[type],
-      borderRadius: 3,
-      borderSkipped: 'bottom',
-      maxBarThickness: 22,
+      borderRadius: 3, borderSkipped: 'bottom', maxBarThickness: 22,
       datalabels: {
         display: ctx => { const v = ctx.dataset.data[ctx.dataIndex]; return v && v > 0; },
-        color: '#fff',
-        font: { size: 9, weight: '700' },
+        color: '#fff', font: { size: 9, weight: '700' },
         formatter: v => salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(),
-        anchor: 'center', align: 'center',
-        clamp: true,
+        anchor: 'center', align: 'center', clamp: true,
       }
     }));
-    // 합계 라벨 전용 투명 데이터셋 (라인 없음)
-    const totalVals = ALL_MONTHS.map(m => {
+    const totalVals = visMonths.map(m => {
       if (!DATA_MONTHS.includes(m)) return null;
       let v=0;
       for (const br of activeBranches)
@@ -2387,25 +2449,17 @@
       return v||null;
     });
     const totalDataset = {
-      type: 'line',
-      label: 'Total',
-      data: totalVals,
-      borderColor: '#ffffff',
-      backgroundColor: '#ffffff',
-      borderWidth: 0,
-      pointRadius: 0,
-      pointHoverRadius: 0,
-      tension: 0,
-      order: -1,
+      type: 'line', label: 'Total', data: totalVals,
+      borderColor: '#ffffff', backgroundColor: '#ffffff',
+      borderWidth: 0, pointRadius: 0, pointHoverRadius: 0, tension: 0, order: -1,
       datalabels: {
         display: ctx => !!totalVals[ctx.dataIndex],
-        color: '#ffffff',
-        font: { size: 10, weight: '700' },
+        color: '#ffffff', font: { size: 10, weight: '700' },
         formatter: v => v ? (salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString()) : '',
         anchor: 'end', align: 'top', offset: 5,
       }
     };
-    return { labels: ALL_MONTHS.map(getMonthLabel), datasets: [...barDatasets, totalDataset] };
+    return { labels: visMonths.map(getMonthLabel), datasets: [...barDatasets, totalDataset] };
   }
 
   /* ── 대시보드 드래그 앤 드롭 ── */
@@ -2515,46 +2569,54 @@
   }
 
   function updateSalesKPIs() {
-    const latest = sumMonth('26-02');
-    const prev   = sumMonth('26-01');
-    const yoy    = sumMonth('25-02');
+    const latestM = getLatestDataMonth();
+    const yr = latestM.slice(0,2), mo = latestM.slice(3,5);
+    const prevM  = DATA_MONTHS.slice().reverse().find(m => m < latestM) || latestM;
+    const yoyM   = (parseInt(yr)-1).toString().slice(-2)+'-'+mo;
+    const latest = sumMonth(latestM);
+    const prev   = sumMonth(prevM);
+    const yoy    = sumMonth(yoyM);
     const momPct = prev.total ? (latest.total-prev.total)/prev.total*100 : 0;
     const yoyPct = yoy.total  ? (latest.total-yoy.total)/yoy.total*100   : 0;
-    const ytd26  = DATA_MONTHS.filter(m=>m.startsWith('26')).reduce((s,m)=>s+sumMonth(m).total,0);
+    const ytdVis  = getVisibleMonths().filter(m=>DATA_MONTHS.includes(m)).reduce((s,m)=>s+sumMonth(m).total,0);
+    const ytdLabel = getVisibleMonths().filter(m=>DATA_MONTHS.includes(m)).length+'개월 합계';
+    const latestLabel = yr+'년 '+parseInt(mo)+'월';
+    const prevLabel   = prevM.slice(0,2)+'년 '+parseInt(prevM.slice(3,5))+'월 대비';
+    const yoyLabel    = yoyM.slice(0,2)+'년 '+parseInt(mo)+'월 대비';
 
-    const setText  = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
-    const setCls   = (id,c) => { const el=document.getElementById(id); if(el) el.className=c; };
+    const setText = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+    const setCls  = (id,c) => { const el=document.getElementById(id); if(el) el.className=c; };
 
     if (kpiMode === 'A') {
-      setText('kpi-label-1', '이번달 총 매출');
+      setText('kpi-label-1', '선택월 총 매출');
       setText('sales-kpi-1', fmt억원(latest.total));
       setCls ('sales-kpi-1', 'sales-kpi-value');
-      setText('sales-kpi-1-sub', '26년 2월');
+      setText('sales-kpi-1-sub', latestLabel);
 
       setText('kpi-label-2', '전월 대비');
       setText('sales-kpi-2', fmtPct(momPct));
       setCls ('sales-kpi-2', 'sales-kpi-value '+(momPct>=0?'text-emerald-500':'text-red-500'));
-      setText('sales-kpi-2-sub', '26년 1월 대비');
+      setText('sales-kpi-2-sub', prevLabel);
 
       setText('kpi-label-3', '전년동월 대비');
       setText('sales-kpi-3', fmtPct(yoyPct));
       setCls ('sales-kpi-3', 'sales-kpi-value '+(yoyPct>=0?'text-emerald-500':'text-red-500'));
-      setText('sales-kpi-3-sub', '25년 2월 대비');
+      setText('sales-kpi-3-sub', yoyLabel);
 
-      setText('kpi-label-4', '26년 누계');
-      setText('sales-kpi-4', fmt억원(ytd26));
+      setText('kpi-label-4', '기간 누계');
+      setText('sales-kpi-4', fmt억원(ytdVis));
       setCls ('sales-kpi-4', 'sales-kpi-value');
-      setText('sales-kpi-4-sub', DATA_MONTHS.filter(m=>m.startsWith('26')).length+'개월 합계');
+      setText('sales-kpi-4-sub', ytdLabel);
 
     } else {
       const avgPerClaim = latest.count ? latest.total/latest.count : 0;
 
-      setText('kpi-label-1', '이번달 총 매출');
+      setText('kpi-label-1', '선택월 총 매출');
       setText('sales-kpi-1', fmt억원(latest.total));
       setCls ('sales-kpi-1', 'sales-kpi-value');
-      setText('sales-kpi-1-sub', '26년 2월');
+      setText('sales-kpi-1-sub', latestLabel);
 
-      setText('kpi-label-2', '이번달 총 건수');
+      setText('kpi-label-2', '선택월 총 건수');
       setText('sales-kpi-2', latest.count.toLocaleString()+'건');
       setCls ('sales-kpi-2', 'sales-kpi-value');
       setText('sales-kpi-2-sub', '바스크 1번 기준');
@@ -2567,7 +2629,7 @@
       setText('kpi-label-4', '전년동월 대비');
       setText('sales-kpi-4', fmtPct(yoyPct));
       setCls ('sales-kpi-4', 'sales-kpi-value '+(yoyPct>=0?'text-emerald-500':'text-red-500'));
-      setText('sales-kpi-4-sub', '25년 2월 대비');
+      setText('sales-kpi-4-sub', yoyLabel);
     }
   }
 
@@ -2582,7 +2644,7 @@
       const el = document.getElementById('th-'+typeIds[t]);
       if (el) el.style.display = activeTypes.has(t) ? '' : 'none';
     });
-    tbody.innerHTML = ALL_MONTHS.map((m,i) => {
+    tbody.innerHTML = getVisibleMonths().map((m,i) => {
       const hasData = DATA_MONTHS.includes(m);
       const agg = hasData ? getAggregated(m) : {};
       const rowTotal = visTypes.reduce((s,t)=>s+(agg[t]?(isAmt?agg[t].total:agg[t].count):0),0);
