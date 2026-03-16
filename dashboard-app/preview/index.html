@@ -2346,7 +2346,7 @@
       backgroundColor: 'transparent',
       maxBarThickness: 28,
       datalabels: {
-        display: showTotalLabels,
+        display: () => activeBranches.size === ALL_BRANCHES.length ? true : showTotalLabels,
         color: '#0f172a',
         font: { size: 10, weight: '800' },
         textStrokeColor: '#fff',
