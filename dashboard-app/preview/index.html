@@ -1588,26 +1588,32 @@
         </div>
 
         <!-- KPI 카드 4개 -->
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex bg-slate-100 rounded-xl p-1 gap-0.5">
+            <button onclick="setKpiMode('A')" id="btn-kpi-A" class="sales-seg active">매출 중심</button>
+            <button onclick="setKpiMode('C')" id="btn-kpi-C" class="sales-seg">균형형</button>
+          </div>
+        </div>
         <div class="grid grid-cols-4 gap-3 mb-4">
           <div class="sales-kpi">
-            <div class="sales-kpi-label">26년 2월 총 매출</div>
-            <div id="sales-kpi-month" class="sales-kpi-value">—</div>
-            <div id="sales-kpi-mom" class="sales-kpi-sub text-slate-400">—</div>
+            <div id="kpi-label-1" class="sales-kpi-label">이번달 총 매출</div>
+            <div id="sales-kpi-1" class="sales-kpi-value">—</div>
+            <div id="sales-kpi-1-sub" class="sales-kpi-sub text-slate-400">—</div>
           </div>
           <div class="sales-kpi">
-            <div class="sales-kpi-label">전년 동월 대비</div>
-            <div id="sales-kpi-yoy-val" class="sales-kpi-value">—</div>
-            <div id="sales-kpi-yoy-sub" class="sales-kpi-sub text-slate-400">25년 2월 대비</div>
+            <div id="kpi-label-2" class="sales-kpi-label">전월 대비</div>
+            <div id="sales-kpi-2" class="sales-kpi-value">—</div>
+            <div id="sales-kpi-2-sub" class="sales-kpi-sub text-slate-400">—</div>
           </div>
           <div class="sales-kpi">
-            <div class="sales-kpi-label">26년 2월 총 건수</div>
-            <div id="sales-kpi-count" class="sales-kpi-value">—</div>
-            <div class="sales-kpi-sub text-slate-400">바스크 1번 기준</div>
+            <div id="kpi-label-3" class="sales-kpi-label">전년동월 대비</div>
+            <div id="sales-kpi-3" class="sales-kpi-value">—</div>
+            <div id="sales-kpi-3-sub" class="sales-kpi-sub text-slate-400">—</div>
           </div>
           <div class="sales-kpi">
-            <div class="sales-kpi-label">2025년 누계</div>
-            <div id="sales-kpi-year25" class="sales-kpi-value">—</div>
-            <div class="sales-kpi-sub text-slate-400">12개월 합계</div>
+            <div id="kpi-label-4" class="sales-kpi-label">연간 누계</div>
+            <div id="sales-kpi-4" class="sales-kpi-value">—</div>
+            <div id="sales-kpi-4-sub" class="sales-kpi-sub text-slate-400">—</div>
           </div>
         </div>
 
@@ -2499,22 +2505,70 @@
     renderSalesTable();
   }
 
+  let kpiMode = 'A';
+
+  function setKpiMode(mode) {
+    kpiMode = mode;
+    document.getElementById('btn-kpi-A').className = 'sales-seg'+(mode==='A'?' active':'');
+    document.getElementById('btn-kpi-C').className = 'sales-seg'+(mode==='C'?' active':'');
+    updateSalesKPIs();
+  }
+
   function updateSalesKPIs() {
     const latest = sumMonth('26-02');
     const prev   = sumMonth('26-01');
     const yoy    = sumMonth('25-02');
     const momPct = prev.total ? (latest.total-prev.total)/prev.total*100 : 0;
     const yoyPct = yoy.total  ? (latest.total-yoy.total)/yoy.total*100   : 0;
-    document.getElementById('sales-kpi-month').textContent = fmt억원(latest.total);
-    const momEl = document.getElementById('sales-kpi-mom');
-    momEl.textContent = fmtPct(momPct)+' 전월 대비';
-    momEl.className = 'sales-kpi-sub '+(momPct>=0?'text-emerald-500':'text-red-500');
-    const yoyEl = document.getElementById('sales-kpi-yoy-val');
-    yoyEl.textContent = fmtPct(yoyPct);
-    yoyEl.className = 'sales-kpi-value '+(yoyPct>=0?'text-emerald-500':'text-red-500');
-    document.getElementById('sales-kpi-count').textContent = latest.count.toLocaleString();
-    const t25 = DATA_MONTHS.filter(m=>m.startsWith('25')).reduce((s,m)=>s+sumMonth(m).total,0);
-    document.getElementById('sales-kpi-year25').textContent = fmt억원(t25);
+    const ytd26  = DATA_MONTHS.filter(m=>m.startsWith('26')).reduce((s,m)=>s+sumMonth(m).total,0);
+
+    const setText  = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+    const setCls   = (id,c) => { const el=document.getElementById(id); if(el) el.className=c; };
+
+    if (kpiMode === 'A') {
+      setText('kpi-label-1', '이번달 총 매출');
+      setText('sales-kpi-1', fmt억원(latest.total));
+      setCls ('sales-kpi-1', 'sales-kpi-value');
+      setText('sales-kpi-1-sub', '26년 2월');
+
+      setText('kpi-label-2', '전월 대비');
+      setText('sales-kpi-2', fmtPct(momPct));
+      setCls ('sales-kpi-2', 'sales-kpi-value '+(momPct>=0?'text-emerald-500':'text-red-500'));
+      setText('sales-kpi-2-sub', '26년 1월 대비');
+
+      setText('kpi-label-3', '전년동월 대비');
+      setText('sales-kpi-3', fmtPct(yoyPct));
+      setCls ('sales-kpi-3', 'sales-kpi-value '+(yoyPct>=0?'text-emerald-500':'text-red-500'));
+      setText('sales-kpi-3-sub', '25년 2월 대비');
+
+      setText('kpi-label-4', '26년 누계');
+      setText('sales-kpi-4', fmt억원(ytd26));
+      setCls ('sales-kpi-4', 'sales-kpi-value');
+      setText('sales-kpi-4-sub', DATA_MONTHS.filter(m=>m.startsWith('26')).length+'개월 합계');
+
+    } else {
+      const avgPerClaim = latest.count ? latest.total/latest.count : 0;
+
+      setText('kpi-label-1', '이번달 총 매출');
+      setText('sales-kpi-1', fmt억원(latest.total));
+      setCls ('sales-kpi-1', 'sales-kpi-value');
+      setText('sales-kpi-1-sub', '26년 2월');
+
+      setText('kpi-label-2', '이번달 총 건수');
+      setText('sales-kpi-2', latest.count.toLocaleString()+'건');
+      setCls ('sales-kpi-2', 'sales-kpi-value');
+      setText('sales-kpi-2-sub', '바스크 1번 기준');
+
+      setText('kpi-label-3', '건당 평균 매출');
+      setText('sales-kpi-3', fmt억원(avgPerClaim));
+      setCls ('sales-kpi-3', 'sales-kpi-value');
+      setText('sales-kpi-3-sub', '총매출 ÷ 건수');
+
+      setText('kpi-label-4', '전년동월 대비');
+      setText('sales-kpi-4', fmtPct(yoyPct));
+      setCls ('sales-kpi-4', 'sales-kpi-value '+(yoyPct>=0?'text-emerald-500':'text-red-500'));
+      setText('sales-kpi-4-sub', '25년 2월 대비');
+    }
   }
 
   function renderSalesTable() {
