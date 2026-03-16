@@ -1575,6 +1575,7 @@
           <div class="flex bg-slate-100 rounded-xl p-1 gap-0.5">
             <button onclick="setSalesMode('amount')" id="btn-sales-amount" class="sales-seg active">금액</button>
             <button onclick="setSalesMode('count')" id="btn-sales-count" class="sales-seg">건수</button>
+            <button onclick="setSalesMode('totalamount')" id="btn-sales-totalamount" class="sales-seg">전체 금액</button>
           </div>
         </div>
 
@@ -2300,6 +2301,40 @@
   }
 
   function buildSalesChartData() {
+    // 전체 금액 모드: 타입 구분 없이 월별 합계 단일 바
+    if (salesMode === 'totalamount') {
+      const totalVals = ALL_MONTHS.map(m => {
+        if (!DATA_MONTHS.includes(m)) return null;
+        let v=0;
+        for (const br of activeBranches)
+          for (const t of SALES_TYPES) {
+            const d = BRANCH_DATA[br]?.[m]?.[t];
+            if (d) v += d.total;
+          }
+        return v||null;
+      });
+      return {
+        labels: ALL_MONTHS.map(getMonthLabel),
+        datasets: [{
+          type: 'bar',
+          label: '전체 금액',
+          data: totalVals,
+          backgroundColor: '#1d4ed8',
+          borderRadius: 3,
+          borderSkipped: 'bottom',
+          maxBarThickness: 28,
+          datalabels: {
+            display: ctx => !!totalVals[ctx.dataIndex],
+            color: '#fff',
+            font: { size: 10, weight: '700' },
+            formatter: v => v ? Math.round(v/1000000).toLocaleString() : '',
+            anchor: 'end', align: 'top', offset: 4,
+            color: '#1d4ed8',
+          }
+        }]
+      };
+    }
+
     const barDatasets = [...activeTypes].map(type => ({
       type: 'bar',
       label: type,
@@ -2376,7 +2411,7 @@
             border:{ color:'#e2e8f0' }
           },
           y: { stacked:true, grid:{color:'#f1f5f9'}, border:{dash:[4,4], color:'transparent'},
-            ticks:{ callback: v => salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(), font:{size:10, weight:'400'}, color:'#94a3b8' }
+            ticks:{ callback: v => (salesMode==='amount'||salesMode==='totalamount') ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(), font:{size:10, weight:'400'}, color:'#94a3b8' }
           }
         },
         plugins: {
@@ -2398,7 +2433,7 @@
   function updateSalesChart() {
     if (!salesChart) return;
     salesChart.data = buildSalesChartData();
-    salesChart.options.scales.y.ticks.callback = v => salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString();
+    salesChart.options.scales.y.ticks.callback = v => (salesMode==='amount'||salesMode==='totalamount') ? Math.round(v/1000000).toLocaleString() : v.toLocaleString();
     salesChart.update();
     updateSalesKPIs();
     renderSalesTable();
@@ -2456,8 +2491,9 @@
 
   function setSalesMode(mode) {
     salesMode = mode;
-    document.getElementById('btn-sales-amount').className = 'sales-seg'+(mode==='amount'?' active':'');
-    document.getElementById('btn-sales-count').className  = 'sales-seg'+(mode==='count' ?' active':'');
+    document.getElementById('btn-sales-amount').className      = 'sales-seg'+(mode==='amount'      ?' active':'');
+    document.getElementById('btn-sales-count').className       = 'sales-seg'+(mode==='count'       ?' active':'');
+    document.getElementById('btn-sales-totalamount').className = 'sales-seg'+(mode==='totalamount' ?' active':'');
     updateSalesChart();
   }
 
