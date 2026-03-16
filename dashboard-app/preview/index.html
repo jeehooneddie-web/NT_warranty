@@ -2325,11 +2325,10 @@
           maxBarThickness: 28,
           datalabels: {
             display: ctx => !!totalVals[ctx.dataIndex],
-            color: '#fff',
             font: { size: 10, weight: '700' },
             formatter: v => v ? Math.round(v/1000000).toLocaleString() : '',
             anchor: 'end', align: 'top', offset: 4,
-            color: '#1d4ed8',
+            color: '#0f172a',
           }
         }]
       };
@@ -2407,15 +2406,15 @@
         interaction: { mode:'index', intersect:false },
         scales: {
           x: { stacked:true, grid:{display:false},
-            ticks:{ font:{size:10, weight:'400'}, color:'#94a3b8' },
+            ticks:{ font:{size:10, weight:'400'}, color:'#0f172a' },
             border:{ color:'#e2e8f0' }
           },
           y: { stacked:true, grid:{color:'#f1f5f9'}, border:{dash:[4,4], color:'transparent'},
-            ticks:{ callback: v => (salesMode==='amount'||salesMode==='totalamount') ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(), font:{size:10, weight:'400'}, color:'#94a3b8' }
+            ticks:{ callback: v => (salesMode==='amount'||salesMode==='totalamount') ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(), font:{size:10, weight:'400'}, color:'#0f172a' }
           }
         },
         plugins: {
-          legend:{ position:'bottom', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:8, padding:18, font:{size:11, weight:'400'}, color:'#64748b',
+          legend:{ position:'bottom', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:8, padding:18, font:{size:11, weight:'400'}, color:'#0f172a',
             filter: item => item.text !== '합계'
           }},
           tooltip:{ backgroundColor:'rgba(15,23,42,0.88)', padding:12, cornerRadius:10, titleFont:{size:12,weight:'600'}, bodyFont:{size:11},
