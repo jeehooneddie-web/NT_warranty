@@ -283,6 +283,10 @@
         <i data-lucide="bar-chart-2"></i>
         <span>보증 매출</span>
       </div>
+      <div class="nav-item admin-only" data-view="view-top-defect" onclick="showView('view-top-defect')">
+        <i data-lucide="alert-triangle"></i>
+        <span>TOP DEFECT</span>
+      </div>
 
       <!-- 구분선 (관리자) -->
       <div class="admin-only pt-3 pb-1 px-1">
@@ -1551,6 +1555,19 @@
           </div>
         </div>
       </div><!-- /view-warranty -->
+
+      <!-- =============================================
+           뷰: TOP DEFECT
+           ============================================= -->
+      <div id="view-top-defect" class="view hidden">
+        <div class="flex items-center justify-between mb-6">
+          <h1 class="text-2xl font-bold text-slate-800 dark:text-white">TOP DEFECT</h1>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-xl p-8 text-center text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700">
+          <i data-lucide="alert-triangle" class="w-12 h-12 mx-auto mb-3 opacity-30"></i>
+          <p class="text-sm">준비 중입니다.</p>
+        </div>
+      </div><!-- /view-top-defect -->
 
       <!-- =============================================
            뷰: 보증 매출 현황
