@@ -2389,8 +2389,8 @@
       order: -1,
       datalabels: {
         display: ctx => !!totalVals[ctx.dataIndex],
-        color: '#ffffff',
-        font: { size: 10, weight: '800' },
+        color: '#0f172a',
+        font: { size: 10, weight: '700' },
         formatter: v => v ? (salesMode==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString()) : '',
         anchor: 'end', align: 'top', offset: 5,
       }
