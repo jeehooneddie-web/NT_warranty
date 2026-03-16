@@ -2296,9 +2296,7 @@
       document.getElementById('warranty-years').textContent = match.years;
       const kmEl = document.getElementById('warranty-km');
       kmEl.textContent = match.km;
-      kmEl.className = match.battery
-        ? 'text-sm font-semibold text-nm-blue'
-        : 'text-3xl font-extrabold text-nm-blue';
+      kmEl.className = 'text-3xl font-extrabold text-nm-blue';
       document.getElementById('warranty-code').textContent  = `Code: ${match.code}`;
       const colors = {'3 Years':'bg-blue-500/30','5 Years':'bg-amber-500/30','7 Years':'bg-emerald-500/30','8 Years':'bg-purple-500/30'};
       result.className = `mt-2 rounded-lg p-3 text-center ${colors[match.years] || 'bg-white/10'}`;
