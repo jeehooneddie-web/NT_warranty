@@ -168,6 +168,23 @@
     }
     aside.sidebar-collapsed .nav-item i,
     aside.sidebar-collapsed .nav-item svg { margin: 0; }
+
+    /* 보증 매출 Apple 스타일 */
+    .sales-pill {
+      padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s ease; border: none; outline: none;
+    }
+    .sales-pill.active { background: #1d4ed8; color: #fff; }
+    .sales-pill:not(.active) { background: #f1f5f9; color: #64748b; }
+    .sales-pill:not(.active):hover { background: #e2e8f0; }
+    .sales-seg { padding: 6px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; }
+    .sales-seg.active { background: #fff; color: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .sales-seg:not(.active) { background: transparent; color: #94a3b8; }
+    .sales-kpi { background: #fff; border-radius: 20px; padding: 22px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .sales-kpi-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .sales-kpi-value { font-size: 28px; font-weight: 700; color: #0f172a; letter-spacing: -0.5px; line-height: 1; }
+    .sales-kpi-sub { font-size: 12px; margin-top: 6px; }
+    .sales-card { background: #fff; border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
   </style>
 </head>
 <body class="font-sans antialiased">
@@ -1523,85 +1540,95 @@
            ============================================= -->
       <div id="view-sales" class="view hidden">
 
-        <!-- 상단 헤더 + 토글 -->
-        <div class="mb-5 flex items-center justify-between">
-          <p class="text-sm text-slate-500">2025.01 ~ 2026.02 · 취소 제외 · Claim 상세_전체 기준</p>
-          <div class="flex gap-2">
-            <button id="btn-sales-amount" onclick="setSalesMode('amount')"
-              class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-nm-blue text-white">금액(만원)</button>
-            <button id="btn-sales-count" onclick="setSalesMode('count')"
-              class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600">건수</button>
+        <!-- 상단 필터 카드 -->
+        <div class="sales-card p-5 mb-4">
+          <!-- 지점 필터 -->
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">지점</span>
+            <div class="flex gap-2 flex-wrap">
+              <button onclick="toggleSalesBranch('all')" id="fbranch-all" class="sales-pill active">전체</button>
+              <button onclick="toggleSalesBranch('군산')" id="fbranch-군산" class="sales-pill">군산</button>
+              <button onclick="toggleSalesBranch('목포')" id="fbranch-목포" class="sales-pill">목포</button>
+              <button onclick="toggleSalesBranch('서산')" id="fbranch-서산" class="sales-pill">서산</button>
+              <button onclick="toggleSalesBranch('전주')" id="fbranch-전주" class="sales-pill">전주</button>
+              <button onclick="toggleSalesBranch('평택')" id="fbranch-평택" class="sales-pill">평택</button>
+            </div>
+          </div>
+          <!-- 타입 필터 -->
+          <div class="flex items-center gap-3">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">타입</span>
+            <div class="flex gap-2 flex-wrap">
+              <button onclick="toggleSalesType('all')" id="ftype-all" class="sales-pill active">전체</button>
+              <button onclick="toggleSalesType('BSI')" id="ftype-BSI" class="sales-pill">BSI</button>
+              <button onclick="toggleSalesType('Warranty')" id="ftype-Warranty" class="sales-pill">Warranty</button>
+              <button onclick="toggleSalesType('TC/RECALL')" id="ftype-TCRECALL" class="sales-pill">TC/RECALL</button>
+              <button onclick="toggleSalesType('WP')" id="ftype-WP" class="sales-pill">WP</button>
+              <button onclick="toggleSalesType('LOCAL TC')" id="ftype-LOCALTC" class="sales-pill">LOCAL TC</button>
+            </div>
           </div>
         </div>
 
-        <!-- 요약 카드 4개 -->
-        <div class="grid grid-cols-4 gap-4 mb-5">
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-            <div class="flex items-start justify-between mb-3">
-              <div class="text-sm text-slate-500 font-medium">26년 2월 총 매출</div>
-              <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center text-nm-blue">
-                <i data-lucide="trending-up" class="w-5 h-5"></i>
-              </div>
-            </div>
-            <div id="sales-stat-month" class="text-2xl font-bold text-slate-800 mb-1">—</div>
-            <div id="sales-stat-mom" class="text-xs text-slate-400">—</div>
+        <!-- 금액/건수 토글 + 설명 -->
+        <div class="flex items-center justify-between mb-4">
+          <p class="text-xs text-slate-400">취소 제외 · 바스크 1번 기준 건수 · Claim 상세_전체</p>
+          <div class="flex bg-slate-100 rounded-xl p-1 gap-0.5">
+            <button onclick="setSalesMode('amount')" id="btn-sales-amount" class="sales-seg active">금액</button>
+            <button onclick="setSalesMode('count')" id="btn-sales-count" class="sales-seg">건수</button>
           </div>
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-            <div class="flex items-start justify-between mb-3">
-              <div class="text-sm text-slate-500 font-medium">26년 2월 총 건수</div>
-              <div class="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center text-green-600">
-                <i data-lucide="file-check" class="w-5 h-5"></i>
-              </div>
-            </div>
-            <div id="sales-stat-count" class="text-2xl font-bold text-slate-800 mb-1">—</div>
-            <div class="text-xs text-slate-400">건</div>
+        </div>
+
+        <!-- KPI 카드 4개 -->
+        <div class="grid grid-cols-4 gap-3 mb-4">
+          <div class="sales-kpi">
+            <div class="sales-kpi-label">26년 2월 총 매출</div>
+            <div id="sales-kpi-month" class="sales-kpi-value">—</div>
+            <div id="sales-kpi-mom" class="sales-kpi-sub text-slate-400">—</div>
           </div>
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-            <div class="flex items-start justify-between mb-3">
-              <div class="text-sm text-slate-500 font-medium">2025년 누계</div>
-              <div class="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center text-purple-600">
-                <i data-lucide="calendar" class="w-5 h-5"></i>
-              </div>
-            </div>
-            <div id="sales-stat-year25" class="text-2xl font-bold text-slate-800 mb-1">—</div>
-            <div class="text-xs text-slate-400">12개월 합계</div>
+          <div class="sales-kpi">
+            <div class="sales-kpi-label">전년 동월 대비</div>
+            <div id="sales-kpi-yoy-val" class="sales-kpi-value">—</div>
+            <div id="sales-kpi-yoy-sub" class="sales-kpi-sub text-slate-400">25년 2월 대비</div>
           </div>
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-            <div class="flex items-start justify-between mb-3">
-              <div class="text-sm text-slate-500 font-medium">2026년 누계 (1~2월)</div>
-              <div class="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center text-amber-600">
-                <i data-lucide="calendar-check" class="w-5 h-5"></i>
-              </div>
-            </div>
-            <div id="sales-stat-year26" class="text-2xl font-bold text-slate-800 mb-1">—</div>
-            <div class="text-xs text-slate-400">2개월 합계</div>
+          <div class="sales-kpi">
+            <div class="sales-kpi-label">26년 2월 총 건수</div>
+            <div id="sales-kpi-count" class="sales-kpi-value">—</div>
+            <div class="sales-kpi-sub text-slate-400">바스크 1번 기준</div>
+          </div>
+          <div class="sales-kpi">
+            <div class="sales-kpi-label">2025년 누계</div>
+            <div id="sales-kpi-year25" class="sales-kpi-value">—</div>
+            <div class="sales-kpi-sub text-slate-400">12개월 합계</div>
           </div>
         </div>
 
         <!-- 차트 -->
-        <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5 mb-5">
-          <h3 class="text-sm font-semibold text-slate-700 mb-4">월별 보증 청구 현황</h3>
-          <div style="height:300px;position:relative;">
+        <div class="sales-card p-6 mb-4">
+          <div class="flex items-center justify-between mb-5">
+            <h3 class="text-sm font-semibold text-slate-800">월별 보증 청구 현황</h3>
+            <span class="text-xs text-slate-400">2025.01 — 2026.12</span>
+          </div>
+          <div style="height:280px;position:relative;">
             <canvas id="sales-chart"></canvas>
           </div>
         </div>
 
         <!-- 상세 테이블 -->
-        <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-          <div class="px-5 py-4 border-b border-slate-100">
-            <h3 class="text-sm font-semibold text-slate-700">월별 Warranty Type 상세</h3>
+        <div class="sales-card overflow-hidden mb-6">
+          <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-slate-800">월별 Warranty Type 상세</h3>
+            <span id="sales-table-unit" class="text-xs text-slate-400">단위: 만원</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-xs border-collapse">
               <thead>
-                <tr class="bg-blue-600 text-white">
-                  <th class="px-4 py-2.5 text-left font-semibold whitespace-nowrap border border-blue-700">월</th>
-                  <th class="px-4 py-2.5 text-right font-semibold whitespace-nowrap border border-blue-700">BSI</th>
-                  <th class="px-4 py-2.5 text-right font-semibold whitespace-nowrap border border-blue-700">Warranty</th>
-                  <th class="px-4 py-2.5 text-right font-semibold whitespace-nowrap border border-blue-700">TC/RECALL</th>
-                  <th class="px-4 py-2.5 text-right font-semibold whitespace-nowrap border border-blue-700">WP</th>
-                  <th class="px-4 py-2.5 text-right font-semibold whitespace-nowrap border border-blue-700">LOCAL TC</th>
-                  <th class="px-4 py-2.5 text-right font-semibold whitespace-nowrap border border-blue-700 bg-blue-800">합계</th>
+                <tr class="border-b border-slate-100">
+                  <th class="px-5 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wide whitespace-nowrap">월</th>
+                  <th id="th-BSI" class="px-4 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide whitespace-nowrap">BSI</th>
+                  <th id="th-Warranty" class="px-4 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide whitespace-nowrap">Warranty</th>
+                  <th id="th-TCRECALL" class="px-4 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide whitespace-nowrap">TC/RECALL</th>
+                  <th id="th-WP" class="px-4 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide whitespace-nowrap">WP</th>
+                  <th id="th-LOCALTC" class="px-4 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide whitespace-nowrap">LOCAL TC</th>
+                  <th class="px-5 py-3 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">합계</th>
                 </tr>
               </thead>
               <tbody id="sales-table-body"></tbody>
@@ -2216,42 +2243,71 @@
   }
 
   /* ── 보증 매출 대시보드 ── */
-  // 건수: I열(바스크)=1인 행만 카운트 / 금액: 전체 합산
-  const SALES_DATA = {
-    "25-01":{"BSI":{"count":1590,"total":632690015},"LOCAL TC":{"count":183,"total":12306112},"TC/RECALL":{"count":720,"total":579283119},"WP":{"count":32,"total":41896300},"Warranty":{"count":351,"total":494004952}},
-    "25-02":{"BSI":{"count":1910,"total":742657923},"LOCAL TC":{"count":217,"total":14613509},"TC/RECALL":{"count":711,"total":603572309},"WP":{"count":40,"total":40985945},"Warranty":{"count":404,"total":459559135}},
-    "25-03":{"BSI":{"count":1917,"total":734375951},"LOCAL TC":{"count":230,"total":15534776},"TC/RECALL":{"count":916,"total":526198078},"WP":{"count":40,"total":41313182},"Warranty":{"count":417,"total":410650502}},
-    "25-04":{"BSI":{"count":2044,"total":813219271},"LOCAL TC":{"count":283,"total":18594400},"TC/RECALL":{"count":740,"total":547441339},"WP":{"count":34,"total":32860300},"Warranty":{"count":475,"total":563008486}},
-    "25-05":{"BSI":{"count":2085,"total":875915092},"LOCAL TC":{"count":111,"total":7403952},"TC/RECALL":{"count":622,"total":548118989},"WP":{"count":33,"total":30174965},"Warranty":{"count":374,"total":510092451}},
-    "25-06":{"BSI":{"count":1905,"total":803128232},"LOCAL TC":{"count":243,"total":17403281},"TC/RECALL":{"count":386,"total":392273794},"WP":{"count":25,"total":31718325},"Warranty":{"count":412,"total":575908630}},
-    "25-07":{"BSI":{"count":2308,"total":909812658},"LOCAL TC":{"count":340,"total":22379582},"TC/RECALL":{"count":428,"total":468782232},"WP":{"count":50,"total":67532330},"Warranty":{"count":515,"total":686629917}},
-    "25-08":{"BSI":{"count":2073,"total":849697597},"LOCAL TC":{"count":266,"total":14692760},"TC/RECALL":{"count":568,"total":386293713},"WP":{"count":55,"total":80720098},"Warranty":{"count":407,"total":652764360}},
-    "25-09":{"BSI":{"count":2049,"total":838692481},"LOCAL TC":{"count":251,"total":13743106},"TC/RECALL":{"count":778,"total":440259798},"WP":{"count":59,"total":66921635},"Warranty":{"count":384,"total":555484039}},
-    "25-10":{"BSI":{"count":2075,"total":930216233},"LOCAL TC":{"count":292,"total":16914592},"TC/RECALL":{"count":675,"total":251815466},"WP":{"count":38,"total":71591260},"Warranty":{"count":344,"total":463822964}},
-    "25-11":{"BSI":{"count":1930,"total":862745044},"LOCAL TC":{"count":285,"total":16592068},"TC/RECALL":{"count":647,"total":306381366},"WP":{"count":54,"total":97719600},"Warranty":{"count":384,"total":549874829}},
-    "25-12":{"BSI":{"count":1972,"total":867038550},"LOCAL TC":{"count":205,"total":11807962},"TC/RECALL":{"count":908,"total":367117868},"WP":{"count":56,"total":64554045},"Warranty":{"count":387,"total":607298305}},
-    "26-01":{"BSI":{"count":1970,"total":820232580},"LOCAL TC":{"count":177,"total":12551559},"TC/RECALL":{"count":789,"total":312553219},"WP":{"count":72,"total":101866555},"Warranty":{"count":406,"total":545342707}},
-    "26-02":{"BSI":{"count":1711,"total":716467420},"LOCAL TC":{"count":144,"total":10320768},"TC/RECALL":{"count":618,"total":309194890},"WP":{"count":71,"total":93298496},"Warranty":{"count":364,"total":648755902}}
+  // 건수: I열(바스크)=1인 행만 / 금액: 전체 합산 / 지점별 데이터
+  const BRANCH_DATA = {
+    '군산':{"25-01":{"BSI":{"count":117,"total":45383974},"LOCAL TC":{"count":18,"total":1183280},"TC/RECALL":{"count":46,"total":19841939},"WP":{"count":2,"total":4048700},"Warranty":{"count":29,"total":19313612}},"25-02":{"BSI":{"count":145,"total":65218774},"LOCAL TC":{"count":15,"total":1014240},"TC/RECALL":{"count":30,"total":9434666},"WP":{"count":3,"total":1034100},"Warranty":{"count":38,"total":45287326}},"25-03":{"BSI":{"count":169,"total":65846322},"LOCAL TC":{"count":11,"total":743776},"TC/RECALL":{"count":64,"total":7212311},"WP":{"count":2,"total":1859900},"Warranty":{"count":23,"total":23169162}},"25-04":{"BSI":{"count":168,"total":70593930},"LOCAL TC":{"count":26,"total":1758016},"TC/RECALL":{"count":50,"total":7003112},"WP":{"count":2,"total":6568700},"Warranty":{"count":41,"total":37545731}},"25-05":{"BSI":{"count":184,"total":77972442},"LOCAL TC":{"count":6,"total":405696},"TC/RECALL":{"count":21,"total":11516773},"WP":{"count":1,"total":30000},"Warranty":{"count":31,"total":56632746}},"25-06":{"BSI":{"count":186,"total":88017890},"LOCAL TC":{"count":38,"total":2723536},"TC/RECALL":{"count":27,"total":23976844},"WP":{"count":2,"total":1991300},"Warranty":{"count":28,"total":35856306}},"25-07":{"BSI":{"count":210,"total":87956701},"LOCAL TC":{"count":35,"total":2185996},"TC/RECALL":{"count":29,"total":13053698},"WP":{"count":4,"total":6278500},"Warranty":{"count":27,"total":47053122}},"25-08":{"BSI":{"count":195,"total":88858677},"LOCAL TC":{"count":20,"total":1290096},"TC/RECALL":{"count":50,"total":1892723},"WP":{"count":4,"total":4859900},"Warranty":{"count":30,"total":73122236}},"25-09":{"BSI":{"count":185,"total":76906633},"LOCAL TC":{"count":19,"total":1039244},"TC/RECALL":{"count":53,"total":4088410},"WP":{"count":1,"total":149800},"Warranty":{"count":29,"total":42495577}},"25-10":{"BSI":{"count":184,"total":84009889},"LOCAL TC":{"count":23,"total":1433440},"TC/RECALL":{"count":58,"total":5543183},"WP":{"count":2,"total":3023000},"Warranty":{"count":29,"total":38654003}},"25-11":{"BSI":{"count":162,"total":79269102},"LOCAL TC":{"count":22,"total":1433440},"TC/RECALL":{"count":58,"total":18005792},"WP":{"count":3,"total":7226400},"Warranty":{"count":26,"total":33578002}},"25-12":{"BSI":{"count":153,"total":75486592},"LOCAL TC":{"count":9,"total":537540},"TC/RECALL":{"count":71,"total":17988759},"WP":{"count":2,"total":2490000},"Warranty":{"count":29,"total":37320239}},"26-01":{"BSI":{"count":175,"total":79077780},"LOCAL TC":{"count":16,"total":1146752},"TC/RECALL":{"count":62,"total":22156196},"WP":{"count":5,"total":7615600},"Warranty":{"count":35,"total":50696523}},"26-02":{"BSI":{"count":157,"total":71543683},"LOCAL TC":{"count":15,"total":1075080},"TC/RECALL":{"count":28,"total":15038669},"WP":{"count":6,"total":5402460},"Warranty":{"count":34,"total":41024819}}},
+    '목포':{"25-01":{"BSI":{"count":106,"total":45669511},"LOCAL TC":{"count":17,"total":1149472},"TC/RECALL":{"count":39,"total":8590631},"WP":{"count":1,"total":1606000},"Warranty":{"count":22,"total":25089586}},"25-02":{"BSI":{"count":173,"total":68234743},"LOCAL TC":{"count":21,"total":1419936},"TC/RECALL":{"count":48,"total":8121873},"WP":{"count":4,"total":4752900},"Warranty":{"count":31,"total":45373289}},"25-03":{"BSI":{"count":151,"total":66261219},"LOCAL TC":{"count":24,"total":1622784},"TC/RECALL":{"count":74,"total":9906400},"Warranty":{"count":46,"total":50975525}},"25-04":{"BSI":{"count":168,"total":70803744},"LOCAL TC":{"count":31,"total":2096096},"TC/RECALL":{"count":50,"total":4290445},"WP":{"count":2,"total":3401800},"Warranty":{"count":38,"total":41627438}},"25-05":{"BSI":{"count":190,"total":78282705},"LOCAL TC":{"count":16,"total":1048048},"TC/RECALL":{"count":36,"total":22215736},"WP":{"count":3,"total":1900700},"Warranty":{"count":40,"total":44931927}},"25-06":{"BSI":{"count":186,"total":75083409},"LOCAL TC":{"count":30,"total":2150160},"TC/RECALL":{"count":29,"total":15973381},"WP":{"count":2,"total":1759100},"Warranty":{"count":43,"total":67494570}},"25-07":{"BSI":{"count":224,"total":90325166},"LOCAL TC":{"count":41,"total":2741454},"TC/RECALL":{"count":31,"total":13032108},"WP":{"count":5,"total":10230800},"Warranty":{"count":50,"total":74922107}},"25-08":{"BSI":{"count":193,"total":82212466},"LOCAL TC":{"count":17,"total":1039244},"TC/RECALL":{"count":38,"total":3584796},"WP":{"count":4,"total":6399600},"Warranty":{"count":43,"total":77651110}},"25-09":{"BSI":{"count":199,"total":84122989},"LOCAL TC":{"count":26,"total":1702210},"TC/RECALL":{"count":67,"total":10851669},"WP":{"count":10,"total":11068500},"Warranty":{"count":48,"total":92871619}},"25-10":{"BSI":{"count":227,"total":101871739},"LOCAL TC":{"count":27,"total":1791800},"TC/RECALL":{"count":80,"total":7832958},"WP":{"count":11,"total":19005610},"Warranty":{"count":56,"total":77933984}},"25-11":{"BSI":{"count":182,"total":83337791},"LOCAL TC":{"count":23,"total":1487194},"TC/RECALL":{"count":67,"total":16019705},"WP":{"count":8,"total":17013100},"Warranty":{"count":60,"total":87569847}},"25-12":{"BSI":{"count":180,"total":79379367},"LOCAL TC":{"count":13,"total":842146},"TC/RECALL":{"count":93,"total":27598346},"WP":{"count":8,"total":8973920},"Warranty":{"count":59,"total":111244868}},"26-01":{"BSI":{"count":194,"total":79527513},"LOCAL TC":{"count":20,"total":1433440},"TC/RECALL":{"count":90,"total":25881621},"WP":{"count":8,"total":10279920},"Warranty":{"count":50,"total":82630299}},"26-02":{"BSI":{"count":178,"total":79682954},"LOCAL TC":{"count":11,"total":788392},"TC/RECALL":{"count":45,"total":18229308},"WP":{"count":7,"total":10733800},"Warranty":{"count":39,"total":81752363}}},
+    '서산':{"25-01":{"BSI":{"count":179,"total":76598104},"LOCAL TC":{"count":24,"total":1622784},"TC/RECALL":{"count":48,"total":3474031},"WP":{"count":3,"total":3263800},"Warranty":{"count":27,"total":72851485}},"25-02":{"BSI":{"count":218,"total":94614797},"LOCAL TC":{"count":26,"total":1758016},"TC/RECALL":{"count":45,"total":8721055},"WP":{"count":2,"total":4865900},"Warranty":{"count":34,"total":37323595}},"25-03":{"BSI":{"count":196,"total":79962685},"LOCAL TC":{"count":26,"total":1758016},"TC/RECALL":{"count":79,"total":18301651},"WP":{"count":4,"total":2719900},"Warranty":{"count":35,"total":50362824}},"25-04":{"BSI":{"count":188,"total":82391293},"LOCAL TC":{"count":34,"total":2298944},"TC/RECALL":{"count":53,"total":4942937},"WP":{"count":5,"total":5562000},"Warranty":{"count":24,"total":37735645}},"25-05":{"BSI":{"count":204,"total":99429610},"LOCAL TC":{"count":15,"total":1014240},"TC/RECALL":{"count":33,"total":15841537},"WP":{"count":3,"total":2223000},"Warranty":{"count":36,"total":68711451}},"25-06":{"BSI":{"count":213,"total":102013475},"LOCAL TC":{"count":34,"total":2436848},"TC/RECALL":{"count":33,"total":16803842},"Warranty":{"count":47,"total":103435260}},"25-07":{"BSI":{"count":239,"total":96667667},"LOCAL TC":{"count":49,"total":3081896},"TC/RECALL":{"count":31,"total":16261978},"WP":{"count":1,"total":2188900},"Warranty":{"count":45,"total":89449716}},"25-08":{"BSI":{"count":218,"total":95803300},"LOCAL TC":{"count":22,"total":1361768},"TC/RECALL":{"count":41,"total":8629615},"WP":{"count":7,"total":10595100},"Warranty":{"count":30,"total":41610132}},"25-09":{"BSI":{"count":212,"total":96162520},"LOCAL TC":{"count":19,"total":967572},"TC/RECALL":{"count":59,"total":10320931},"WP":{"count":7,"total":4893200},"Warranty":{"count":33,"total":51537223}},"25-10":{"BSI":{"count":230,"total":105469825},"LOCAL TC":{"count":35,"total":1935144},"TC/RECALL":{"count":65,"total":10107044},"WP":{"count":4,"total":6314500},"Warranty":{"count":34,"total":68471850}},"25-11":{"BSI":{"count":219,"total":108392116},"LOCAL TC":{"count":27,"total":1612620},"TC/RECALL":{"count":66,"total":14358148},"WP":{"count":9,"total":10931100},"Warranty":{"count":31,"total":54925756}},"25-12":{"BSI":{"count":211,"total":104457083},"LOCAL TC":{"count":18,"total":1182588},"TC/RECALL":{"count":92,"total":18710151},"WP":{"count":6,"total":12719800},"Warranty":{"count":35,"total":54389493}},"26-01":{"BSI":{"count":230,"total":112465854},"LOCAL TC":{"count":17,"total":1218424},"TC/RECALL":{"count":71,"total":20531476},"WP":{"count":10,"total":27282700},"Warranty":{"count":25,"total":33941942}},"26-02":{"BSI":{"count":165,"total":79656677},"LOCAL TC":{"count":22,"total":1576784},"TC/RECALL":{"count":65,"total":30191042},"WP":{"count":6,"total":6118500},"Warranty":{"count":23,"total":29320718}}},
+    '전주':{"25-01":{"BSI":{"count":634,"total":246538220},"LOCAL TC":{"count":69,"total":4631696},"TC/RECALL":{"count":313,"total":275665739},"WP":{"count":20,"total":26869700},"Warranty":{"count":169,"total":233637028}},"25-02":{"BSI":{"count":703,"total":273975280},"LOCAL TC":{"count":71,"total":4800736},"TC/RECALL":{"count":263,"total":238931152},"WP":{"count":20,"total":19968525},"Warranty":{"count":182,"total":218283272}},"25-03":{"BSI":{"count":754,"total":284378380},"LOCAL TC":{"count":91,"total":6153056},"TC/RECALL":{"count":328,"total":207110639},"WP":{"count":23,"total":24956800},"Warranty":{"count":180,"total":150338027}},"25-04":{"BSI":{"count":870,"total":331019451},"LOCAL TC":{"count":117,"total":7640608},"TC/RECALL":{"count":300,"total":251612958},"WP":{"count":17,"total":8884500},"Warranty":{"count":231,"total":244767313}},"25-05":{"BSI":{"count":776,"total":321039246},"LOCAL TC":{"count":39,"total":2637024},"TC/RECALL":{"count":255,"total":247951846},"WP":{"count":21,"total":22778765},"Warranty":{"count":171,"total":259107760}},"25-06":{"BSI":{"count":704,"total":270693476},"LOCAL TC":{"count":71,"total":5075697},"TC/RECALL":{"count":176,"total":224440678},"WP":{"count":13,"total":9091725},"Warranty":{"count":181,"total":245388828}},"25-07":{"BSI":{"count":921,"total":354072998},"LOCAL TC":{"count":102,"total":6880512},"TC/RECALL":{"count":225,"total":321681095},"WP":{"count":28,"total":29617390},"Warranty":{"count":241,"total":315680552}},"25-08":{"BSI":{"count":826,"total":327428246},"LOCAL TC":{"count":98,"total":5106630},"TC/RECALL":{"count":303,"total":318773785},"WP":{"count":33,"total":50531198},"Warranty":{"count":181,"total":256486511}},"25-09":{"BSI":{"count":783,"total":311208275},"LOCAL TC":{"count":86,"total":4837860},"TC/RECALL":{"count":352,"total":271966494},"WP":{"count":33,"total":29770035},"Warranty":{"count":174,"total":244497367}},"25-10":{"BSI":{"count":761,"total":334328465},"LOCAL TC":{"count":112,"total":6235464},"TC/RECALL":{"count":277,"total":170399871},"WP":{"count":14,"total":28973525},"Warranty":{"count":151,"total":206199303}},"25-11":{"BSI":{"count":754,"total":321913378},"LOCAL TC":{"count":120,"total":6826758},"TC/RECALL":{"count":270,"total":167429015},"WP":{"count":25,"total":34622400},"Warranty":{"count":174,"total":236388401}},"25-12":{"BSI":{"count":785,"total":335188512},"LOCAL TC":{"count":95,"total":5303728},"TC/RECALL":{"count":384,"total":177422949},"WP":{"count":32,"total":32128325},"Warranty":{"count":187,"total":283310684}},"26-01":{"BSI":{"count":781,"total":314347640},"LOCAL TC":{"count":54,"total":3870288},"TC/RECALL":{"count":339,"total":140382292},"WP":{"count":37,"total":38602965},"Warranty":{"count":195,"total":248532188}},"26-02":{"BSI":{"count":672,"total":258840912},"LOCAL TC":{"count":52,"total":3726944},"TC/RECALL":{"count":277,"total":142979818},"WP":{"count":40,"total":56189936},"Warranty":{"count":181,"total":294013361}}},
+    '평택':{"25-01":{"BSI":{"count":554,"total":218500206},"LOCAL TC":{"count":55,"total":3718880},"TC/RECALL":{"count":274,"total":271710779},"WP":{"count":6,"total":6108100},"Warranty":{"count":104,"total":143113241}},"25-02":{"BSI":{"count":671,"total":240614329},"LOCAL TC":{"count":84,"total":5620581},"TC/RECALL":{"count":325,"total":338363563},"WP":{"count":11,"total":10364520},"Warranty":{"count":119,"total":113291653}},"25-03":{"BSI":{"count":647,"total":237927345},"LOCAL TC":{"count":78,"total":5257144},"TC/RECALL":{"count":371,"total":283667077},"WP":{"count":11,"total":11776582},"Warranty":{"count":133,"total":135804964}},"25-04":{"BSI":{"count":650,"total":258410853},"LOCAL TC":{"count":75,"total":4800736},"TC/RECALL":{"count":287,"total":279591887},"WP":{"count":8,"total":8443300},"Warranty":{"count":141,"total":201332359}},"25-05":{"BSI":{"count":731,"total":299191089},"LOCAL TC":{"count":35,"total":2298944},"TC/RECALL":{"count":277,"total":250593097},"WP":{"count":5,"total":3242500},"Warranty":{"count":96,"total":80708567}},"25-06":{"BSI":{"count":616,"total":267319982},"LOCAL TC":{"count":70,"total":5017040},"TC/RECALL":{"count":121,"total":111079049},"WP":{"count":8,"total":18876200},"Warranty":{"count":113,"total":123733666}},"25-07":{"BSI":{"count":714,"total":280790126},"LOCAL TC":{"count":113,"total":7489724},"TC/RECALL":{"count":112,"total":104753353},"WP":{"count":12,"total":19216740},"Warranty":{"count":152,"total":159524420}},"25-08":{"BSI":{"count":641,"total":255394908},"LOCAL TC":{"count":109,"total":5895022},"TC/RECALL":{"count":136,"total":53412794},"WP":{"count":7,"total":8334300},"Warranty":{"count":123,"total":203894371}},"25-09":{"BSI":{"count":670,"total":270292064},"LOCAL TC":{"count":101,"total":5196220},"TC/RECALL":{"count":247,"total":143032294},"WP":{"count":8,"total":21040100},"Warranty":{"count":100,"total":124082253}},"25-10":{"BSI":{"count":673,"total":304536315},"LOCAL TC":{"count":95,"total":5518744},"TC/RECALL":{"count":195,"total":57932410},"WP":{"count":7,"total":14274625},"Warranty":{"count":74,"total":72563824}},"25-11":{"BSI":{"count":613,"total":269832657},"LOCAL TC":{"count":93,"total":5232056},"TC/RECALL":{"count":186,"total":90568706},"WP":{"count":9,"total":27926600},"Warranty":{"count":93,"total":137412823}},"25-12":{"BSI":{"count":643,"total":272526996},"LOCAL TC":{"count":70,"total":3941960},"TC/RECALL":{"count":268,"total":125397663},"WP":{"count":8,"total":8242000},"Warranty":{"count":77,"total":121033021}},"26-01":{"BSI":{"count":590,"total":234813793},"LOCAL TC":{"count":70,"total":4882655},"TC/RECALL":{"count":227,"total":103601634},"WP":{"count":12,"total":18085370},"Warranty":{"count":101,"total":129541755}},"26-02":{"BSI":{"count":539,"total":226743194},"LOCAL TC":{"count":44,"total":3153568},"TC/RECALL":{"count":203,"total":102756053},"WP":{"count":12,"total":14853800},"Warranty":{"count":87,"total":202644641}}}
   };
-  const SALES_MONTHS = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02'];
-  const SALES_MONTHS_KO = ['25.01','25.02','25.03','25.04','25.05','25.06','25.07','25.08','25.09','25.10','25.11','25.12','26.01','26.02'];
+  const ALL_BRANCHES = ['군산','목포','서산','전주','평택'];
+  const ALL_MONTHS = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02','26-03','26-04','26-05','26-06','26-07','26-08','26-09','26-10','26-11','26-12'];
+  const DATA_MONTHS = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02'];
   const SALES_TYPES = ['BSI','Warranty','TC/RECALL','WP','LOCAL TC'];
   const SALES_COLORS = {'BSI':'#3b82f6','Warranty':'#10b981','TC/RECALL':'#f59e0b','WP':'#8b5cf6','LOCAL TC':'#94a3b8'};
   let salesMode = 'amount';
   let salesChart = null;
+  let activeBranches = new Set(ALL_BRANCHES);
+  let activeTypes = new Set(SALES_TYPES);
+
+  function getMonthLabel(m) {
+    const [y, mo] = m.split('-');
+    return `'${y.slice(1)}.${mo}`;
+  }
 
   function fmt억원(v) { return (v/100000000).toFixed(1)+'억원'; }
+  function fmtPct(v) { return (v>=0?'▲':'▼')+Math.abs(v).toFixed(1)+'%'; }
+
+  function getAggregated(month) {
+    const res = {};
+    for (const t of SALES_TYPES) {
+      if (!activeTypes.has(t)) continue;
+      let count=0, total=0;
+      for (const br of activeBranches) {
+        const d = BRANCH_DATA[br]?.[month]?.[t];
+        if (d) { count+=d.count; total+=d.total; }
+      }
+      res[t] = {count, total};
+    }
+    return res;
+  }
+
+  function sumMonth(month) {
+    const agg = getAggregated(month);
+    return {
+      total: Object.values(agg).reduce((s,d)=>s+d.total,0),
+      count: Object.values(agg).reduce((s,d)=>s+d.count,0)
+    };
+  }
 
   function buildSalesChartData() {
     return {
-      labels: SALES_MONTHS_KO,
-      datasets: SALES_TYPES.map(type => ({
+      labels: ALL_MONTHS.map(getMonthLabel),
+      datasets: [...activeTypes].map(type => ({
         label: type,
-        data: SALES_MONTHS.map(m => {
-          const d = SALES_DATA[m][type];
-          return d ? (salesMode === 'amount' ? d.total : d.count) : 0;
+        data: ALL_MONTHS.map(m => {
+          if (!DATA_MONTHS.includes(m)) return null;
+          let v=0;
+          for (const br of activeBranches) {
+            const d = BRANCH_DATA[br]?.[m]?.[type];
+            if (d) v += salesMode==='amount' ? d.total : d.count;
+          }
+          return v||null;
         }),
         backgroundColor: SALES_COLORS[type],
+        borderRadius: 3,
+        borderSkipped: false,
       }))
     };
   }
@@ -2259,85 +2315,130 @@
   function initSalesChart() {
     const ctx = document.getElementById('sales-chart');
     if (!ctx) return;
-    if (salesChart) { salesChart.destroy(); salesChart = null; }
+    if (salesChart) { salesChart.destroy(); salesChart=null; }
     salesChart = new Chart(ctx, {
       type: 'bar',
       data: buildSalesChartData(),
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode:'index', intersect:false },
         scales: {
-          x: { stacked: true, grid: { display: false } },
-          y: {
-            stacked: true,
-            ticks: { callback: v => salesMode === 'amount' ? Math.round(v/10000).toLocaleString()+'만' : v.toLocaleString() }
+          x: { stacked:true, grid:{display:false}, ticks:{font:{size:10},color:'#94a3b8'} },
+          y: { stacked:true, grid:{color:'#f1f5f9'}, border:{dash:[4,4]},
+            ticks:{ callback: v => salesMode==='amount' ? Math.round(v/10000).toLocaleString()+'만' : v.toLocaleString(), font:{size:10}, color:'#94a3b8' }
           }
         },
         plugins: {
-          legend: { position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 14, font: { size: 11 } } },
-          tooltip: {
-            callbacks: {
-              label: c => ` ${c.dataset.label}: ${salesMode === 'amount' ? Math.round(c.raw/10000).toLocaleString()+'만원' : c.raw.toLocaleString()+'건'}`
-            }
+          legend:{ position:'top', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:7, padding:16, font:{size:11}, color:'#475569' }},
+          tooltip:{ backgroundColor:'rgba(15,23,42,0.85)', padding:12, cornerRadius:10, titleFont:{size:12}, bodyFont:{size:11},
+            callbacks:{ label: c => ` ${c.dataset.label}: ${salesMode==='amount' ? Math.round(c.raw/10000).toLocaleString()+'만원' : c.raw.toLocaleString()+'건'}` }
           }
         }
       }
     });
-    updateSalesStats();
+    updateSalesKPIs();
     renderSalesTable();
   }
 
-  function setSalesMode(mode) {
-    salesMode = mode;
-    const active = 'px-3 py-1.5 text-xs font-semibold rounded-lg bg-nm-blue text-white';
-    const inactive = 'px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600';
-    document.getElementById('btn-sales-amount').className = mode === 'amount' ? active : inactive;
-    document.getElementById('btn-sales-count').className  = mode === 'count'  ? active : inactive;
-    if (salesChart) {
-      salesChart.data = buildSalesChartData();
-      salesChart.options.scales.y.ticks.callback = v => mode === 'amount' ? Math.round(v/10000).toLocaleString()+'만' : v.toLocaleString();
-      salesChart.update();
-    }
+  function updateSalesChart() {
+    if (!salesChart) return;
+    salesChart.data = buildSalesChartData();
+    salesChart.options.scales.y.ticks.callback = v => salesMode==='amount' ? Math.round(v/10000).toLocaleString()+'만' : v.toLocaleString();
+    salesChart.update();
+    updateSalesKPIs();
     renderSalesTable();
   }
 
-  function updateSalesStats() {
-    const latest = SALES_DATA['26-02'], prev = SALES_DATA['26-01'];
-    const sum = (obj, key) => SALES_TYPES.reduce((s,t) => s + (obj[t]?.[key]||0), 0);
-    const latestAmt = sum(latest,'total'), prevAmt = sum(prev,'total');
-    const momPct = ((latestAmt - prevAmt) / prevAmt * 100).toFixed(1);
-    document.getElementById('sales-stat-month').textContent = fmt억원(latestAmt);
-    const momEl = document.getElementById('sales-stat-mom');
-    momEl.textContent = (momPct >= 0 ? '▲' : '▼') + Math.abs(momPct) + '% 전월 대비';
-    momEl.className = 'text-xs ' + (momPct >= 0 ? 'text-emerald-600' : 'text-red-500');
-    document.getElementById('sales-stat-count').textContent = sum(latest,'count').toLocaleString();
-    const t25 = SALES_MONTHS.filter(m=>m.startsWith('25')).reduce((s,m)=>s+sum(SALES_DATA[m],'total'),0);
-    const t26 = SALES_MONTHS.filter(m=>m.startsWith('26')).reduce((s,m)=>s+sum(SALES_DATA[m],'total'),0);
-    document.getElementById('sales-stat-year25').textContent = fmt억원(t25);
-    document.getElementById('sales-stat-year26').textContent = fmt억원(t26);
+  function updateSalesKPIs() {
+    const latest = sumMonth('26-02');
+    const prev   = sumMonth('26-01');
+    const yoy    = sumMonth('25-02');
+    const momPct = prev.total ? (latest.total-prev.total)/prev.total*100 : 0;
+    const yoyPct = yoy.total  ? (latest.total-yoy.total)/yoy.total*100   : 0;
+    document.getElementById('sales-kpi-month').textContent = fmt억원(latest.total);
+    const momEl = document.getElementById('sales-kpi-mom');
+    momEl.textContent = fmtPct(momPct)+' 전월 대비';
+    momEl.className = 'sales-kpi-sub '+(momPct>=0?'text-emerald-500':'text-red-500');
+    const yoyEl = document.getElementById('sales-kpi-yoy-val');
+    yoyEl.textContent = fmtPct(yoyPct);
+    yoyEl.className = 'sales-kpi-value '+(yoyPct>=0?'text-emerald-500':'text-red-500');
+    document.getElementById('sales-kpi-count').textContent = latest.count.toLocaleString();
+    const t25 = DATA_MONTHS.filter(m=>m.startsWith('25')).reduce((s,m)=>s+sumMonth(m).total,0);
+    document.getElementById('sales-kpi-year25').textContent = fmt억원(t25);
   }
 
   function renderSalesTable() {
     const tbody = document.getElementById('sales-table-body');
     if (!tbody) return;
-    const isAmt = salesMode === 'amount';
-    tbody.innerHTML = SALES_MONTHS.map((m, i) => {
-      const rowTotal = SALES_TYPES.reduce((s,t) => s + (SALES_DATA[m][t] ? (isAmt ? SALES_DATA[m][t].total : SALES_DATA[m][t].count) : 0), 0);
+    const isAmt = salesMode==='amount';
+    document.getElementById('sales-table-unit').textContent = isAmt ? '단위: 만원' : '단위: 건';
+    const visTypes = SALES_TYPES.filter(t=>activeTypes.has(t));
+    const typeIds = {'BSI':'BSI','Warranty':'Warranty','TC/RECALL':'TCRECALL','WP':'WP','LOCAL TC':'LOCALTC'};
+    SALES_TYPES.forEach(t => {
+      const el = document.getElementById('th-'+typeIds[t]);
+      if (el) el.style.display = activeTypes.has(t) ? '' : 'none';
+    });
+    tbody.innerHTML = ALL_MONTHS.map((m,i) => {
+      const hasData = DATA_MONTHS.includes(m);
+      const agg = hasData ? getAggregated(m) : {};
+      const rowTotal = visTypes.reduce((s,t)=>s+(agg[t]?(isAmt?agg[t].total:agg[t].count):0),0);
+      const [y,mo] = m.split('-');
+      const label = `${y.startsWith('26')?'26':'25'}년 ${parseInt(mo)}월`;
+      const isFuture = !hasData;
+      const bg = isFuture ? 'bg-slate-50/60' : (i%2===0?'':'bg-slate-50/40');
       const cells = SALES_TYPES.map(t => {
-        const d = SALES_DATA[m][t];
-        const v = d ? (isAmt ? d.total : d.count) : 0;
-        return `<td class="px-4 py-1.5 text-right text-slate-700 whitespace-nowrap border border-slate-200">${isAmt ? Math.round(v/10000).toLocaleString() : v.toLocaleString()}</td>`;
+        if (!activeTypes.has(t)) return '';
+        const v = agg[t] ? (isAmt?agg[t].total:agg[t].count) : 0;
+        return `<td class="px-4 py-2 text-right ${isFuture?'text-slate-300':'text-slate-700'} whitespace-nowrap border-b border-slate-100 tabular-nums">${isFuture?'—':isAmt?Math.round(v/10000).toLocaleString():v.toLocaleString()}</td>`;
       }).join('');
-      const yr = m.startsWith('26') ? '26' : '25';
-      const mo = parseInt(m.split('-')[1]);
-      const bg = i % 2 === 0 ? '' : 'bg-slate-50';
-      return `<tr class="${bg} hover:bg-blue-50">
-        <td class="px-4 py-1.5 font-semibold text-slate-800 whitespace-nowrap border border-slate-200">${yr}년 ${mo}월</td>
+      return `<tr class="${bg} hover:bg-blue-50/40 transition-colors">
+        <td class="px-5 py-2 font-semibold ${isFuture?'text-slate-300':'text-slate-700'} whitespace-nowrap border-b border-slate-100">${label}</td>
         ${cells}
-        <td class="px-4 py-1.5 text-right font-bold text-blue-700 whitespace-nowrap border border-slate-200 bg-blue-50">${isAmt ? Math.round(rowTotal/10000).toLocaleString()+'만원' : rowTotal.toLocaleString()+'건'}</td>
+        <td class="px-5 py-2 text-right font-bold ${isFuture?'text-slate-300':'text-blue-600'} whitespace-nowrap border-b border-slate-100 tabular-nums">${isFuture?'—':isAmt?Math.round(rowTotal/10000).toLocaleString():rowTotal.toLocaleString()}</td>
       </tr>`;
     }).join('');
+  }
+
+  function setSalesMode(mode) {
+    salesMode = mode;
+    document.getElementById('btn-sales-amount').className = 'sales-seg'+(mode==='amount'?' active':'');
+    document.getElementById('btn-sales-count').className  = 'sales-seg'+(mode==='count' ?' active':'');
+    updateSalesChart();
+  }
+
+  function toggleSalesBranch(br) {
+    if (br==='all') {
+      activeBranches = new Set(ALL_BRANCHES);
+    } else {
+      if (activeBranches.size===ALL_BRANCHES.length) { activeBranches = new Set([br]); }
+      else if (activeBranches.has(br) && activeBranches.size===1) { activeBranches = new Set(ALL_BRANCHES); }
+      else { activeBranches.has(br) ? activeBranches.delete(br) : activeBranches.add(br); }
+    }
+    ALL_BRANCHES.forEach(b => {
+      const el = document.getElementById('fbranch-'+b);
+      if (el) el.className = 'sales-pill'+(activeBranches.has(b)&&activeBranches.size<ALL_BRANCHES.length?' active':'');
+    });
+    const allEl = document.getElementById('fbranch-all');
+    if (allEl) allEl.className = 'sales-pill'+(activeBranches.size===ALL_BRANCHES.length?' active':'');
+    updateSalesChart();
+  }
+
+  function toggleSalesType(type) {
+    if (type==='all') {
+      activeTypes = new Set(SALES_TYPES);
+    } else {
+      if (activeTypes.size===SALES_TYPES.length) { activeTypes = new Set([type]); }
+      else if (activeTypes.has(type) && activeTypes.size===1) { activeTypes = new Set(SALES_TYPES); }
+      else { activeTypes.has(type) ? activeTypes.delete(type) : activeTypes.add(type); }
+    }
+    const typeIds = {'BSI':'BSI','Warranty':'Warranty','TC/RECALL':'TCRECALL','WP':'WP','LOCAL TC':'LOCALTC'};
+    SALES_TYPES.forEach(t => {
+      const el = document.getElementById('ftype-'+typeIds[t]);
+      if (el) el.className = 'sales-pill'+(activeTypes.has(t)&&activeTypes.size<SALES_TYPES.length?' active':'');
+    });
+    const allEl = document.getElementById('ftype-all');
+    if (allEl) allEl.className = 'sales-pill'+(activeTypes.size===SALES_TYPES.length?' active':'');
+    updateSalesChart();
   }
 
   /* 조치사항 버튼 - 값 설정 후 커서를 끝으로 이동 */
