@@ -13,6 +13,8 @@
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <!-- SortableJS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 
   <!-- 브랜드 색상 설정 -->
   <script>
@@ -183,6 +185,12 @@
     .sales-seg:not(.active) { background: transparent; color: #94a3b8; }
     .sales-kpi { background: #fff; border-radius: 20px; padding: 22px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
     .sales-kpi-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    /* 드래그 앤 드롭 */
+    .dash-drag-handle { cursor: grab; color: #cbd5e1; font-size: 14px; line-height:1; padding: 2px 4px; border-radius: 4px; transition: color 0.15s, background 0.15s; user-select: none; }
+    .dash-drag-handle:hover { color: #94a3b8; background: #f1f5f9; }
+    .dash-drag-handle:active { cursor: grabbing; }
+    .sortable-ghost { opacity: 0.35; border: 2px dashed #94a3b8 !important; }
+    .sortable-chosen { box-shadow: 0 8px 24px rgba(0,0,0,0.13) !important; }
     .sales-kpi-value { font-size: 28px; font-weight: 700; color: #0f172a; letter-spacing: -0.5px; line-height: 1; }
     .sales-kpi-sub { font-size: 12px; margin-top: 6px; }
     .sales-card { background: #fff; border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
@@ -369,9 +377,10 @@
       <div id="view-dashboard" class="view">
 
         <!-- 통계 카드 4개 -->
-        <div class="grid grid-cols-4 gap-4 mb-6">
+        <div id="dash-kpi-grid" class="grid grid-cols-4 gap-4 mb-6">
           <!-- 이번달 보증 문의 -->
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 relative group" data-id="kpi-1">
+            <span class="dash-drag-handle absolute top-2 right-2 opacity-0 group-hover:opacity-100">⠿</span>
             <div class="flex items-start justify-between mb-3">
               <div class="text-sm text-slate-500 font-medium">이번달 보증 문의</div>
               <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center text-nm-blue">
@@ -386,7 +395,8 @@
           </div>
 
           <!-- 처리 대기 -->
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 relative group" data-id="kpi-2">
+            <span class="dash-drag-handle absolute top-2 right-2 opacity-0 group-hover:opacity-100">⠿</span>
             <div class="flex items-start justify-between mb-3">
               <div class="text-sm text-slate-500 font-medium">처리 대기</div>
               <div class="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center text-red-500">
@@ -401,7 +411,8 @@
           </div>
 
           <!-- 평균 처리시간 -->
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 relative group" data-id="kpi-3">
+            <span class="dash-drag-handle absolute top-2 right-2 opacity-0 group-hover:opacity-100">⠿</span>
             <div class="flex items-start justify-between mb-3">
               <div class="text-sm text-slate-500 font-medium">평균 처리시간</div>
               <div class="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center text-purple-500">
@@ -416,7 +427,8 @@
           </div>
 
           <!-- 이번달 공지 -->
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 relative group" data-id="kpi-4">
+            <span class="dash-drag-handle absolute top-2 right-2 opacity-0 group-hover:opacity-100">⠿</span>
             <div class="flex items-start justify-between mb-3">
               <div class="text-sm text-slate-500 font-medium">이번달 공지</div>
               <div class="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500">
@@ -429,12 +441,15 @@
         </div>
 
         <!-- 하단: 최근 문의 테이블 + 최근 공지 -->
-        <div class="grid grid-cols-3 gap-4">
+        <div id="dash-bottom-grid" class="grid grid-cols-3 gap-4">
 
           <!-- 최근 문의 테이블 (2/3) -->
-          <div class="col-span-2 bg-white rounded-xl shadow-sm border border-slate-100">
+          <div class="col-span-2 bg-white rounded-xl shadow-sm border border-slate-100" data-id="bottom-inquiries">
             <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h2 class="font-semibold text-slate-800">최근 문의</h2>
+              <div class="flex items-center gap-2">
+                <span class="dash-drag-handle">⠿</span>
+                <h2 class="font-semibold text-slate-800">최근 문의</h2>
+              </div>
               <button onclick="showView('view-admin-inquiries')" class="text-xs text-nm-blue hover:underline">전체보기</button>
             </div>
             <div class="overflow-x-auto">
@@ -512,9 +527,12 @@
           </div>
 
           <!-- 최근 공지 카드 (1/3) -->
-          <div class="bg-white rounded-xl shadow-sm border border-slate-100">
+          <div class="bg-white rounded-xl shadow-sm border border-slate-100" data-id="bottom-notices">
             <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h2 class="font-semibold text-slate-800">최근 공지</h2>
+              <div class="flex items-center gap-2">
+                <span class="dash-drag-handle">⠿</span>
+                <h2 class="font-semibold text-slate-800">최근 공지</h2>
+              </div>
               <button onclick="showView('view-notices')" class="text-xs text-nm-blue hover:underline">전체보기</button>
             </div>
             <div class="divide-y divide-slate-100">
@@ -1878,6 +1896,8 @@
 
     // 보증 매출 차트 초기화
     if (viewId === 'view-sales') setTimeout(initSalesChart, 50);
+    // 대시보드 드래그 초기화
+    if (viewId === 'view-dashboard') setTimeout(initDashboardSort, 50);
 
     // 보증번역기 진입 시 사이드바 자동 접기, 다른 페이지는 자동 펼치기
     const sidebar = document.querySelector('aside');
@@ -2390,6 +2410,53 @@
       }
     };
     return { labels: ALL_MONTHS.map(getMonthLabel), datasets: [...barDatasets, totalDataset] };
+  }
+
+  /* ── 대시보드 드래그 앤 드롭 ── */
+  let _dashSortInit = false;
+  function initDashboardSort() {
+    if (_dashSortInit || typeof Sortable === 'undefined') return;
+    _dashSortInit = true;
+
+    const save = () => {
+      ['dash-kpi-grid','dash-bottom-grid'].forEach(gridId => {
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+        const order = [...grid.querySelectorAll('[data-id]')].map(el => el.dataset.id);
+        localStorage.setItem('dash-order-'+gridId, JSON.stringify(order));
+      });
+    };
+
+    const restore = (gridId) => {
+      const saved = localStorage.getItem('dash-order-'+gridId);
+      if (!saved) return;
+      const order = JSON.parse(saved);
+      const grid = document.getElementById(gridId);
+      if (!grid) return;
+      order.forEach(id => {
+        const el = grid.querySelector(`[data-id="${id}"]`);
+        if (el) grid.appendChild(el);
+      });
+    };
+
+    new Sortable(document.getElementById('dash-kpi-grid'), {
+      animation: 200,
+      handle: '.dash-drag-handle',
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      onEnd: save
+    });
+
+    new Sortable(document.getElementById('dash-bottom-grid'), {
+      animation: 200,
+      handle: '.dash-drag-handle',
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      onEnd: save
+    });
+
+    restore('dash-kpi-grid');
+    restore('dash-bottom-grid');
   }
 
   function initSalesChart() {
