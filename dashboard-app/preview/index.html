@@ -2660,7 +2660,7 @@
     const isAmt = salesMode==='amount';
     document.getElementById('sales-table-unit').textContent = isAmt ? '단위: 만원' : '단위: 건';
     const visTypes = SALES_TYPES.filter(t=>activeTypes.has(t));
-    const typeIds = {'BSI':'BSI','Warranty':'Warranty','TC/RECALL':'TCRECALL','WP':'WP','LOCAL TC':'LOCALTC'};
+    const typeIds = {'BSI':'BSI','Warranty':'Warranty','TC/RECALL':'TCRECALL','Goodwill':'Goodwill','WP':'WP','LOCAL TC':'LOCALTC'};
     SALES_TYPES.forEach(t => {
       const el = document.getElementById('th-'+typeIds[t]);
       if (el) el.style.display = activeTypes.has(t) ? '' : 'none';
@@ -2719,7 +2719,7 @@
       else if (activeTypes.has(type) && activeTypes.size===1) { activeTypes = new Set(SALES_TYPES); }
       else { activeTypes.has(type) ? activeTypes.delete(type) : activeTypes.add(type); }
     }
-    const typeIds = {'BSI':'BSI','Warranty':'Warranty','TC/RECALL':'TCRECALL','WP':'WP','LOCAL TC':'LOCALTC'};
+    const typeIds = {'BSI':'BSI','Warranty':'Warranty','TC/RECALL':'TCRECALL','Goodwill':'Goodwill','WP':'WP','LOCAL TC':'LOCALTC'};
     SALES_TYPES.forEach(t => {
       const el = document.getElementById('ftype-'+typeIds[t]);
       if (el) el.className = 'sales-pill'+(activeTypes.has(t)&&activeTypes.size<SALES_TYPES.length?' active':'');
