@@ -3771,7 +3771,7 @@ const BRANCH_DATA = {
       if (!TC_DATA[b]) return;
       const isActive = tcActiveBranches.has(b) || tcActiveBranches.size === TC_BRANCHES.length;
       let row = '<tr style="border-bottom:1px solid #334155; ' + (isActive ? '' : 'opacity:0.3') + '">';
-      row += '<td class="px-4 py-3 text-sm font-bold" style="color:' + TC_BRANCH_COLORS[b] + '">' + b + '</td>';
+      row += '<td class="px-4 py-3 text-sm font-bold" style="color:#f1f5f9">' + b + '</td>';
       let tot = 0, nTot = 0;
       allMonths.forEach(m => {
         const v = TC_DATA[b][m];
