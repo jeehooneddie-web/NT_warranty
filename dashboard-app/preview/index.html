@@ -3645,17 +3645,15 @@ const BRANCH_DATA = {
       barLabel = selMonths[0];
     }
 
-    // 바 색상: 전부 네이비 (초과=진한 네이비+주황 테두리, 이하=네이비)
+    // 바 색상: 전부 네이비
     const barColors  = barData.map(v => v > TC_TARGET ? '#1e3a8a' : '#1e3a5f');
-    const barBorders = barData.map(v => v > TC_TARGET ? '#f97316' : '#3b82f6');
 
     const barDatasets = [{
       type: 'bar',
       label: barLabel,
       data: barData,
       backgroundColor: barColors,
-      borderColor: barBorders,
-      borderWidth: 2,
+      borderWidth: 0,
       borderRadius: 6,
       maxBarThickness: 80,
     }];
