@@ -219,23 +219,43 @@
     .cap-btn:hover { background: #475569; color: #f1f5f9; }
     .capturable:hover .cap-btn { opacity: 1; }
 
-    /* ── 뷰 패널 내부 카드 항상 다크 (테마 무관) ── */
-    .view .bg-white   { background: #1e293b !important; }
-    .view .bg-slate-50 { background: #162032 !important; }
-    .view .bg-slate-100 { background: #1e293b !important; }
-    .view .border-slate-200,
-    .view .border-slate-100 { border-color: #334155 !important; }
-    .view .divide-slate-200 > *,
-    .view .divide-slate-700 > * { border-color: #334155 !important; }
-    /* 텍스트 색상 통일 */
-    .view .text-slate-800,
-    .view .text-slate-700 { color: #f1f5f9 !important; }
-    .view .text-slate-600,
-    .view .text-slate-500 { color: #94a3b8 !important; }
-    .view .text-slate-400 { color: #64748b !important; }
-    .view .text-slate-300 { color: #cbd5e1 !important; }
-    /* 테이블 호버 */
-    .view tbody tr:hover { background: #243045 !important; }
+    /* ── 대시보드 뷰 카드 항상 다크 (번역기/보증기간 제외) ── */
+    #view-sales .bg-white, #view-top-defect .bg-white,
+    #view-person .bg-white, #view-tc .bg-white, #view-dashboard .bg-white
+      { background: #1e293b !important; }
+    #view-sales .bg-slate-50, #view-top-defect .bg-slate-50,
+    #view-person .bg-slate-50, #view-tc .bg-slate-50, #view-dashboard .bg-slate-50
+      { background: #162032 !important; }
+    #view-sales .bg-slate-100, #view-top-defect .bg-slate-100,
+    #view-person .bg-slate-100, #view-tc .bg-slate-100, #view-dashboard .bg-slate-100
+      { background: #1e293b !important; }
+    #view-sales .border-slate-200, #view-sales .border-slate-100,
+    #view-top-defect .border-slate-200, #view-top-defect .border-slate-100,
+    #view-person .border-slate-200, #view-person .border-slate-100,
+    #view-tc .border-slate-200, #view-tc .border-slate-100,
+    #view-dashboard .border-slate-200, #view-dashboard .border-slate-100
+      { border-color: #334155 !important; }
+    #view-sales .divide-slate-200 > *, #view-top-defect .divide-slate-200 > *,
+    #view-person .divide-slate-200 > *, #view-dashboard .divide-slate-200 > *
+      { border-color: #334155 !important; }
+    /* 텍스트 색상 (대시보드 뷰만) */
+    #view-sales .text-slate-800, #view-sales .text-slate-700,
+    #view-top-defect .text-slate-800, #view-top-defect .text-slate-700,
+    #view-person .text-slate-800, #view-person .text-slate-700,
+    #view-dashboard .text-slate-800, #view-dashboard .text-slate-700
+      { color: #f1f5f9 !important; }
+    #view-sales .text-slate-600, #view-sales .text-slate-500,
+    #view-top-defect .text-slate-600, #view-top-defect .text-slate-500,
+    #view-person .text-slate-600, #view-person .text-slate-500,
+    #view-dashboard .text-slate-600, #view-dashboard .text-slate-500
+      { color: #94a3b8 !important; }
+    #view-sales .text-slate-400, #view-top-defect .text-slate-400,
+    #view-person .text-slate-400, #view-dashboard .text-slate-400
+      { color: #64748b !important; }
+    /* 테이블 호버 (대시보드 뷰만) */
+    #view-sales tbody tr:hover, #view-top-defect tbody tr:hover,
+    #view-person tbody tr:hover, #view-dashboard tbody tr:hover
+      { background: #243045 !important; }
   </style>
 </head>
 <body class="font-sans antialiased">
@@ -377,10 +397,6 @@
           <div id="sidebar-name" class="text-white text-xs font-medium truncate">관리자</div>
           <span id="sidebar-role" class="inline-block mt-0.5 px-2 py-0.5 bg-blue-500/30 text-blue-200 text-xs rounded-full">관리자</span>
         </div>
-        <button onclick="toggleTheme()" id="btn-theme" title="테마 변경"
-          class="text-white/70 hover:text-white transition-colors flex-shrink-0 text-base">
-          <span id="icon-sun">🌙</span>
-        </button>
         <button onclick="doLogout()" title="로그아웃"
           class="text-white/40 hover:text-white transition-colors flex-shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -407,11 +423,6 @@
         <button class="relative w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500">
           <i data-lucide="bell" class="w-5 h-5"></i>
           <span class="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
-        </button>
-        <!-- 테마 토글 -->
-        <button onclick="toggleTheme()" id="btn-theme-top" title="테마 변경"
-          class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-xl">
-          <span id="icon-theme-top">🌙</span>
         </button>
         <!-- 사용자 아바타 -->
         <div class="w-8 h-8 rounded-full bg-nm-blue flex items-center justify-center text-white text-sm font-bold cursor-pointer">A</div>
@@ -2552,7 +2563,7 @@
     const current = localStorage.getItem('nm_theme') || 'light';
     applyTheme(current === 'light' ? 'dark' : 'light');
   }
-  applyTheme(localStorage.getItem('nm_theme') || 'dark');
+  applyTheme('light');
 
   /* 점검내용 자동 높이 + 확장 버튼 표시 */
   const EXPAND_THRESHOLD = 120; // px - 이 높이 초과 시 확장 버튼 노출
