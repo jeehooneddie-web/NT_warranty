@@ -2985,12 +2985,12 @@ const BRANCH_DATA = {
         label: tp,
         data: codeList.map(code => agg[code]?.[tp]?.[metric] || 0),
         backgroundColor: COLORS[tp],
+        clip: false,
         datalabels: idx === nTypes - 1 ? {
           display: true,
           anchor: 'end',
-          align: 'end',
-          clamp: false,
-          clip: false,
+          align: 'right',
+          offset: 4,
           color: tickCol,
           font: { size: 10, weight: 'bold' },
           formatter: (value, ctx) => {
