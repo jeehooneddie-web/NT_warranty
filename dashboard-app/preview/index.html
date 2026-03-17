@@ -3759,7 +3759,7 @@ const BRANCH_DATA = {
         const v = TC_DATA[b][m];
         if (v) {
           const r = parseFloat((v.n_count / v.total * 100).toFixed(1));
-          const clr = r > TC_TARGET ? '#fb923c' : '#60a5fa';
+          const clr = r > TC_TARGET ? '#fb923c' : '#93c5fd';
           row += '<td class="px-4 py-3 text-center"><div class="text-sm font-bold" style="color:' + clr + '">' + r + '%</div>'
             + '<div class="text-[10px] text-slate-500">' + v.n_count + '/' + v.total + '</div></td>';
           tot += v.total; nTot += v.n_count;
@@ -3768,7 +3768,7 @@ const BRANCH_DATA = {
         }
       });
       const totalRate = tot ? parseFloat((nTot / tot * 100).toFixed(1)) : null;
-      const totalClr = totalRate !== null && totalRate > TC_TARGET ? '#fb923c' : '#60a5fa';
+      const totalClr = totalRate !== null && totalRate > TC_TARGET ? '#fb923c' : '#93c5fd';
       row += '<td class="px-4 py-3 text-center" style="background:#0f172a"><div class="text-sm font-bold" style="color:' + totalClr + '">' + (totalRate !== null ? totalRate + '%' : '-') + '</div>'
         + '<div class="text-[10px] text-slate-500">' + nTot + '/' + tot + '</div></td></tr>';
       rows += row;
