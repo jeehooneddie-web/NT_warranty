@@ -1648,15 +1648,20 @@
           </div>
         </div>
         <div id="tc-kpi-row" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4"></div>
-        <div class="sales-card p-5 mb-4">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-semibold text-slate-300">지점별 미실시율 <span class="text-slate-500 text-xs ml-1">— 빨간 점선: 목표 35%</span></h2>
+        <div class="grid grid-cols-2 gap-4">
+          <!-- 좌: 차트 -->
+          <div class="sales-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="text-sm font-semibold text-slate-300">지점별 미실시율</h2>
+              <span class="text-xs text-slate-500">━ 목표 35%</span>
+            </div>
+            <div style="height:320px;"><canvas id="tc-bar-chart"></canvas></div>
           </div>
-          <div style="height:340px;"><canvas id="tc-bar-chart"></canvas></div>
-        </div>
-        <div class="sales-card p-5">
-          <h2 class="text-sm font-semibold text-slate-300 mb-3">지점별 상세</h2>
-          <div id="tc-table-wrap" class="overflow-x-auto"></div>
+          <!-- 우: 테이블 -->
+          <div class="sales-card p-5">
+            <h2 class="text-sm font-semibold text-slate-300 mb-3">지점별 상세</h2>
+            <div id="tc-table-wrap" class="overflow-x-auto"></div>
+          </div>
         </div>
       </div><!-- /view-tc -->
 
@@ -3618,30 +3623,47 @@ const BRANCH_DATA = {
     });
 
     // ── 세로 막대 차트 ──
-    // X축: 지점, 데이터셋: 월별 (전체선택시 월별 그루핑, 단일월 선택시 단일 바)
-    const BAR_COLORS = ['#1d4ed8','#0891b2','#059669','#7c3aed','#d97706','#dc2626'];
-    const barDatasets = selMonths.map((m, i) => ({
-      type: 'bar',
-      label: m,
-      data: activeBranches.map(b => {
+    // 전체 선택 시: 지점별 집계 단일 바 / 특정 월 선택 시: 해당 월 단일 바
+    const isAllMonths = tcActiveMonths.size === 0;
+    let barData, barLabel;
+    if (isAllMonths) {
+      // 전체 기간 집계
+      barData = activeBranches.map(b => {
+        let tot = 0, n = 0;
+        allMonths.forEach(m => { const v = TC_DATA[b] && TC_DATA[b][m]; if (v) { tot += v.total; n += v.n_count; } });
+        return tot ? parseFloat((n / tot * 100).toFixed(1)) : 0;
+      });
+      barLabel = '전체';
+    } else {
+      const m = selMonths[0];
+      barData = activeBranches.map(b => {
         const v = TC_DATA[b] && TC_DATA[b][m];
         return v ? parseFloat((v.n_count / v.total * 100).toFixed(1)) : 0;
-      }),
-      backgroundColor: BAR_COLORS[i % BAR_COLORS.length] + 'cc',
-      borderColor: BAR_COLORS[i % BAR_COLORS.length],
-      borderWidth: 1,
-      borderRadius: 4,
-    }));
+      });
+      barLabel = selMonths[0];
+    }
 
-    // 전체(all months) 선택 시 → 집계 단일 바도 추가 옵션, 여기선 월별 그룹화 유지
-    // 35% 기준선 dataset
+    // 바 색상: 35% 초과=빨강, 이하=파랑
+    const barColors = barData.map(v => v > TC_TARGET ? '#ef4444cc' : '#1d4ed8cc');
+    const barBorders = barData.map(v => v > TC_TARGET ? '#ef4444' : '#1d4ed8');
+
+    const barDatasets = [{
+      type: 'bar',
+      label: barLabel,
+      data: barData,
+      backgroundColor: barColors,
+      borderColor: barBorders,
+      borderWidth: 1,
+      borderRadius: 6,
+    }];
+
+    // 35% 기준선: 실선, 굵게
     const targetDataset = {
       type: 'line',
       label: '목표 35%',
       data: activeBranches.map(() => TC_TARGET),
-      borderColor: '#f87171',
-      borderWidth: 2,
-      borderDash: [6, 4],
+      borderColor: '#fbbf24',
+      borderWidth: 3,
       pointRadius: 0,
       pointHoverRadius: 0,
       fill: false,
@@ -3656,36 +3678,33 @@ const BRANCH_DATA = {
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: {
-            labels: {
-              color: '#94a3b8', font: { size: 11 },
-              filter: item => item.text !== '목표 35%',
-            },
-            onClick: () => {},
-          },
+          legend: { display: false },
           tooltip: {
             callbacks: {
               label: ctx => {
                 if (ctx.dataset.label === '목표 35%') return ' 목표: 35%';
                 const b = activeBranches[ctx.dataIndex];
-                const m = ctx.dataset.label;
+                if (isAllMonths) {
+                  let tot = 0, n = 0;
+                  allMonths.forEach(m => { const v = TC_DATA[b] && TC_DATA[b][m]; if (v) { tot += v.total; n += v.n_count; } });
+                  return ' 전체: ' + ctx.raw + '% (N ' + n + '/' + tot + ')';
+                }
+                const m = selMonths[0];
                 const v = TC_DATA[b] && TC_DATA[b][m];
-                const detail = v ? ' (' + v.n_count + '/' + v.total + ')' : '';
-                return ' ' + m + ': ' + ctx.raw + '%' + detail;
+                return ' ' + m + ': ' + ctx.raw + '%' + (v ? ' (N ' + v.n_count + '/' + v.total + ')' : '');
               }
             }
           },
           datalabels: {
-            display: ctx => ctx.dataset.type === 'bar',
+            display: ctx => ctx.dataset.type === 'bar' && ctx.raw > 0,
             color: '#ffffff',
-            font: { size: 10, weight: 'bold' },
-            anchor: 'end', align: 'end',
-            formatter: v => v > 0 ? v + '%' : '',
-            clamp: true,
+            font: { size: 12, weight: 'bold' },
+            anchor: 'center', align: 'center',
+            formatter: v => v + '%',
           },
         },
         scales: {
-          x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: '#334155' } },
+          x: { ticks: { color: '#94a3b8', font: { size: 12 } }, grid: { color: '#334155' } },
           y: {
             ticks: { color: '#94a3b8', callback: v => v + '%' },
             grid: { color: '#334155' },
