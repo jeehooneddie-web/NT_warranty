@@ -2980,42 +2980,55 @@ const BRANCH_DATA = {
       });
     }
     function makeDatasets(codeList, metric) {
-      const nTypes = activeTypes.length;
-      return activeTypes.map((tp, idx) => ({
+      return activeTypes.map(tp => ({
         label: tp,
         data: codeList.map(code => agg[code]?.[tp]?.[metric] || 0),
         backgroundColor: COLORS[tp],
-        clip: false,
-        datalabels: idx === nTypes - 1 ? {
-          display: true,
-          anchor: 'end',
-          align: 'right',
-          offset: 4,
-          color: tickCol,
-          font: { size: 10, weight: 'bold' },
-          formatter: (value, ctx) => {
-            const total = ctx.chart.data.datasets.reduce((s, ds) => s + (ds.data[ctx.dataIndex] || 0), 0);
-            if (!total) return null;
-            return metric === 'amount'
-              ? Math.round(total / 1000000).toLocaleString()
-              : total.toLocaleString();
-          }
-        } : { display: false }
+        datalabels: { display: false }
       }));
     }
     function buildChart(canvasId, codeList, metric, existing) {
       const ctx = document.getElementById(canvasId);
       if (!ctx) return null;
       if (existing) existing.destroy();
+
+      const totals = codeList.map(code => {
+        let t = 0;
+        for (const tp of activeTypes) t += agg[code]?.[tp]?.[metric] || 0;
+        return t;
+      });
+
+      const endLabelPlugin = {
+        id: 'endLabel_' + canvasId,
+        afterDraw(chart) {
+          const { ctx: c, scales: { x, y } } = chart;
+          c.save();
+          c.textAlign = 'left';
+          c.textBaseline = 'middle';
+          c.fillStyle = tickCol;
+          c.font = 'bold 10px Arial, sans-serif';
+          totals.forEach((total, i) => {
+            if (!total) return;
+            const xPos = x.getPixelForValue(total) + 5;
+            const yPos = y.getPixelForValue(i);
+            const label = metric === 'amount'
+              ? Math.round(total / 1000000).toLocaleString()
+              : total.toLocaleString();
+            c.fillText(label, xPos, yPos);
+          });
+          c.restore();
+        }
+      };
+
       return new Chart(ctx, {
         type: 'bar',
+        plugins: [endLabelPlugin],
         data: { labels: makeLabels(codeList), datasets: makeDatasets(codeList, metric) },
         options: {
           indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
           layout: { padding: { right: 56 } },
-          clip: false,
           plugins: {
             legend: { display: false },
             tooltip: {
