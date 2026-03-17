@@ -3242,6 +3242,14 @@ const BRANCH_DATA = {
             legend: { display: false },
             tooltip: {
               callbacks: {
+                title: ctx => {
+                  const code = codeList[ctx[0].dataIndex];
+                  const total = totals[ctx[0].dataIndex];
+                  const totalStr = metric === 'amount'
+                    ? `합계: ₩${Math.round(total).toLocaleString()}`
+                    : `합계: ${total.toLocaleString()}건`;
+                  return [DEFECT_DESC[code] || code, totalStr];
+                },
                 label: ctx => {
                   const code = codeList[ctx.dataIndex];
                   const lines = activeTypes
@@ -3249,7 +3257,7 @@ const BRANCH_DATA = {
                       const v = agg[code]?.[tp]?.[metric] || 0;
                       if (!v) return null;
                       return metric === 'amount'
-                        ? `${tp}: ${Math.round(v/1000000).toLocaleString()}백만원`
+                        ? `${tp}: ₩${Math.round(v).toLocaleString()}`
                         : `${tp}: ${v.toLocaleString()}건`;
                     })
                     .filter(Boolean);
