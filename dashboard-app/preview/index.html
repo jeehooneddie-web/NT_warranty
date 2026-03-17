@@ -72,6 +72,8 @@
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    body.dark ::-webkit-scrollbar-track { background: #0f172a; }
+    body.dark ::-webkit-scrollbar-thumb { background: #334155; }
 
     /* 카드 호버 */
     .notice-card:hover { background: #f8fafc; }
@@ -196,6 +198,19 @@
     .sales-kpi-value { font-size: 28px; font-weight: 700; color: #0f172a; letter-spacing: -0.5px; line-height: 1; }
     .sales-kpi-sub { font-size: 12px; margin-top: 6px; }
     .sales-card { background: #fff; border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+
+    /* ── 다크모드: sales 컴포넌트 오버라이드 ── */
+    body.dark .sales-card { background: #1e293b !important; box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important; }
+    body.dark .sales-kpi  { background: #1e293b !important; box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important; }
+    body.dark .sales-kpi-value { color: #f1f5f9 !important; }
+    body.dark .sales-kpi-label { color: #64748b !important; }
+    body.dark .sales-kpi-sub   { color: #94a3b8 !important; }
+    body.dark .sales-pill:not(.active) { background: #334155 !important; color: #cbd5e1 !important; }
+    body.dark .sales-pill:not(.active):hover { background: #475569 !important; }
+    body.dark .sales-seg.active { background: #334155 !important; color: #f1f5f9 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important; }
+    body.dark .sales-seg:not(.active) { color: #64748b !important; }
+    body.dark .dash-drag-handle { color: #475569 !important; }
+    body.dark .dash-drag-handle:hover { background: #334155 !important; color: #94a3b8 !important; }
   </style>
 </head>
 <body class="font-sans antialiased">
@@ -2480,7 +2495,7 @@
     const current = localStorage.getItem('nm_theme') || 'light';
     applyTheme(current === 'light' ? 'dark' : 'light');
   }
-  applyTheme(localStorage.getItem('nm_theme') || 'light');
+  applyTheme(localStorage.getItem('nm_theme') || 'dark');
 
   /* 점검내용 자동 높이 + 확장 버튼 표시 */
   const EXPAND_THRESHOLD = 120; // px - 이 높이 초과 시 확장 버튼 노출
