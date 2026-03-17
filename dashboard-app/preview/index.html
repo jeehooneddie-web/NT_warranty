@@ -176,41 +176,46 @@
     aside.sidebar-collapsed .nav-item i,
     aside.sidebar-collapsed .nav-item svg { margin: 0; }
 
-    /* 보증 매출 Apple 스타일 */
-    .sales-pill {
-      padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
-      cursor: pointer; transition: all 0.15s ease; border: none; outline: none;
-    }
-    .sales-pill.active { background: #1d4ed8; color: #fff; }
-    .sales-pill:not(.active) { background: #f1f5f9; color: #0f172a; }
-    .sales-pill:not(.active):hover { background: #e2e8f0; }
-    .sales-seg { padding: 6px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; }
-    .sales-seg.active { background: #fff; color: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .sales-seg:not(.active) { background: transparent; color: #94a3b8; }
-    .sales-kpi { background: #fff; border-radius: 20px; padding: 22px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    /* ── 카드 / KPI / 필터 버튼 — 항상 다크 (테마 무관) ── */
+    .sales-card  { background: #1e293b; border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.25); }
+    .sales-kpi   { background: #1e293b; border-radius: 20px; padding: 22px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.25); }
     .sales-kpi-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
-    /* 드래그 앤 드롭 */
-    .dash-drag-handle { cursor: grab; color: #cbd5e1; font-size: 14px; line-height:1; padding: 2px 4px; border-radius: 4px; transition: color 0.15s, background 0.15s; user-select: none; }
-    .dash-drag-handle:hover { color: #94a3b8; background: #f1f5f9; }
-    .dash-drag-handle:active { cursor: grabbing; }
-    .sortable-ghost { opacity: 0.35; border: 2px dashed #94a3b8 !important; }
-    .sortable-chosen { box-shadow: 0 8px 24px rgba(0,0,0,0.13) !important; }
-    .sales-kpi-value { font-size: 28px; font-weight: 700; color: #0f172a; letter-spacing: -0.5px; line-height: 1; }
-    .sales-kpi-sub { font-size: 12px; margin-top: 6px; }
-    .sales-card { background: #fff; border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .sales-kpi-value { font-size: 28px; font-weight: 700; color: #f1f5f9; letter-spacing: -0.5px; line-height: 1; }
+    .sales-kpi-sub   { font-size: 12px; margin-top: 6px; color: #64748b; }
 
-    /* ── 다크모드: sales 컴포넌트 오버라이드 ── */
-    body.dark .sales-card { background: #1e293b !important; box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important; }
-    body.dark .sales-kpi  { background: #1e293b !important; box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important; }
-    body.dark .sales-kpi-value { color: #f1f5f9 !important; }
-    body.dark .sales-kpi-label { color: #64748b !important; }
-    body.dark .sales-kpi-sub   { color: #94a3b8 !important; }
-    body.dark .sales-pill:not(.active) { background: #334155 !important; color: #cbd5e1 !important; }
-    body.dark .sales-pill:not(.active):hover { background: #475569 !important; }
-    body.dark .sales-seg.active { background: #334155 !important; color: #f1f5f9 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important; }
-    body.dark .sales-seg:not(.active) { color: #64748b !important; }
-    body.dark .dash-drag-handle { color: #475569 !important; }
-    body.dark .dash-drag-handle:hover { background: #334155 !important; color: #94a3b8 !important; }
+    .sales-pill { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; border: none; outline: none; }
+    .sales-pill.active          { background: #1d4ed8; color: #fff; }
+    .sales-pill:not(.active)    { background: #334155; color: #cbd5e1; }
+    .sales-pill:not(.active):hover { background: #475569; }
+
+    .sales-seg { padding: 6px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; }
+    .sales-seg.active        { background: #334155; color: #f1f5f9; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+    .sales-seg:not(.active)  { background: transparent; color: #64748b; }
+
+    /* 드래그 앤 드롭 */
+    .dash-drag-handle { cursor: grab; color: #475569; font-size: 14px; line-height:1; padding: 2px 4px; border-radius: 4px; transition: color 0.15s, background 0.15s; user-select: none; }
+    .dash-drag-handle:hover { color: #94a3b8; background: #334155; }
+    .dash-drag-handle:active { cursor: grabbing; }
+    .sortable-ghost  { opacity: 0.35; border: 2px dashed #94a3b8 !important; }
+    .sortable-chosen { box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important; }
+
+    /* ── 뷰 패널 내부 카드 항상 다크 (테마 무관) ── */
+    .view .bg-white   { background: #1e293b !important; }
+    .view .bg-slate-50 { background: #162032 !important; }
+    .view .bg-slate-100 { background: #1e293b !important; }
+    .view .border-slate-200,
+    .view .border-slate-100 { border-color: #334155 !important; }
+    .view .divide-slate-200 > *,
+    .view .divide-slate-700 > * { border-color: #334155 !important; }
+    /* 텍스트 색상 통일 */
+    .view .text-slate-800,
+    .view .text-slate-700 { color: #f1f5f9 !important; }
+    .view .text-slate-600,
+    .view .text-slate-500 { color: #94a3b8 !important; }
+    .view .text-slate-400 { color: #64748b !important; }
+    .view .text-slate-300 { color: #cbd5e1 !important; }
+    /* 테이블 호버 */
+    .view tbody tr:hover { background: #243045 !important; }
   </style>
 </head>
 <body class="font-sans antialiased">
