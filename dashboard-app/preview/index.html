@@ -3785,15 +3785,15 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":373,"total":45383974},"Go
     // ── 상세 테이블 ──
     const wrap = document.getElementById('tc-table-wrap');
     let th = '<tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0">'
-      + '<th class="text-left px-4 py-2.5 text-xs font-bold text-slate-500 uppercase tracking-wider">지점</th>';
-    allMonths.forEach(m => { th += '<th class="px-4 py-2.5 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">' + m + '</th>'; });
-    th += '<th class="px-4 py-2.5 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">전체</th></tr>';
+      + '<th class="text-left px-4 py-2.5 text-sm font-bold text-slate-600 uppercase tracking-wider">지점</th>';
+    allMonths.forEach(m => { th += '<th class="px-4 py-2.5 text-sm font-bold text-slate-600 uppercase tracking-wider text-center">' + m + '</th>'; });
+    th += '<th class="px-4 py-2.5 text-sm font-bold text-slate-600 uppercase tracking-wider text-center">전체</th></tr>';
     let rows = '';
     TC_BRANCHES.forEach(b => {
       if (!TC_DATA[b]) return;
       const isActive = tcActiveBranches.has(b) || tcActiveBranches.size === TC_BRANCHES.length;
       let row = '<tr style="border-bottom:1px solid #f1f5f9; ' + (isActive ? '' : 'opacity:0.3') + '">';
-      row += '<td class="px-4 py-3 text-sm font-bold text-slate-700">' + b + '</td>';
+      row += '<td class="px-4 py-3 text-base font-bold text-slate-700">' + b + '</td>';
       let tot = 0, nTot = 0;
       allMonths.forEach(m => {
         const v = TC_DATA[b][m];
