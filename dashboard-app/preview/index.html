@@ -10,6 +10,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <!-- SheetJS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
@@ -296,6 +298,11 @@
       <div class="nav-item admin-only" data-view="view-admin-menus" onclick="showView('view-admin-menus')">
         <i data-lucide="settings"></i>
         <span>메뉴 관리</span>
+      </div>
+
+      <div class="nav-item admin-only" onclick="openDataUpdateModal()">
+        <i data-lucide="refresh-cw"></i>
+        <span>데이터 업데이트</span>
       </div>
 
       <!-- 구분선 (전체) -->
@@ -1877,6 +1884,43 @@
 <!-- =============================================
      모달: 새 공지 작성
      ============================================= -->
+<!-- 데이터 업데이트 모달 -->
+<div id="modal-data-update" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md shadow-xl">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-white">데이터 업데이트</h3>
+      <button onclick="closeModal('modal-data-update')" class="text-slate-400 hover:text-slate-600">✕</button>
+    </div>
+    <!-- RAW 클레임 -->
+    <div class="mb-4">
+      <p class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">RAW 클레임 파일</p>
+      <p class="text-xs text-slate-400 mb-2">2026 data RAW_Claim.xlsx — 매출/디펙트 데이터 갱신</p>
+      <label class="flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-400 cursor-pointer transition-colors">
+        <input type="file" id="input-raw-claim" accept=".xlsx,.xls" class="hidden" onchange="handleRawFile(this)">
+        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        <span id="raw-file-name" class="text-sm text-slate-500 dark:text-slate-400">파일 선택...</span>
+      </label>
+    </div>
+    <!-- 디펙트코드 리스트 -->
+    <div class="mb-6">
+      <p class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">디펙트코드 리스트 <span class="text-xs font-normal text-slate-400">(선택)</span></p>
+      <p class="text-xs text-slate-400 mb-2">디펙트코드 리스트.xlsx — 코드 설명 갱신</p>
+      <label class="flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-400 cursor-pointer transition-colors">
+        <input type="file" id="input-defect-list" accept=".xlsx,.xls" class="hidden" onchange="handleDefectListFile(this)">
+        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        <span id="defect-list-file-name" class="text-sm text-slate-500 dark:text-slate-400">파일 선택...</span>
+      </label>
+    </div>
+    <!-- 상태 메시지 -->
+    <div id="update-status" class="hidden mb-4 px-3 py-2 rounded-lg text-sm"></div>
+    <!-- 버튼 -->
+    <div class="flex gap-3">
+      <button onclick="closeModal('modal-data-update')" class="flex-1 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm">취소</button>
+      <button onclick="runDataUpdate()" id="btn-run-update" class="flex-1 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-50">적용</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-new-notice" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl">
     <div class="flex items-center justify-between mb-5">
@@ -2065,6 +2109,163 @@
   function closeModal(modalId) {
     document.getElementById(modalId).classList.add('hidden');
   }
+
+  // ===================== 데이터 업데이트 =====================
+  let _pendingRawFile      = null;
+  let _pendingDefectFile   = null;
+
+  function openDataUpdateModal() {
+    _pendingRawFile    = null;
+    _pendingDefectFile = null;
+    document.getElementById('raw-file-name').textContent        = '파일 선택...';
+    document.getElementById('defect-list-file-name').textContent = '파일 선택...';
+    document.getElementById('update-status').classList.add('hidden');
+    document.getElementById('modal-data-update').classList.remove('hidden');
+  }
+
+  function handleRawFile(input) {
+    _pendingRawFile = input.files[0] || null;
+    document.getElementById('raw-file-name').textContent = _pendingRawFile ? _pendingRawFile.name : '파일 선택...';
+  }
+
+  function handleDefectListFile(input) {
+    _pendingDefectFile = input.files[0] || null;
+    document.getElementById('defect-list-file-name').textContent = _pendingDefectFile ? _pendingDefectFile.name : '파일 선택...';
+  }
+
+  function setUpdateStatus(msg, type) {
+    const el = document.getElementById('update-status');
+    el.className = 'mb-4 px-3 py-2 rounded-lg text-sm ' +
+      (type === 'ok'  ? 'bg-green-50 text-green-700 border border-green-200' :
+       type === 'err' ? 'bg-red-50 text-red-700 border border-red-200' :
+                        'bg-blue-50 text-blue-700 border border-blue-200');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  async function runDataUpdate() {
+    if (!_pendingRawFile && !_pendingDefectFile) {
+      setUpdateStatus('파일을 선택해 주세요.', 'err'); return;
+    }
+    const btn = document.getElementById('btn-run-update');
+    btn.disabled = true;
+    btn.textContent = '처리 중...';
+
+    try {
+      // 디펙트코드 리스트 먼저 처리 (DEFECT_DESC 갱신)
+      if (_pendingDefectFile) {
+        setUpdateStatus('디펙트코드 리스트 읽는 중...', 'info');
+        await processDefectListFile(_pendingDefectFile);
+      }
+
+      // RAW 클레임 처리 (BRANCH_DATA + DEFECT_RAW 갱신)
+      if (_pendingRawFile) {
+        setUpdateStatus('RAW 클레임 파일 읽는 중... (파일 크기에 따라 10~30초 소요)', 'info');
+        await new Promise(r => setTimeout(r, 50)); // UI 업데이트용 tick
+        await processRawClaimFile(_pendingRawFile);
+      }
+
+      setUpdateStatus('업데이트 완료! 차트가 갱신됐습니다.', 'ok');
+    } catch(e) {
+      console.error(e);
+      setUpdateStatus('오류: ' + e.message, 'err');
+    }
+
+    btn.disabled = false;
+    btn.textContent = '적용';
+  }
+
+  function readFileAsArrayBuffer(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = e => resolve(e.target.result);
+      reader.onerror = () => reject(new Error('파일 읽기 실패'));
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  async function processDefectListFile(file) {
+    const buf  = await readFileAsArrayBuffer(file);
+    const wb   = XLSX.read(buf, { type: 'array' });
+    const ws   = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    const newDesc = {};
+    for (let i = 1; i < rows.length; i++) {
+      const code = String(rows[i][0] || '').trim();
+      const desc = String(rows[i][1] || '').trim();
+      if (code) newDesc[code] = desc;
+    }
+    // DEFECT_DESC는 const이므로 내용을 교체
+    Object.keys(DEFECT_DESC).forEach(k => delete DEFECT_DESC[k]);
+    Object.assign(DEFECT_DESC, newDesc);
+  }
+
+  async function processRawClaimFile(file) {
+    const buf  = await readFileAsArrayBuffer(file);
+    const wb   = XLSX.read(buf, { type: 'array', sheets: 3 });
+    const ws   = wb.Sheets[wb.SheetNames[3]];
+    const all  = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+
+    // header=1 → 행 인덱스 1이 헤더, 2부터 데이터
+    const data = all.slice(2);
+    const VALID_TYPES = new Set(['BSI','Warranty','TC/RECALL','WP','LOCAL TC','Goodwill']);
+
+    const branchAgg = {}; // {city: {month: {type: {count, total}}}}
+    const defectAgg = {}; // {key: {city, month, type, code, count, amount}}
+
+    for (const row of data) {
+      const status = String(row[1] || '');
+      if (!status.includes('청구')) continue;
+      const type = String(row[30] || '').trim();
+      if (!VALID_TYPES.has(type)) continue;
+
+      const city   = String(row[5] || '').replace('AS_', '').trim();
+      const month  = String(row[28] || '').trim();
+      const code   = String(row[12] || '').trim();
+      const amount = parseFloat(String(row[22] || '0').replace(/,/g, '')) || 0;
+
+      if (!city || !month) continue;
+
+      // BRANCH_DATA 집계
+      if (!branchAgg[city])               branchAgg[city] = {};
+      if (!branchAgg[city][month])         branchAgg[city][month] = {};
+      if (!branchAgg[city][month][type])   branchAgg[city][month][type] = { count: 0, total: 0 };
+      branchAgg[city][month][type].count++;
+      branchAgg[city][month][type].total += amount;
+
+      // DEFECT_RAW 집계
+      const key = `${city}|${month}|${type}|${code}`;
+      if (!defectAgg[key]) defectAgg[key] = { city, month, type, code, count: 0, amount: 0 };
+      defectAgg[key].count++;
+      defectAgg[key].amount += amount;
+    }
+
+    // BRANCH_DATA 교체 (const이므로 내용 수정)
+    Object.keys(BRANCH_DATA).forEach(k => delete BRANCH_DATA[k]);
+    Object.assign(BRANCH_DATA, branchAgg);
+
+    // DEFECT_RAW 교체
+    const newRaw = Object.values(defectAgg).map(r => [r.city, r.month, r.type, r.code, r.count, Math.round(r.amount)]);
+    DEFECT_RAW.length = 0;
+    DEFECT_RAW.push(...newRaw);
+
+    // DEFECT_UNMATCHED 갱신
+    const unmatchedAgg = {};
+    for (const [,, , code, cnt, amt] of newRaw) {
+      if (DEFECT_DESC[code]) continue;
+      if (!unmatchedAgg[code]) unmatchedAgg[code] = { code, count: 0, amount: 0 };
+      unmatchedAgg[code].count  += cnt;
+      unmatchedAgg[code].amount += amt;
+    }
+    const newUnmatched = Object.values(unmatchedAgg).sort((a, b) => b.count - a.count);
+    DEFECT_UNMATCHED.length = 0;
+    DEFECT_UNMATCHED.push(...newUnmatched);
+
+    // 현재 뷰 갱신
+    if (document.getElementById('view-sales')?.classList.contains('hidden') === false) renderSalesChart();
+    if (document.getElementById('view-top-defect')?.classList.contains('hidden') === false) renderTopDefect();
+  }
+  // ===================== /데이터 업데이트 =====================
 
   // 모달 바깥 클릭 시 닫기
   document.querySelectorAll('[id^="modal-"]').forEach(modal => {
