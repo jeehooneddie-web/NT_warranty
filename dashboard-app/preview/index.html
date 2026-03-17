@@ -1738,15 +1738,16 @@
               <button onclick="setPersonMetric('count')" id="pmetric-count" class="sales-pill">건수</button>
             </div>
           </div>
-          <!-- 월별 추이 차트 -->
-          <div id="person-monthly-area" class="p-4">
-            <div class="flex items-center justify-between mb-3">
-              <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">월별 개인 누적</p>
+          <!-- 월별 추이 표 -->
+          <div id="person-monthly-area" class="overflow-x-auto">
+            <div class="flex items-center justify-between px-5 py-2 border-b border-slate-100 dark:border-slate-700">
+              <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">월별 개인별 현황</p>
               <span id="person-unit-label" class="text-xs text-slate-400">단위: 백만원</span>
             </div>
-            <div style="height:420px; position:relative;">
-              <canvas id="person-chart-monthly"></canvas>
-            </div>
+            <table class="w-full text-sm">
+              <thead id="person-monthly-thead"></thead>
+              <tbody id="person-monthly-tbody"></tbody>
+            </table>
           </div>
           <!-- 개인별 순위 차트 (좌: 금액, 우: 건수) -->
           <div id="person-rank-area" class="hidden grid grid-cols-2 divide-x divide-slate-200 dark:divide-slate-700">
@@ -3537,42 +3538,42 @@ const BRANCH_DATA = {
         monthAgg[person][mo].amount += amt;
       }
       const activePeople = allPersons.filter(p => monthAgg[p]);
-      const datasets = activePeople.map((person, idx) => ({
-        label: getName(person),
-        data: visMo.map(mo => monthAgg[person]?.[mo]?.[pMetric] || 0),
-        backgroundColor: PERSON_COLORS[idx % PERSON_COLORS.length],
-        datalabels: { display: false }
-      }));
 
-      const ctx = document.getElementById('person-chart-monthly');
-      if (!ctx) return;
-      if (pChartMonthly) pChartMonthly.destroy();
-      pChartMonthly = new Chart(ctx, {
-        type: 'bar',
-        data: { labels: visMo, datasets },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: {
-            legend: { display: true, position: 'top', labels: { color: tickCol, boxWidth: 12, font: { size: 11 } } },
-            tooltip: {
-              callbacks: {
-                label: ctx => {
-                  const v = ctx.raw;
-                  if (!v) return null;
-                  return pMetric === 'amount'
-                    ? `${ctx.dataset.label}: ${Math.round(v/1000000).toLocaleString()}백만원`
-                    : `${ctx.dataset.label}: ${v.toLocaleString()}건`;
-                }
-              }
-            },
-            datalabels: { display: false }
-          },
-          scales: {
-            x: { stacked: true, grid: { color: gridCol }, ticks: { color: tickCol } },
-            y: { stacked: true, grid: { color: gridCol }, ticks: { color: tickCol, callback: v => pMetric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString() } }
-          }
-        }
-      });
+      // 표 헤더: 이름 | 월1 | 월2 | ... | 합계
+      const thead = document.getElementById('person-monthly-thead');
+      const tbody = document.getElementById('person-monthly-tbody');
+      if (!thead || !tbody) return;
+
+      thead.innerHTML = `<tr class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-xs">
+        <th class="px-4 py-2 text-left sticky left-0 bg-slate-50 dark:bg-slate-700/50">이름</th>
+        ${visMo.map(m => `<th class="px-3 py-2 text-right whitespace-nowrap">${m}</th>`).join('')}
+        <th class="px-4 py-2 text-right font-bold">합계</th>
+      </tr>`;
+
+      tbody.innerHTML = activePeople.map((person, i) => {
+        const bg = i % 2 === 0 ? '' : 'bg-slate-50 dark:bg-slate-700/30';
+        const cells = visMo.map(mo => {
+          const v = monthAgg[person]?.[mo]?.[pMetric] || 0;
+          const disp = v ? (pMetric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString()) : '—';
+          return `<td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300 tabular-nums">${disp}</td>`;
+        }).join('');
+        const total = visMo.reduce((s, mo) => s + (monthAgg[person]?.[mo]?.[pMetric] || 0), 0);
+        const totalDisp = pMetric === 'amount' ? Math.round(total/1000000).toLocaleString() : total.toLocaleString();
+        return `<tr class="${bg} hover:bg-blue-50 dark:hover:bg-slate-700">
+          <td class="px-4 py-2 font-semibold text-slate-800 dark:text-slate-100 sticky left-0 ${bg}">${getName(person)}</td>
+          ${cells}
+          <td class="px-4 py-2 text-right font-bold text-blue-600 dark:text-blue-400 tabular-nums">${totalDisp}</td>
+        </tr>`;
+      }).join('');
+
+      // 합계 행
+      const totalRow = visMo.map(mo => activePeople.reduce((s, p) => s + (monthAgg[p]?.[mo]?.[pMetric] || 0), 0));
+      const grandTotal = totalRow.reduce((a, b) => a + b, 0);
+      tbody.innerHTML += `<tr class="border-t-2 border-slate-300 dark:border-slate-500 bg-slate-100 dark:bg-slate-700 font-bold text-slate-800 dark:text-slate-100 text-xs">
+        <td class="px-4 py-2 sticky left-0 bg-slate-100 dark:bg-slate-700">합계</td>
+        ${totalRow.map(v => `<td class="px-3 py-2 text-right tabular-nums">${v ? (pMetric==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString()) : '—'}</td>`).join('')}
+        <td class="px-4 py-2 text-right tabular-nums text-blue-600 dark:text-blue-400">${pMetric==='amount' ? Math.round(grandTotal/1000000).toLocaleString() : grandTotal.toLocaleString()}</td>
+      </tr>`;
     } else {
       // 개인별 순위: 합산
       const rankAgg = {};
@@ -3594,7 +3595,7 @@ const BRANCH_DATA = {
         if (existing) existing.destroy();
         const labels = sorted.map(([id]) => getName(id));
         const values = sorted.map(([,v]) => metric === 'amount' ? v.amount : v.count);
-        const colors = sorted.map(([id]) => PERSON_COLORS[allPersons.indexOf(id) % PERSON_COLORS.length]);
+        const colors = pStatus === '청구' ? '#1d4ed8' : '#d97706';
         const endLabelPlugin = {
           id: 'endLabel_' + canvasId,
           afterDraw(chart) {
