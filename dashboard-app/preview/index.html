@@ -2979,13 +2979,21 @@ const BRANCH_DATA = {
         return desc.length > 22 ? desc.slice(0,22)+'…' : desc;
       });
     }
+    // 단일 타입 선택 시 해당 색, 다수/전체 선택 시 단일 네이비
+    const barColor = activeTypes.length === 1 ? COLORS[activeTypes[0]] : '#1d4ed8';
+
     function makeDatasets(codeList, metric) {
-      return activeTypes.map(tp => ({
-        label: tp,
-        data: codeList.map(code => agg[code]?.[tp]?.[metric] || 0),
-        backgroundColor: COLORS[tp],
+      const totals = codeList.map(code => {
+        let t = 0;
+        for (const tp of activeTypes) t += agg[code]?.[tp]?.[metric] || 0;
+        return t;
+      });
+      return [{
+        label: '합계',
+        data: totals,
+        backgroundColor: barColor,
         datalabels: { display: false }
-      }));
+      }];
     }
     function buildChart(canvasId, codeList, metric, existing) {
       const ctx = document.getElementById(canvasId);
@@ -3034,18 +3042,23 @@ const BRANCH_DATA = {
             tooltip: {
               callbacks: {
                 label: ctx => {
-                  const v = ctx.raw;
-                  if (!v) return null;
-                  return metric === 'amount'
-                    ? `${ctx.dataset.label}: ${Math.round(v/1000000).toLocaleString()}백만원`
-                    : `${ctx.dataset.label}: ${v.toLocaleString()}건`;
+                  const code = codeList[ctx.dataIndex];
+                  const lines = activeTypes
+                    .map(tp => {
+                      const v = agg[code]?.[tp]?.[metric] || 0;
+                      if (!v) return null;
+                      return metric === 'amount'
+                        ? `${tp}: ${Math.round(v/1000000).toLocaleString()}백만원`
+                        : `${tp}: ${v.toLocaleString()}건`;
+                    })
+                    .filter(Boolean);
+                  return lines;
                 }
               }
             }
           },
           scales: {
             x: {
-              stacked: true,
               grid: { color: gridCol },
               ticks: {
                 color: tickCol,
@@ -3056,7 +3069,6 @@ const BRANCH_DATA = {
               }
             },
             y: {
-              stacked: true,
               grid: { display: false },
               ticks: { color: '#ffffff', font: { size: 10 } }
             }
