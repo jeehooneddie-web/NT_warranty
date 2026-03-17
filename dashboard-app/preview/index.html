@@ -1625,7 +1625,7 @@
       <!-- =============================================
            뷰: TC 미실시율
            ============================================= -->
-      <div id="view-tc" class="view hidden">
+      <div id="view-tc" class="view hidden" style="background:#0f172a; margin:-24px; padding:24px; min-height:100%">
         <div class="sales-card p-5 mb-4">
           <div class="flex flex-wrap gap-6 items-start">
             <!-- 지점 필터 -->
@@ -3708,11 +3708,6 @@ const BRANCH_DATA = {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#0f172a',
-            borderColor: '#334155',
-            borderWidth: 1,
-            titleColor: '#e2e8f0',
-            bodyColor: '#94a3b8',
             callbacks: {
               label: ctx => {
                 const b = activeBranches[ctx.dataIndex];
