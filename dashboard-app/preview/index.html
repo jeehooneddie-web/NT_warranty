@@ -3662,7 +3662,7 @@ const BRANCH_DATA = {
       type: 'line',
       label: '목표 35%',
       data: activeBranches.map(() => TC_TARGET),
-      borderColor: '#fbbf24',
+      borderColor: '#ef4444',
       borderWidth: 3,
       pointRadius: 0,
       pointHoverRadius: 0,
@@ -3704,10 +3704,10 @@ const BRANCH_DATA = {
           },
         },
         scales: {
-          x: { ticks: { color: '#94a3b8', font: { size: 12 } }, grid: { color: '#334155' } },
+          x: { ticks: { color: '#94a3b8', font: { size: 12 } }, grid: { display: false } },
           y: {
             ticks: { color: '#94a3b8', callback: v => v + '%' },
-            grid: { color: '#334155' },
+            grid: { display: false },
             min: 0, max: 100,
           }
         }
