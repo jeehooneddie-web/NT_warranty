@@ -386,209 +386,53 @@
            ============================================= -->
       <div id="view-dashboard" class="view">
 
-        <!-- 통계 카드 4개 -->
-        <div id="dash-kpi-grid" class="grid grid-cols-4 gap-4 mb-6">
-          <!-- 이번달 보증 문의 -->
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 relative group" data-id="kpi-1">
-            <span class="dash-drag-handle absolute top-2 right-2 opacity-0 group-hover:opacity-100">⠿</span>
-            <div class="flex items-start justify-between mb-3">
-              <div class="text-sm text-slate-500 font-medium">이번달 보증 문의</div>
-              <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center text-nm-blue">
-                <i data-lucide="file-text" class="w-5 h-5"></i>
-              </div>
+        <!-- KPI 타일 4개 -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5" id="dash-kpi-row">
+          <!-- JS로 채움 -->
+        </div>
+
+        <!-- 중간: 지점별 보증 현황 + TC 미실시율 -->
+        <div class="grid grid-cols-3 gap-4 mb-5">
+
+          <!-- 지점별 보증 청구 현황 -->
+          <div class="col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden" style="border-top:3px solid #1d4ed8">
+            <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <h2 class="text-sm font-bold text-slate-700 dark:text-white">지점별 보증 청구 현황</h2>
+              <span id="dash-branch-month" class="text-xs px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded-full font-medium"></span>
             </div>
-            <div class="text-3xl font-bold text-slate-800 mb-1">134</div>
-            <div class="text-xs text-emerald-600 flex items-center gap-1">
-              <i data-lucide="trending-up" class="w-3 h-3"></i>
-              +12% 전월 대비
-            </div>
+            <div id="dash-branch-table"></div>
           </div>
 
-          <!-- 처리 대기 -->
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 relative group" data-id="kpi-2">
-            <span class="dash-drag-handle absolute top-2 right-2 opacity-0 group-hover:opacity-100">⠿</span>
-            <div class="flex items-start justify-between mb-3">
-              <div class="text-sm text-slate-500 font-medium">처리 대기</div>
-              <div class="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center text-red-500">
-                <i data-lucide="clock" class="w-5 h-5"></i>
-              </div>
+          <!-- TC 미실시율 -->
+          <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden" style="border-top:3px solid #ef4444">
+            <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <h2 class="text-sm font-bold text-slate-700 dark:text-white">TC 미실시율</h2>
+              <span class="text-xs text-slate-400">목표 <b class="text-yellow-500">35%</b></span>
             </div>
-            <div class="flex items-end gap-2 mb-1">
-              <span class="text-3xl font-bold text-slate-800">23</span>
-              <span class="inline-block mb-1 px-2 py-0.5 bg-red-100 text-red-600 text-xs font-semibold rounded-full">긴급</span>
-            </div>
-            <div class="text-xs text-slate-400">건</div>
-          </div>
-
-          <!-- 평균 처리시간 -->
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 relative group" data-id="kpi-3">
-            <span class="dash-drag-handle absolute top-2 right-2 opacity-0 group-hover:opacity-100">⠿</span>
-            <div class="flex items-start justify-between mb-3">
-              <div class="text-sm text-slate-500 font-medium">평균 처리시간</div>
-              <div class="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center text-purple-500">
-                <i data-lucide="timer" class="w-5 h-5"></i>
-              </div>
-            </div>
-            <div class="text-3xl font-bold text-slate-800 mb-1">4.2<span class="text-lg font-normal text-slate-500 ml-1">시간</span></div>
-            <div class="text-xs text-emerald-600 flex items-center gap-1">
-              <i data-lucide="trending-down" class="w-3 h-3"></i>
-              -0.8h
-            </div>
-          </div>
-
-          <!-- 이번달 공지 -->
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 relative group" data-id="kpi-4">
-            <span class="dash-drag-handle absolute top-2 right-2 opacity-0 group-hover:opacity-100">⠿</span>
-            <div class="flex items-start justify-between mb-3">
-              <div class="text-sm text-slate-500 font-medium">이번달 공지</div>
-              <div class="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500">
-                <i data-lucide="megaphone" class="w-5 h-5"></i>
-              </div>
-            </div>
-            <div class="text-3xl font-bold text-slate-800 mb-1">8</div>
-            <div class="text-xs text-slate-400">건</div>
+            <div id="dash-tc-table" class="px-5 py-4"></div>
           </div>
         </div>
 
-        <!-- 하단: 최근 문의 테이블 + 최근 공지 -->
-        <div id="dash-bottom-grid" class="grid grid-cols-3 gap-4">
+        <!-- 하단: TOP 결함코드 + 타입별 현황 -->
+        <div class="grid grid-cols-3 gap-4">
 
-          <!-- 최근 문의 테이블 (2/3) -->
-          <div class="col-span-2 bg-white rounded-xl shadow-sm border border-slate-100" data-id="bottom-inquiries">
-            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="dash-drag-handle">⠿</span>
-                <h2 class="font-semibold text-slate-800">최근 문의</h2>
-              </div>
-              <button onclick="showView('view-admin-inquiries')" class="text-xs text-nm-blue hover:underline">전체보기</button>
+          <!-- TOP 10 결함코드 -->
+          <div class="col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden" style="border-top:3px solid #059669">
+            <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-700">
+              <h2 class="text-sm font-bold text-slate-700 dark:text-white">TOP 10 결함코드 <span class="text-xs font-normal text-slate-400 ml-1">전체 기간</span></h2>
             </div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="text-xs text-slate-500 uppercase tracking-wider bg-slate-50">
-                    <th class="px-4 py-3 text-left font-medium">No</th>
-                    <th class="px-4 py-3 text-left font-medium">대분류</th>
-                    <th class="px-4 py-3 text-left font-medium">중분류</th>
-                    <th class="px-4 py-3 text-left font-medium">작성자</th>
-                    <th class="px-4 py-3 text-left font-medium">등록일</th>
-                    <th class="px-4 py-3 text-left font-medium">상태</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                  <tr>
-                    <td class="px-4 py-3 text-slate-500">1</td>
-                    <td class="px-4 py-3 text-slate-700">보증문의</td>
-                    <td class="px-4 py-3 text-slate-600">엔진/변속기</td>
-                    <td class="px-4 py-3 text-slate-700">김철수</td>
-                    <td class="px-4 py-3 text-slate-500">2026-03-09</td>
-                    <td class="px-4 py-3"><span class="badge-pending px-2 py-0.5 rounded-full text-xs font-medium">대기중</span></td>
-                  </tr>
-                  <tr>
-                    <td class="px-4 py-3 text-slate-500">2</td>
-                    <td class="px-4 py-3 text-slate-700">정비문의</td>
-                    <td class="px-4 py-3 text-slate-600">정기점검</td>
-                    <td class="px-4 py-3 text-slate-700">이영희</td>
-                    <td class="px-4 py-3 text-slate-500">2026-03-09</td>
-                    <td class="px-4 py-3"><span class="badge-inprogress px-2 py-0.5 rounded-full text-xs font-medium">처리중</span></td>
-                  </tr>
-                  <tr>
-                    <td class="px-4 py-3 text-slate-500">3</td>
-                    <td class="px-4 py-3 text-slate-700">보증문의</td>
-                    <td class="px-4 py-3 text-slate-600">전기/전자</td>
-                    <td class="px-4 py-3 text-slate-700">박민준</td>
-                    <td class="px-4 py-3 text-slate-500">2026-03-08</td>
-                    <td class="px-4 py-3"><span class="badge-resolved px-2 py-0.5 rounded-full text-xs font-medium">완료</span></td>
-                  </tr>
-                  <tr>
-                    <td class="px-4 py-3 text-slate-500">4</td>
-                    <td class="px-4 py-3 text-slate-700">부품문의</td>
-                    <td class="px-4 py-3 text-slate-600">순정부품</td>
-                    <td class="px-4 py-3 text-slate-700">최수진</td>
-                    <td class="px-4 py-3 text-slate-500">2026-03-08</td>
-                    <td class="px-4 py-3"><span class="badge-pending px-2 py-0.5 rounded-full text-xs font-medium">대기중</span></td>
-                  </tr>
-                  <tr>
-                    <td class="px-4 py-3 text-slate-500">5</td>
-                    <td class="px-4 py-3 text-slate-700">보증문의</td>
-                    <td class="px-4 py-3 text-slate-600">제동/조향</td>
-                    <td class="px-4 py-3 text-slate-700">정대호</td>
-                    <td class="px-4 py-3 text-slate-500">2026-03-07</td>
-                    <td class="px-4 py-3"><span class="badge-inprogress px-2 py-0.5 rounded-full text-xs font-medium">처리중</span></td>
-                  </tr>
-                  <tr>
-                    <td class="px-4 py-3 text-slate-500">6</td>
-                    <td class="px-4 py-3 text-slate-700">정비문의</td>
-                    <td class="px-4 py-3 text-slate-600">사고수리</td>
-                    <td class="px-4 py-3 text-slate-700">윤미래</td>
-                    <td class="px-4 py-3 text-slate-500">2026-03-07</td>
-                    <td class="px-4 py-3"><span class="badge-resolved px-2 py-0.5 rounded-full text-xs font-medium">완료</span></td>
-                  </tr>
-                  <tr>
-                    <td class="px-4 py-3 text-slate-500">7</td>
-                    <td class="px-4 py-3 text-slate-700">부품문의</td>
-                    <td class="px-4 py-3 text-slate-600">외장부품</td>
-                    <td class="px-4 py-3 text-slate-700">강지원</td>
-                    <td class="px-4 py-3 text-slate-500">2026-03-06</td>
-                    <td class="px-4 py-3"><span class="badge-pending px-2 py-0.5 rounded-full text-xs font-medium">대기중</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <div class="p-4" style="height:290px"><canvas id="dash-defect-chart"></canvas></div>
           </div>
 
-          <!-- 최근 공지 카드 (1/3) -->
-          <div class="bg-white rounded-xl shadow-sm border border-slate-100" data-id="bottom-notices">
-            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="dash-drag-handle">⠿</span>
-                <h2 class="font-semibold text-slate-800">최근 공지</h2>
-              </div>
-              <button onclick="showView('view-notices')" class="text-xs text-nm-blue hover:underline">전체보기</button>
+          <!-- 타입별 현황 -->
+          <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden" style="border-top:3px solid #7c3aed">
+            <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-700">
+              <h2 class="text-sm font-bold text-slate-700 dark:text-white">타입별 청구 현황 <span class="text-xs font-normal text-slate-400 ml-1">전체 기간</span></h2>
             </div>
-            <div class="divide-y divide-slate-100">
-              <!-- 공지 1 (핀) -->
-              <div class="notice-card px-5 py-4 cursor-pointer">
-                <div class="flex items-start gap-2">
-                  <i data-lucide="pin" class="w-3.5 h-3.5 text-red-400 mt-0.5 flex-shrink-0"></i>
-                  <div class="min-w-0">
-                    <div class="text-sm font-medium text-slate-800 leading-snug">[중요] 2026년 1분기 보증 정책 변경 안내</div>
-                    <div class="text-xs text-slate-400 mt-1">2026-03-05</div>
-                  </div>
-                </div>
-              </div>
-              <!-- 공지 2 -->
-              <div class="notice-card px-5 py-4 cursor-pointer">
-                <div class="flex items-start gap-2">
-                  <div class="w-3.5 h-3.5 mt-0.5 flex-shrink-0"></div>
-                  <div class="min-w-0">
-                    <div class="text-sm font-medium text-slate-800 leading-snug">시스템 정기 점검 안내 (3/15)</div>
-                    <div class="text-xs text-slate-400 mt-1">2026-03-04</div>
-                  </div>
-                </div>
-              </div>
-              <!-- 공지 3 (핀) -->
-              <div class="notice-card px-5 py-4 cursor-pointer">
-                <div class="flex items-start gap-2">
-                  <i data-lucide="pin" class="w-3.5 h-3.5 text-red-400 mt-0.5 flex-shrink-0"></i>
-                  <div class="min-w-0">
-                    <div class="text-sm font-medium text-slate-800 leading-snug">신규 딜러 온보딩 교육 일정</div>
-                    <div class="text-xs text-slate-400 mt-1">2026-03-03</div>
-                  </div>
-                </div>
-              </div>
-              <!-- 공지 4 -->
-              <div class="notice-card px-5 py-4 cursor-pointer">
-                <div class="flex items-start gap-2">
-                  <div class="w-3.5 h-3.5 mt-0.5 flex-shrink-0"></div>
-                  <div class="min-w-0">
-                    <div class="text-sm font-medium text-slate-800 leading-snug">클레임 처리 프로세스 개정 안내</div>
-                    <div class="text-xs text-slate-400 mt-1">2026-03-01</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <div id="dash-type-table" class="px-5 py-3"></div>
           </div>
         </div>
+
       </div><!-- /view-dashboard -->
 
       <!-- =============================================
@@ -2240,7 +2084,7 @@
     if (viewId === 'view-person') renderPersonChart();
     if (viewId === 'view-tc') renderTcView();
     // 대시보드 드래그 초기화
-    if (viewId === 'view-dashboard') setTimeout(initDashboardSort, 50);
+    if (viewId === 'view-dashboard') setTimeout(initDashboard, 50);
 
     // 보증번역기 진입 시 사이드바 자동 접기, 다른 페이지는 자동 펼치기
     const sidebar = document.querySelector('aside');
@@ -2958,51 +2802,214 @@ const BRANCH_DATA = {
 
   /* ── 대시보드 드래그 앤 드롭 ── */
   let _dashSortInit = false;
-  function initDashboardSort() {
-    if (_dashSortInit || typeof Sortable === 'undefined') return;
-    _dashSortInit = true;
+  let _dashDefectChart = null;
 
-    const save = () => {
-      ['dash-kpi-grid','dash-bottom-grid'].forEach(gridId => {
-        const grid = document.getElementById(gridId);
-        if (!grid) return;
-        const order = [...grid.querySelectorAll('[data-id]')].map(el => el.dataset.id);
-        localStorage.setItem('dash-order-'+gridId, JSON.stringify(order));
-      });
-    };
+  function initDashboard() {
+    const BRANCH_ORDER = ['전주','평택','군산','목포','서산'];
+    const TYPE_COLORS  = {'BSI':'#1d4ed8','Warranty':'#0891b2','TC/RECALL':'#059669','Goodwill':'#7c3aed','WP':'#d97706','LOCAL TC':'#dc2626'};
+    const TYPES_ORDER  = ['BSI','Warranty','TC/RECALL','WP','LOCAL TC','Goodwill'];
 
-    const restore = (gridId) => {
-      const saved = localStorage.getItem('dash-order-'+gridId);
-      if (!saved) return;
-      const order = JSON.parse(saved);
-      const grid = document.getElementById(gridId);
-      if (!grid) return;
-      order.forEach(id => {
-        const el = grid.querySelector(`[data-id="${id}"]`);
-        if (el) grid.appendChild(el);
-      });
-    };
+    // ── 최근월 탐색 ──
+    const allMonths = new Set();
+    BRANCH_ORDER.forEach(b => { if(BRANCH_DATA[b]) Object.keys(BRANCH_DATA[b]).forEach(m => allMonths.add(m)); });
+    const sortedMonths = [...allMonths].sort();
+    const latestMonth  = sortedMonths[sortedMonths.length - 1];
+    const prevMonth    = sortedMonths[sortedMonths.length - 2] || null;
 
-    new Sortable(document.getElementById('dash-kpi-grid'), {
-      animation: 200,
-      handle: '.dash-drag-handle',
-      ghostClass: 'sortable-ghost',
-      chosenClass: 'sortable-chosen',
-      onEnd: save
+    // ── 최근월 지점별 집계 ──
+    let totalCount = 0, totalAmount = 0;
+    let prevTotalCount = 0;
+    const branchStats = {};
+    BRANCH_ORDER.forEach(b => {
+      const md = (BRANCH_DATA[b] && BRANCH_DATA[b][latestMonth]) || {};
+      let cnt = 0, amt = 0;
+      Object.values(md).forEach(v => { cnt += v.count; amt += v.total; });
+      branchStats[b] = {count: cnt, amount: amt};
+      totalCount  += cnt;
+      totalAmount += amt;
+      if (prevMonth && BRANCH_DATA[b] && BRANCH_DATA[b][prevMonth]) {
+        Object.values(BRANCH_DATA[b][prevMonth]).forEach(v => { prevTotalCount += v.count; });
+      }
     });
+    const countChange = prevTotalCount ? ((totalCount - prevTotalCount) / prevTotalCount * 100).toFixed(1) : null;
 
-    new Sortable(document.getElementById('dash-bottom-grid'), {
-      animation: 200,
-      handle: '.dash-drag-handle',
-      ghostClass: 'sortable-ghost',
-      chosenClass: 'sortable-chosen',
-      onEnd: save
+    // ── TC 최근월 ──
+    const tcMonths = new Set();
+    BRANCH_ORDER.forEach(b => { if(TC_DATA[b]) Object.keys(TC_DATA[b]).forEach(m => tcMonths.add(m)); });
+    const latestTcMonth = [...tcMonths].sort().pop() || '';
+    let tcN = 0, tcTotal = 0;
+    BRANCH_ORDER.forEach(b => {
+      const v = TC_DATA[b] && TC_DATA[b][latestTcMonth];
+      if (v) { tcN += v.n_count; tcTotal += v.total; }
     });
+    const tcRate = tcTotal ? (tcN / tcTotal * 100).toFixed(1) : '-';
+    const tcOver = tcRate !== '-' && parseFloat(tcRate) > 35;
 
-    restore('dash-kpi-grid');
-    restore('dash-bottom-grid');
+    // ── TOP 결함코드 (전체) ──
+    const codeStats = {};
+    DEFECT_RAW.forEach(r => { codeStats[r[3]] = (codeStats[r[3]] || 0) + r[4]; });
+    const topEntry = Object.entries(codeStats).sort((a,b) => b[1]-a[1])[0] || ['-', 0];
+
+    // ── KPI 카드 ──
+    const kpiRow = document.getElementById('dash-kpi-row');
+    if (!kpiRow) return;
+    const kpis = [
+      { label:'청구 건수',   sub: latestMonth,   value: totalCount.toLocaleString(), unit:'건',
+        change: countChange, icon:'file-text', color:'#1d4ed8', bg:'#eff6ff' },
+      { label:'청구 금액',   sub: latestMonth,   value: (totalAmount/1000000).toFixed(0), unit:'백만원',
+        icon:'circle-dollar-sign', color:'#0891b2', bg:'#ecfeff' },
+      { label:'TC 미실시율', sub: latestTcMonth, value: tcRate, unit:'%',
+        icon:'percent', color: tcOver ? '#ef4444' : '#059669', bg: tcOver ? '#fef2f2' : '#f0fdf4' },
+      { label:'TOP 결함코드', sub: (DEFECT_DESC[topEntry[0]] || topEntry[0]).slice(0,18),
+        value: topEntry[1].toLocaleString(), unit:'건',
+        icon:'alert-triangle', color:'#d97706', bg:'#fffbeb' },
+    ];
+    kpiRow.innerHTML = kpis.map(k => {
+      const chg = k.change ? (parseFloat(k.change) >= 0
+        ? '<div class="text-xs mt-2 text-emerald-500">↑ ' + k.change + '% 전월 대비</div>'
+        : '<div class="text-xs mt-2 text-red-400">↓ ' + Math.abs(k.change) + '% 전월 대비</div>')
+        : '<div class="h-4 mt-2"></div>';
+      return '<div class="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700" style="border-left:4px solid ' + k.color + '">'
+        + '<div class="flex items-start justify-between mb-3">'
+        +   '<div><div class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">' + k.label + '</div>'
+        +   '<div class="text-[10px] text-slate-400 mt-0.5 truncate max-w-[120px]">' + k.sub + '</div></div>'
+        +   '<div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:' + k.bg + '">'
+        +     '<i data-lucide="' + k.icon + '" class="w-5 h-5" style="color:' + k.color + '"></i>'
+        +   '</div>'
+        + '</div>'
+        + '<div class="text-3xl font-bold text-slate-800 dark:text-white">' + k.value
+        +   '<span class="text-sm font-normal text-slate-400 ml-1">' + k.unit + '</span></div>'
+        + chg
+        + '</div>';
+    }).join('');
+
+    // ── 지점별 보증 현황 테이블 ──
+    document.getElementById('dash-branch-month').textContent = latestMonth;
+    const maxCount = Math.max(...Object.values(branchStats).map(s => s.count), 1);
+    let tbl = '<table class="w-full text-sm">'
+      + '<thead><tr class="bg-slate-50 dark:bg-slate-700/40">'
+      + '<th class="px-4 py-2.5 text-left text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">지점</th>'
+      + '<th class="px-4 py-2.5 text-right text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">건수</th>'
+      + '<th class="px-4 py-2.5 text-right text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">금액 (백만)</th>'
+      + '<th class="px-4 py-2.5 text-left text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase w-36">비율</th>'
+      + '</tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-700">';
+    BRANCH_ORDER.forEach(b => {
+      const s = branchStats[b] || {count:0, amount:0};
+      const pct = Math.round(s.count / maxCount * 100);
+      tbl += '<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">'
+        + '<td class="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">' + b + '</td>'
+        + '<td class="px-4 py-3 text-right font-mono font-bold text-slate-800 dark:text-white">' + s.count.toLocaleString() + '</td>'
+        + '<td class="px-4 py-3 text-right font-mono text-slate-500 dark:text-slate-400">' + (s.amount/1000000).toFixed(1) + '</td>'
+        + '<td class="px-4 py-3"><div class="flex items-center gap-2">'
+        +   '<div class="flex-1 bg-slate-200 dark:bg-slate-600 rounded-full h-2.5">'
+        +     '<div class="bg-blue-500 h-2.5 rounded-full transition-all" style="width:' + pct + '%"></div>'
+        +   '</div>'
+        +   '<span class="text-[11px] text-slate-400 w-8 text-right">' + pct + '%</span>'
+        + '</div></td>'
+        + '</tr>';
+    });
+    const totalAmt = (totalAmount/1000000).toFixed(1);
+    tbl += '<tr class="bg-blue-50 dark:bg-blue-900/20 font-bold">'
+      + '<td class="px-4 py-2.5 text-blue-700 dark:text-blue-300 text-xs font-bold uppercase">합계</td>'
+      + '<td class="px-4 py-2.5 text-right font-mono text-blue-700 dark:text-blue-300">' + totalCount.toLocaleString() + '</td>'
+      + '<td class="px-4 py-2.5 text-right font-mono text-blue-700 dark:text-blue-300">' + totalAmt + '</td>'
+      + '<td class="px-4 py-2.5"></td>'
+      + '</tr></tbody></table>';
+    document.getElementById('dash-branch-table').innerHTML = tbl;
+
+    // ── TC 미실시율 ──
+    let tcHTML = '';
+    BRANCH_ORDER.forEach(b => {
+      const v = TC_DATA[b] && TC_DATA[b][latestTcMonth];
+      if (!v) return;
+      const rate = parseFloat((v.n_count / v.total * 100).toFixed(1));
+      const over = rate > 35;
+      tcHTML += '<div class="mb-4">'
+        + '<div class="flex items-center justify-between mb-1.5">'
+        +   '<span class="text-xs font-bold text-slate-700 dark:text-slate-200">' + b + '</span>'
+        +   '<span class="text-sm font-bold ' + (over ? 'text-red-500' : 'text-emerald-500') + '">' + rate + '%</span>'
+        + '</div>'
+        + '<div class="bg-slate-200 dark:bg-slate-600 rounded-full h-3 relative overflow-visible">'
+        +   '<div class="' + (over ? 'bg-red-500' : 'bg-emerald-500') + ' h-3 rounded-full transition-all" style="width:' + Math.min(rate,100) + '%"></div>'
+        +   '<div class="absolute top-0 h-3 border-l-2 border-yellow-400" style="left:35%"></div>'
+        + '</div>'
+        + '<div class="text-[10px] text-slate-400 mt-0.5">미실시 ' + v.n_count + ' / 모수 ' + v.total + '</div>'
+        + '</div>';
+    });
+    tcHTML += '<div class="pt-1 border-t border-slate-200 dark:border-slate-600 text-[10px] text-slate-400 flex items-center gap-1.5">'
+      + '<div class="w-4 border-t-2 border-yellow-400"></div>목표 기준선 35%</div>';
+    document.getElementById('dash-tc-table').innerHTML = tcHTML;
+
+    // ── TOP 10 결함코드 가로 차트 ──
+    const top10 = Object.entries(codeStats).sort((a,b) => b[1]-a[1]).slice(0,10);
+    const defLabels = top10.map(([code]) => {
+      const desc = DEFECT_DESC[code] || code;
+      return desc.length > 22 ? desc.slice(0,22) + '…' : desc;
+    });
+    const defValues = top10.map(([,v]) => v);
+    if (_dashDefectChart) _dashDefectChart.destroy();
+    const defCtx = document.getElementById('dash-defect-chart');
+    if (defCtx) {
+      _dashDefectChart = new Chart(defCtx.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: defLabels,
+          datasets: [{ data: defValues, backgroundColor: '#1d4ed8bb', borderColor: '#1d4ed8', borderWidth:1, borderRadius:4 }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              color: '#94a3b8', font: { size: 9 }, anchor: 'end', align: 'end',
+              formatter: v => v.toLocaleString()
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: {size:10} }, grid: { color: '#334155' } },
+            y: { ticks: { color: '#cbd5e1', font: {size: 9} }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // ── 타입별 현황 ──
+    const typeStats = {};
+    DEFECT_RAW.forEach(r => {
+      const t = r[2], cnt = r[4], amt = r[5];
+      if (!typeStats[t]) typeStats[t] = {count:0, amount:0};
+      typeStats[t].count  += cnt;
+      typeStats[t].amount += amt;
+    });
+    const typeTotal = Object.values(typeStats).reduce((s,v) => s+v.count, 0);
+    const maxTypeCount = Math.max(...Object.values(typeStats).map(v => v.count), 1);
+    let typeHTML = '<table class="w-full text-xs">'
+      + '<thead><tr class="border-b border-slate-200 dark:border-slate-600">'
+      + '<th class="pb-2 text-left text-[11px] font-bold text-slate-400 uppercase">타입</th>'
+      + '<th class="pb-2 text-right text-[11px] font-bold text-slate-400 uppercase">건수</th>'
+      + '<th class="pb-2 text-right text-[11px] font-bold text-slate-400 uppercase">비율</th>'
+      + '</tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-700">';
+    TYPES_ORDER.forEach(t => {
+      const s = typeStats[t]; if (!s) return;
+      const pct = (s.count / typeTotal * 100).toFixed(1);
+      const barPct = Math.round(s.count / maxTypeCount * 100);
+      typeHTML += '<tr>'
+        + '<td class="py-2.5"><div class="flex items-center gap-2">'
+        +   '<div class="w-2.5 h-2.5 rounded-sm flex-shrink-0" style="background:' + TYPE_COLORS[t] + '"></div>'
+        +   '<span class="font-semibold text-slate-700 dark:text-slate-200">' + t + '</span>'
+        + '</div></td>'
+        + '<td class="py-2.5 text-right font-mono font-bold text-slate-700 dark:text-slate-200">' + s.count.toLocaleString() + '</td>'
+        + '<td class="py-2.5 text-right text-slate-400">' + pct + '%</td>'
+        + '</tr>';
+    });
+    typeHTML += '</tbody></table>';
+    document.getElementById('dash-type-table').innerHTML = typeHTML;
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
+  function initSalesChart() {
   function initSalesChart() {
     const ctx = document.getElementById('sales-chart');
     if (!ctx) return;
@@ -3961,6 +3968,7 @@ const BRANCH_DATA = {
      Lucide 아이콘 초기화 (마지막에 호출)
      ----------------------------------------------- */
   lucide.createIcons();
+  initDashboard();
 
   /* -----------------------------------------------
      인증 (로그인 / 로그아웃)
