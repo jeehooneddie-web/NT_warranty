@@ -2989,8 +2989,10 @@ const BRANCH_DATA = {
           display: true,
           anchor: 'end',
           align: 'end',
-          color: '#94a3b8',
-          font: { size: 10 },
+          clamp: false,
+          clip: false,
+          color: tickCol,
+          font: { size: 10, weight: 'bold' },
           formatter: (value, ctx) => {
             const total = ctx.chart.data.datasets.reduce((s, ds) => s + (ds.data[ctx.dataIndex] || 0), 0);
             if (!total) return null;
@@ -3012,7 +3014,8 @@ const BRANCH_DATA = {
           indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
-          layout: { padding: { right: 48 } },
+          layout: { padding: { right: 56 } },
+          clip: false,
           plugins: {
             legend: { display: false },
             tooltip: {
