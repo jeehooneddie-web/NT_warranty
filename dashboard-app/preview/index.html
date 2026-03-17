@@ -3005,7 +3005,7 @@ const BRANCH_DATA = {
           c.save();
           c.textAlign = 'left';
           c.textBaseline = 'middle';
-          c.fillStyle = tickCol;
+          c.fillStyle = isDark ? '#ffffff' : tickCol;
           c.font = 'bold 10px Arial, sans-serif';
           totals.forEach((total, i) => {
             if (!total) return;
