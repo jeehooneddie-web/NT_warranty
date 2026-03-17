@@ -1723,16 +1723,36 @@
           </div>
         </div>
 
-        <!-- 상태 탭 + 차트 카드 -->
+        <!-- 차트 카드 -->
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <div class="flex items-center px-5 py-3 border-b border-slate-200 dark:border-slate-700 gap-2">
-            <button onclick="setPersonStatus('청구')" id="pstatus-claim" class="sales-pill active">청구</button>
-            <button onclick="setPersonStatus('취소')" id="pstatus-cancel" class="sales-pill">취소</button>
+          <!-- 탭 바 -->
+          <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700">
+            <div class="flex gap-2">
+              <button onclick="setPersonView('monthly')" id="pview-monthly" class="sales-pill active">월별 추이</button>
+              <button onclick="setPersonView('rank')" id="pview-rank" class="sales-pill">개인별 순위</button>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="setPersonStatus('청구')" id="pstatus-claim" class="sales-pill active">청구</button>
+              <button onclick="setPersonStatus('취소')" id="pstatus-cancel" class="sales-pill">취소</button>
+              <button onclick="setPersonMetric('amount')" id="pmetric-amount" class="sales-pill active">금액</button>
+              <button onclick="setPersonMetric('count')" id="pmetric-count" class="sales-pill">건수</button>
+            </div>
           </div>
-          <div class="grid grid-cols-2 divide-x divide-slate-200 dark:divide-slate-700">
+          <!-- 월별 추이 차트 -->
+          <div id="person-monthly-area" class="p-4">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">월별 개인 누적</p>
+              <span id="person-unit-label" class="text-xs text-slate-400">단위: 백만원</span>
+            </div>
+            <div style="height:420px; position:relative;">
+              <canvas id="person-chart-monthly"></canvas>
+            </div>
+          </div>
+          <!-- 개인별 순위 차트 (좌: 금액, 우: 건수) -->
+          <div id="person-rank-area" class="hidden grid grid-cols-2 divide-x divide-slate-200 dark:divide-slate-700">
             <div class="p-4">
               <div class="flex items-center justify-between mb-3">
-                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">금액 기준</p>
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">금액 기준 순위</p>
                 <span class="text-xs text-slate-400">단위: 백만원</span>
               </div>
               <div style="height:420px; position:relative;">
@@ -1741,7 +1761,7 @@
             </div>
             <div class="p-4">
               <div class="flex items-center justify-between mb-3">
-                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">건수 기준</p>
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">건수 기준 순위</p>
                 <span class="text-xs text-slate-400">단위: 건</span>
               </div>
               <div style="height:420px; position:relative;">
@@ -3449,19 +3469,31 @@ const BRANCH_DATA = {
   const P_ALL_YEARS  = ['25','26'];
   const P_ALL_MO     = ['01','02','03','04','05','06','07','08','09','10','11','12'];
   const DATA_MO_P    = ['25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02'];
+  const PERSON_COLORS = ['#1d4ed8','#0891b2','#059669','#7c3aed','#d97706','#dc2626','#0d9488','#9333ea','#f59e0b','#ef4444','#3b82f6','#10b981','#8b5cf6','#f97316'];
 
-  // 이름 매핑 (ID → 이름): 추후 업데이트
   const PERSON_NAMES = {};
 
   let pActiveTypes  = new Set(P_ALL_TYPES);
   let pActiveYears  = new Set(P_ALL_YEARS);
   let pActiveMonths = new Set(P_ALL_MO);
   let pStatus       = '청구';
+  let pMetric       = 'amount';
+  let pViewMode     = 'monthly';
+  let pChartMonthly = null;
   let pChartAmount  = null;
   let pChartCount   = null;
 
   function pGetVisibleMonths() {
     return DATA_MO_P.filter(m => pActiveYears.has(m.slice(0,2)) && pActiveMonths.has(m.slice(3,5)));
+  }
+
+  function setPersonView(v) {
+    pViewMode = v;
+    document.getElementById('pview-monthly').className = 'sales-pill' + (v==='monthly'?' active':'');
+    document.getElementById('pview-rank').className    = 'sales-pill' + (v==='rank'?' active':'');
+    document.getElementById('person-monthly-area').classList.toggle('hidden', v!=='monthly');
+    document.getElementById('person-rank-area').classList.toggle('hidden', v!=='rank');
+    renderPersonChart();
   }
 
   function setPersonStatus(s) {
@@ -3471,73 +3503,128 @@ const BRANCH_DATA = {
     renderPersonChart();
   }
 
-  function renderPersonChart() {
-    const visMo = new Set(pGetVisibleMonths());
-    const agg = {};
-    for (const row of PERSON_DATA) {
-      const [person, mo, tp, status, cnt, amt] = row;
-      if (!pActiveTypes.has(tp)) continue;
-      if (!visMo.has(mo)) continue;
-      if (status !== pStatus) continue;
-      if (!agg[person]) agg[person] = {count:0, amount:0};
-      agg[person].count  += cnt;
-      agg[person].amount += amt;
-    }
+  function setPersonMetric(m) {
+    pMetric = m;
+    document.getElementById('pmetric-amount').className = 'sales-pill' + (m==='amount'?' active':'');
+    document.getElementById('pmetric-count').className  = 'sales-pill' + (m==='count'?' active':'');
+    const unitEl = document.getElementById('person-unit-label');
+    if (unitEl) unitEl.textContent = m==='amount' ? '단위: 백만원' : '단위: 건';
+    renderPersonChart();
+  }
 
+  function renderPersonChart() {
+    const visMo = pGetVisibleMonths();
+    const visMoSet = new Set(visMo);
     const isDark  = document.body.classList.contains('dark');
     const gridCol = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
     const tickCol = isDark ? '#cbd5e1' : '#334155';
-    const barCol  = pStatus === '청구' ? '#1d4ed8' : '#d97706';
-
-    const byAmount = Object.entries(agg).sort((a,b)=>b[1].amount-a[1].amount);
-    const byCount  = Object.entries(agg).sort((a,b)=>b[1].count -a[1].count);
-
     function getName(id) { return PERSON_NAMES[id] || id; }
 
-    function buildPersonChart(canvasId, sorted, metric, existing) {
-      const ctx = document.getElementById(canvasId);
-      if (!ctx) return null;
-      if (existing) existing.destroy();
-      const labels = sorted.map(([id]) => getName(id));
-      const values = sorted.map(([,v]) => metric === 'amount' ? v.amount : v.count);
-      const endLabelPlugin = {
-        id: 'endLabel_' + canvasId,
-        afterDraw(chart) {
-          const { ctx: c, scales: { x, y } } = chart;
-          c.save();
-          c.textAlign = 'left'; c.textBaseline = 'middle';
-          c.fillStyle = '#ffffff'; c.font = 'bold 10px Arial, sans-serif';
-          values.forEach((total, i) => {
-            if (!total) return;
-            const label = metric === 'amount'
-              ? Math.round(total/1000000).toLocaleString()
-              : total.toLocaleString();
-            c.fillText(label, x.getPixelForValue(total) + 5, y.getPixelForValue(i));
-          });
-          c.restore();
-        }
-      };
-      return new Chart(ctx, {
+    // 모든 고유 person 목록
+    const allPersons = [...new Set(PERSON_DATA.map(r => r[0]))].sort();
+
+    if (pViewMode === 'monthly') {
+      // 월별 집계: {person: {month: {count, amount}}}
+      const monthAgg = {};
+      for (const row of PERSON_DATA) {
+        const [person, mo, tp, status, cnt, amt] = row;
+        if (!pActiveTypes.has(tp)) continue;
+        if (!visMoSet.has(mo)) continue;
+        if (status !== pStatus) continue;
+        if (!monthAgg[person]) monthAgg[person] = {};
+        if (!monthAgg[person][mo]) monthAgg[person][mo] = {count:0, amount:0};
+        monthAgg[person][mo].count  += cnt;
+        monthAgg[person][mo].amount += amt;
+      }
+      const activePeople = allPersons.filter(p => monthAgg[p]);
+      const datasets = activePeople.map((person, idx) => ({
+        label: getName(person),
+        data: visMo.map(mo => monthAgg[person]?.[mo]?.[pMetric] || 0),
+        backgroundColor: PERSON_COLORS[idx % PERSON_COLORS.length],
+        datalabels: { display: false }
+      }));
+
+      const ctx = document.getElementById('person-chart-monthly');
+      if (!ctx) return;
+      if (pChartMonthly) pChartMonthly.destroy();
+      pChartMonthly = new Chart(ctx, {
         type: 'bar',
-        plugins: [endLabelPlugin],
-        data: { labels, datasets: [{ data: values, backgroundColor: barCol, datalabels: { display: false } }] },
+        data: { labels: visMo, datasets },
         options: {
-          indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-          layout: { padding: { right: 56 } },
+          responsive: true, maintainAspectRatio: false,
           plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: ctx => metric === 'amount' ? `₩${Math.round(ctx.raw).toLocaleString()}` : `${ctx.raw.toLocaleString()}건` } }
+            legend: { display: true, position: 'top', labels: { color: tickCol, boxWidth: 12, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const v = ctx.raw;
+                  if (!v) return null;
+                  return pMetric === 'amount'
+                    ? `${ctx.dataset.label}: ${Math.round(v/1000000).toLocaleString()}백만원`
+                    : `${ctx.dataset.label}: ${v.toLocaleString()}건`;
+                }
+              }
+            },
+            datalabels: { display: false }
           },
           scales: {
-            x: { grid: { color: gridCol }, ticks: { color: tickCol, maxTicksLimit: 6, callback: v => metric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString() } },
-            y: { grid: { display: false }, ticks: { color: '#ffffff', font: { size: 11 } } }
+            x: { stacked: true, grid: { color: gridCol }, ticks: { color: tickCol } },
+            y: { stacked: true, grid: { color: gridCol }, ticks: { color: tickCol, callback: v => pMetric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString() } }
           }
         }
       });
-    }
+    } else {
+      // 개인별 순위: 합산
+      const rankAgg = {};
+      for (const row of PERSON_DATA) {
+        const [person, mo, tp, status, cnt, amt] = row;
+        if (!pActiveTypes.has(tp)) continue;
+        if (!visMoSet.has(mo)) continue;
+        if (status !== pStatus) continue;
+        if (!rankAgg[person]) rankAgg[person] = {count:0, amount:0};
+        rankAgg[person].count  += cnt;
+        rankAgg[person].amount += amt;
+      }
+      const byAmount = Object.entries(rankAgg).sort((a,b)=>b[1].amount-a[1].amount);
+      const byCount  = Object.entries(rankAgg).sort((a,b)=>b[1].count -a[1].count);
 
-    pChartAmount = buildPersonChart('person-chart-amount', byAmount, 'amount', pChartAmount);
-    pChartCount  = buildPersonChart('person-chart-count',  byCount,  'count',  pChartCount);
+      function buildRankChart(canvasId, sorted, metric, existing) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return null;
+        if (existing) existing.destroy();
+        const labels = sorted.map(([id]) => getName(id));
+        const values = sorted.map(([,v]) => metric === 'amount' ? v.amount : v.count);
+        const colors = sorted.map(([id]) => PERSON_COLORS[allPersons.indexOf(id) % PERSON_COLORS.length]);
+        const endLabelPlugin = {
+          id: 'endLabel_' + canvasId,
+          afterDraw(chart) {
+            const { ctx: c, scales: { x, y } } = chart;
+            c.save(); c.textAlign='left'; c.textBaseline='middle';
+            c.fillStyle='#ffffff'; c.font='bold 10px Arial,sans-serif';
+            values.forEach((v, i) => {
+              if (!v) return;
+              c.fillText(metric==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(), x.getPixelForValue(v)+5, y.getPixelForValue(i));
+            });
+            c.restore();
+          }
+        };
+        return new Chart(ctx, {
+          type: 'bar', plugins: [endLabelPlugin],
+          data: { labels, datasets: [{ data: values, backgroundColor: colors, datalabels: { display: false } }] },
+          options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            layout: { padding: { right: 56 } },
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => metric==='amount' ? `₩${Math.round(ctx.raw).toLocaleString()}` : `${ctx.raw.toLocaleString()}건` } } },
+            scales: {
+              x: { grid: { color: gridCol }, ticks: { color: tickCol, maxTicksLimit:6, callback: v => metric==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString() } },
+              y: { grid: { display: false }, ticks: { color: '#ffffff', font: { size: 11 } } }
+            }
+          }
+        });
+      }
+      pChartAmount = buildRankChart('person-chart-amount', byAmount, 'amount', pChartAmount);
+      pChartCount  = buildRankChart('person-chart-count',  byCount,  'count',  pChartCount);
+    }
   }
 
   function togglePersonType(tp) {
