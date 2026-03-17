@@ -3615,10 +3615,11 @@ const BRANCH_DATA = {
       const rate = tot ? (n / tot * 100).toFixed(1) : '-';
       const isActive = tcActiveBranches.has(b) || tcActiveBranches.size === TC_BRANCHES.length;
       const aboveTarget = tot && parseFloat(rate) > TC_TARGET;
-      kpiRow.innerHTML += '<div class="sales-card p-4 cursor-pointer ' + (isActive ? '' : 'opacity-40') + '" onclick="toggleTcBranch(\'' + b + '\')">'
-        + '<div class="text-[11px] text-slate-400 mb-1">' + b + '</div>'
-        + '<div class="text-2xl font-bold ' + (aboveTarget ? 'text-red-400' : 'text-emerald-400') + '">' + rate + '%</div>'
-        + '<div class="text-[10px] text-slate-500 mt-1">N ' + n.toLocaleString() + ' / ' + tot.toLocaleString() + '</div>'
+      const borderClr = isActive ? (aboveTarget ? '#f97316' : '#2d5a9e') : '#334155';
+      kpiRow.innerHTML += '<div class="sales-card p-4 cursor-pointer ' + (isActive ? '' : 'opacity-40') + '" style="border-left:3px solid ' + borderClr + '" onclick="toggleTcBranch(\'' + b + '\')">'
+        + '<div class="text-[11px] text-slate-400 mb-1 font-semibold tracking-wider uppercase">' + b + '</div>'
+        + '<div class="text-2xl font-bold ' + (aboveTarget ? 'text-orange-400' : 'text-blue-400') + '">' + rate + '%</div>'
+        + '<div class="text-[10px] text-slate-500 mt-1">미실시 ' + n.toLocaleString() + ' / ' + tot.toLocaleString() + '</div>'
         + '</div>';
     });
 
@@ -3643,9 +3644,9 @@ const BRANCH_DATA = {
       barLabel = selMonths[0];
     }
 
-    // 바 색상: 35% 초과=주황, 이하=파랑
-    const barColors = barData.map(v => v > TC_TARGET ? '#f97316cc' : '#1d4ed8cc');
-    const barBorders = barData.map(v => v > TC_TARGET ? '#f97316' : '#1d4ed8');
+    // 바 색상: 35% 초과=주황, 이하=네이비
+    const barColors  = barData.map(v => v > TC_TARGET ? '#f9731699' : '#1e3a5fcc');
+    const barBorders = barData.map(v => v > TC_TARGET ? '#f97316'   : '#2d5a9e');
 
     const barDatasets = [{
       type: 'bar',
@@ -3658,32 +3659,41 @@ const BRANCH_DATA = {
       maxBarThickness: 80,
     }];
 
-    // 35% 기준선: 실선, 굵게
-    const targetDataset = {
-      type: 'line',
-      label: '목표 35%',
-      data: activeBranches.map(() => TC_TARGET),
-      borderColor: '#ef4444',
-      borderWidth: 3,
-      pointRadius: 0,
-      pointHoverRadius: 0,
-      fill: false,
-      tension: 0,
-      datalabels: { display: false },
+    // 35% 기준선: afterDraw 플러그인 (지점 수 관계없이 항상 전체 폭에 그려짐)
+    const tcLine35Plugin = {
+      id: 'tcLine35_' + Date.now(),
+      afterDraw(chart) {
+        const { ctx: c, chartArea, scales: { y } } = chart;
+        if (!y || !chartArea) return;
+        const yPx = y.getPixelForValue(TC_TARGET);
+        c.save();
+        c.beginPath();
+        c.strokeStyle = '#ef4444';
+        c.lineWidth = 3;
+        c.moveTo(chartArea.left, yPx);
+        c.lineTo(chartArea.right, yPx);
+        c.stroke();
+        c.fillStyle = '#ef4444';
+        c.font = 'bold 11px Arial, sans-serif';
+        c.textAlign = 'right';
+        c.textBaseline = 'bottom';
+        c.fillText('목표 35%', chartArea.right, yPx - 4);
+        c.restore();
+      }
     };
 
     if (tcBarChart) tcBarChart.destroy();
     const ctx = document.getElementById('tc-bar-chart').getContext('2d');
     tcBarChart = new Chart(ctx, {
-      data: { labels: activeBranches, datasets: [...barDatasets, targetDataset] },
+      data: { labels: activeBranches, datasets: barDatasets },
       options: {
         responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 28, right: 8 } },
         plugins: {
           legend: { display: false },
           tooltip: {
             callbacks: {
               label: ctx => {
-                if (ctx.dataset.label === '목표 35%') return ' 목표: 35%';
                 const b = activeBranches[ctx.dataIndex];
                 if (isAllMonths) {
                   let tot = 0, n = 0;
@@ -3697,10 +3707,10 @@ const BRANCH_DATA = {
             }
           },
           datalabels: {
-            display: ctx => ctx.dataset.type === 'bar' && ctx.raw > 0,
-            color: '#ffffff',
-            font: { size: 12, weight: 'bold' },
-            anchor: 'center', align: 'center',
+            display: ctx => ctx.raw > 0,
+            color: ctx => ctx.raw > TC_TARGET ? '#f97316' : '#60a5fa',
+            font: { size: 13, weight: 'bold' },
+            anchor: 'end', align: 'end',
             formatter: v => v + '%',
           },
         },
@@ -3712,7 +3722,8 @@ const BRANCH_DATA = {
             min: 0, max: 100,
           }
         }
-      }
+      },
+      plugins: [tcLine35Plugin],
     });
 
     // ── 상세 테이블 ──
