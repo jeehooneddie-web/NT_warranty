@@ -1302,6 +1302,8 @@
                 class="warranty-tab px-3 py-2 text-xs font-semibold border-b-2 border-nm-blue text-nm-blue">동력 계통</button>
               <button onclick="switchWarrantyTab('content-emission')" id="btn-emission"
                 class="warranty-tab px-3 py-2 text-xs font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700">배기가스 계통</button>
+              <button onclick="switchWarrantyTab('content-emission2')" id="btn-emission2"
+                class="warranty-tab px-3 py-2 text-xs font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700">배기가스 계통2</button>
               <button onclick="switchWarrantyTab('content-battery')" id="btn-battery"
                 class="warranty-tab px-3 py-2 text-xs font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700">고전압 배터리</button>
             </div>
@@ -1373,12 +1375,21 @@
                   <tr class="bg-slate-50 hover:bg-amber-50"><td class="px-3 py-0.5 font-mono font-bold text-amber-700 whitespace-nowrap border border-slate-200">161407*</td><td class="px-3 py-0.5 text-slate-700 whitespace-nowrap border border-slate-200">Fuel pressure regulator</td><td class="px-3 py-0.5 text-center font-semibold text-amber-700 whitespace-nowrap border border-slate-200">5년 / 80,000km</td></tr>
                   <tr class="bg-white hover:bg-amber-50"><td class="px-3 py-0.5 font-mono font-bold text-amber-700 whitespace-nowrap border border-slate-200">175101*</td><td class="px-3 py-0.5 text-slate-700 whitespace-nowrap border border-slate-200">Charge air intercooler</td><td class="px-3 py-0.5 text-center font-semibold text-amber-700 whitespace-nowrap border border-slate-200">5년 / 80,000km</td></tr>
                   <tr class="bg-slate-50 hover:bg-amber-50"><td class="px-3 py-0.5 font-mono font-bold text-amber-700 whitespace-nowrap border border-slate-200">175102*</td><td class="px-3 py-0.5 text-slate-700 whitespace-nowrap border border-slate-200">Charge air pipes/hoses</td><td class="px-3 py-0.5 text-center font-semibold text-amber-700 whitespace-nowrap border border-slate-200">5년 / 80,000km</td></tr>
-                  <!-- 7년 구분선 -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 배기가스 계통2 탭 콘텐츠 (7년 / 120,000km) -->
+            <div id="content-emission2" class="warranty-tab-content hidden flex-1 overflow-auto">
+              <table class="border-collapse" style="font-size:16px;">
+                <thead>
                   <tr class="bg-emerald-600 text-white">
-                    <td class="px-3 py-2 font-mono font-bold border border-emerald-700">Defect Code</td>
-                    <td class="px-3 py-2 font-semibold border border-emerald-700">Description — 7년 / 120,000km</td>
-                    <td class="px-3 py-2 text-center font-semibold border border-emerald-700">보증기간</td>
+                    <th class="px-3 py-2 text-left font-semibold whitespace-nowrap border border-emerald-700">Defect Code</th>
+                    <th class="px-3 py-2 text-left font-semibold whitespace-nowrap border border-emerald-700">Description</th>
+                    <th class="px-3 py-2 text-center font-semibold whitespace-nowrap border border-emerald-700">보증기간</th>
                   </tr>
+                </thead>
+                <tbody>
                   <tr class="bg-white hover:bg-emerald-50"><td class="px-3 py-0.5 font-mono font-bold text-emerald-700 whitespace-nowrap border border-slate-200">1214*</td><td class="px-3 py-0.5 text-slate-700 whitespace-nowrap border border-slate-200">Electronic shift or control units</td><td class="px-3 py-0.5 text-center font-semibold text-emerald-700 whitespace-nowrap border border-slate-200">7년 / 120,000km</td></tr>
                   <tr class="bg-slate-50 hover:bg-emerald-50"><td class="px-3 py-0.5 font-mono font-bold text-emerald-700 whitespace-nowrap border border-slate-200">1361*</td><td class="px-3 py-0.5 text-slate-700 whitespace-nowrap border border-slate-200">Electronic shift or control units</td><td class="px-3 py-0.5 text-center font-semibold text-emerald-700 whitespace-nowrap border border-slate-200">7년 / 120,000km</td></tr>
                   <tr class="bg-white hover:bg-emerald-50"><td class="px-3 py-0.5 font-mono font-bold text-emerald-700 whitespace-nowrap border border-slate-200">1619*</td><td class="px-3 py-0.5 text-slate-700 whitespace-nowrap border border-slate-200">SCR Technology</td><td class="px-3 py-0.5 text-center font-semibold text-emerald-700 whitespace-nowrap border border-slate-200">7년 / 120,000km</td></tr>
