@@ -1621,9 +1621,9 @@
             </div>
           </div>
           <!-- 월별 추이 차트 -->
-          <div id="person-monthly-area" class="p-5">
+          <div id="person-monthly-area" class="p-5" style="background:#1e2433; border-top:1px solid #2d3748;">
             <div class="flex items-center justify-between mb-3">
-              <p class="text-xs font-semibold text-slate-500">월별 추이</p>
+              <p class="text-xs font-semibold text-slate-300">월별 추이</p>
               <span id="person-unit-label" class="text-xs text-slate-400">단위: 백만원</span>
             </div>
             <div style="height:360px;"><canvas id="person-monthly-chart"></canvas></div>
@@ -3885,13 +3885,17 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
         options: {
           responsive: true, maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: '#475569', font: { size: 11 } } },
+            legend: { labels: { color: '#cbd5e1', font: { size: 12 }, padding: 16, usePointStyle: true } },
             tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw?.toLocaleString() ?? '-'}${pMetric==='amount' ? '백만원' : '건'}` } },
-            datalabels: { display: false },
+            datalabels: {
+              color: '#f1f5f9', font: { size: 10, weight: 'bold' },
+              formatter: v => v != null ? (pMetric==='amount' ? v.toLocaleString() : v) : '',
+              anchor: 'top', align: 'top', display: ctx => ctx.raw != null,
+            },
           },
           scales: {
-            x: { ticks: { color: '#64748b' }, grid: { color: '#e2e8f0' } },
-            y: { ticks: { color: '#64748b', callback: v => pMetric==='amount' ? v.toLocaleString()+'M' : v.toLocaleString() }, grid: { color: '#e2e8f0' }, beginAtZero: true },
+            x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: '#334155' } },
+            y: { ticks: { color: '#94a3b8', callback: v => pMetric==='amount' ? v.toLocaleString() : v.toLocaleString() }, grid: { color: '#334155' }, beginAtZero: true },
           }
         }
       });
