@@ -1630,6 +1630,9 @@
               <span id="person-unit-label" class="text-xs text-slate-400">단위: 백만원</span>
             </div>
             <div style="height:360px;"><canvas id="person-monthly-chart"></canvas></div>
+            <div class="flex justify-center mt-3">
+              <button onclick="resetPersonChartLegend()" class="text-xs px-3 py-1 rounded-full font-semibold" style="background:#334155;color:#94a3b8;border:1px solid #475569;">전체 선택</button>
+            </div>
           </div>
           <!-- 개인별 순위 차트 (좌: 금액, 우: 건수) -->
           <div id="person-rank-area" class="hidden grid grid-cols-2 divide-x divide-slate-200 dark:divide-slate-700">
@@ -3819,6 +3822,12 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     const result = [];
     for (const y of years) for (const m of mos) result.push(y + '-' + m);
     return result;
+  }
+
+  function resetPersonChartLegend() {
+    if (!pChartMonthly) return;
+    pChartMonthly.data.datasets.forEach((_, i) => pChartMonthly.setDatasetVisibility(i, true));
+    pChartMonthly.update();
   }
 
   function setPersonTotalMode(isTotal) {
