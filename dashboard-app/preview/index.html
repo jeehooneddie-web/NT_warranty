@@ -1613,7 +1613,11 @@
               <button onclick="setPersonView('monthly')" id="pview-monthly" class="sales-pill active">월별 추이</button>
               <button onclick="setPersonView('rank')" id="pview-rank" class="sales-pill">개인별 순위</button>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2 items-center">
+              <div id="pmode-wrap" class="flex gap-2 border-r border-slate-200 pr-2 mr-1">
+                <button onclick="setPersonTotalMode(false)" id="pmode-individual" class="sales-pill active">개인별</button>
+                <button onclick="setPersonTotalMode(true)"  id="pmode-total"      class="sales-pill">전체합계</button>
+              </div>
               <button onclick="setPersonStatus('청구')" id="pstatus-claim" class="sales-pill active">청구</button>
               <button onclick="setPersonStatus('취소')" id="pstatus-cancel" class="sales-pill">취소</button>
               <button onclick="setPersonMetric('amount')" id="pmetric-amount" class="sales-pill active">금액</button>
@@ -1622,11 +1626,7 @@
           </div>
           <!-- 월별 추이 차트 -->
           <div id="person-monthly-area" class="p-5" style="background:#1e2433; border-top:1px solid #2d3748;">
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex gap-2">
-                <button onclick="setPersonTotalMode(false)" id="pmode-individual" class="sales-pill active">개인별</button>
-                <button onclick="setPersonTotalMode(true)"  id="pmode-total"      class="sales-pill">전체합계</button>
-              </div>
+            <div class="flex justify-end mb-3">
               <span id="person-unit-label" class="text-xs text-slate-400">단위: 백만원</span>
             </div>
             <div style="height:360px;"><canvas id="person-monthly-chart"></canvas></div>
@@ -3834,6 +3834,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     document.getElementById('pview-rank').className    = 'sales-pill' + (v==='rank'?' active':'');
     document.getElementById('person-monthly-area').classList.toggle('hidden', v!=='monthly');
     document.getElementById('person-rank-area').classList.toggle('hidden', v!=='rank');
+    document.getElementById('pmode-wrap').classList.toggle('hidden', v!=='monthly');
     renderPersonChart();
   }
 
