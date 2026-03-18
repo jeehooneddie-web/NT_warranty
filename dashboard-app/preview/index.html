@@ -3926,8 +3926,12 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
       }
       const activePeople = allPersons.filter(p => monthAgg[p]);
 
-      // 꺾은선 차트
-      if (pChartMonthly) { pChartMonthly.destroy(); pChartMonthly = null; }
+      // 꺾은선 차트 — 기존 visibility 상태 보존
+      const prevVisibility = {};
+      if (pChartMonthly) {
+        pChartMonthly.data.datasets.forEach((ds, i) => { prevVisibility[ds.label] = pChartMonthly.isDatasetVisible(i); });
+        pChartMonthly.destroy(); pChartMonthly = null;
+      }
       const ctx = document.getElementById('person-monthly-chart');
       if (!ctx) return;
 
@@ -3957,6 +3961,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
           tension: 0.3, fill: false, pointRadius: 5, pointHoverRadius: 7, spanGaps: false,
         }));
       }
+      const hiddenLabels = new Set(Object.entries(prevVisibility).filter(([,v]) => !v).map(([k]) => k));
       pChartMonthly = new Chart(ctx, {
         type: 'line',
         data: { labels: visMo, datasets },
@@ -3977,6 +3982,10 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
           }
         }
       });
+      if (hiddenLabels.size > 0) {
+        pChartMonthly.data.datasets.forEach((ds, i) => { if (hiddenLabels.has(ds.label)) pChartMonthly.setDatasetVisibility(i, false); });
+        pChartMonthly.update();
+      }
       renderPersonLegend();
     } else {
       // 개인별 순위: 합산
