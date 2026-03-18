@@ -185,14 +185,11 @@
     .sales-kpi-value { font-size: 28px; font-weight: 700; color: #0f172a; letter-spacing: -0.5px; line-height: 1; }
     .sales-kpi-sub   { font-size: 12px; margin-top: 6px; color: #64748b; }
 
-    .sales-pill { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; border: none; outline: none; }
-    .sales-pill.active          { background: #1e3a5f; color: #fff; }
-    .sales-pill:not(.active)    { background: #e2e8f0; color: #475569; }
-    .sales-pill:not(.active):hover { background: #cbd5e1; }
+    .pill-group { display: inline-flex; flex-wrap: wrap; background: #e2e8f0; border-radius: 10px; padding: 3px; gap: 2px; }
+    .sales-pill { padding: 5px 14px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; border: none; outline: none; background: transparent; color: #64748b; white-space: nowrap; }
+    .sales-pill.active          { background: #fff; color: #1e3a5f; box-shadow: 0 1px 4px rgba(0,0,0,0.13); }
+    .sales-pill:not(.active):hover { background: #f1f5f9; color: #1e3a5f; }
 
-    .sales-seg { padding: 6px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; }
-    .sales-seg.active        { background: #fff; color: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
-    .sales-seg:not(.active)  { background: transparent; color: #94a3b8; }
 
     /* 드래그 앤 드롭 */
     .dash-drag-handle { cursor: grab; color: #cbd5e1; font-size: 14px; line-height:1; padding: 2px 4px; border-radius: 4px; transition: color 0.15s, background 0.15s; user-select: none; }
@@ -1457,7 +1454,7 @@
           <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'DEFECT_필터')">📷</button>
           <div class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">지점</span>
-            <div class="flex gap-2 flex-wrap">
+            <div class="pill-group">
               <button onclick="toggleDefectBranch('all')" id="dbranch-all" class="sales-pill active">전체</button>
               <button onclick="toggleDefectBranch('전주')" id="dbranch-전주" class="sales-pill">전주</button>
               <button onclick="toggleDefectBranch('평택')" id="dbranch-평택" class="sales-pill">평택</button>
@@ -1468,7 +1465,7 @@
           </div>
           <div class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">타입</span>
-            <div class="flex gap-2 flex-wrap">
+            <div class="pill-group">
               <button onclick="toggleDefectType('all')" id="dtype-all" class="sales-pill active">전체</button>
               <button onclick="toggleDefectType('BSI')" id="dtype-BSI" class="sales-pill">BSI</button>
               <button onclick="toggleDefectType('Warranty')" id="dtype-Warranty" class="sales-pill">Warranty</button>
@@ -1480,7 +1477,7 @@
           </div>
           <div class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">년도</span>
-            <div class="flex gap-2 flex-wrap">
+            <div class="pill-group">
               <button onclick="toggleDefectYear('all')" id="dyear-all" class="sales-pill active">전체</button>
               <button onclick="toggleDefectYear('25')" id="dyear-25" class="sales-pill">2025</button>
               <button onclick="toggleDefectYear('26')" id="dyear-26" class="sales-pill">2026</button>
@@ -1488,7 +1485,7 @@
           </div>
           <div class="flex items-center gap-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">월별</span>
-            <div class="flex gap-2 flex-wrap">
+            <div class="pill-group">
               <button onclick="toggleDefectMonth('all')" id="dmonth-all" class="sales-pill active">전체</button>
               <button onclick="toggleDefectMonth('01')" id="dmonth-01" class="sales-pill">1월</button>
               <button onclick="toggleDefectMonth('02')" id="dmonth-02" class="sales-pill">2월</button>
@@ -1566,7 +1563,7 @@
           <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'개인별_필터')">📷</button>
           <div class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">타입</span>
-            <div class="flex gap-2 flex-wrap">
+            <div class="pill-group">
               <button onclick="togglePersonType('all')" id="ptype-all" class="sales-pill active">전체</button>
               <button onclick="togglePersonType('BSI')" id="ptype-BSI" class="sales-pill">BSI</button>
               <button onclick="togglePersonType('Warranty')" id="ptype-Warranty" class="sales-pill">Warranty</button>
@@ -1578,7 +1575,7 @@
           </div>
           <div class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">년도</span>
-            <div class="flex gap-2 flex-wrap">
+            <div class="pill-group">
               <button onclick="togglePersonYear('all')" id="pyear-all" class="sales-pill active">전체</button>
               <button onclick="togglePersonYear('25')" id="pyear-25" class="sales-pill">2025</button>
               <button onclick="togglePersonYear('26')" id="pyear-26" class="sales-pill">2026</button>
@@ -1586,7 +1583,7 @@
           </div>
           <div class="flex items-center gap-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">월별</span>
-            <div class="flex gap-2 flex-wrap">
+            <div class="pill-group">
               <button onclick="togglePersonMonth('all')" id="pmonth-all" class="sales-pill active">전체</button>
               <button onclick="togglePersonMonth('01')" id="pmonth-01" class="sales-pill">1월</button>
               <button onclick="togglePersonMonth('02')" id="pmonth-02" class="sales-pill">2월</button>
@@ -1609,19 +1606,23 @@
           <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'개인별_차트')">📷</button>
           <!-- 탭 바 -->
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700">
-            <div class="flex gap-2">
+            <div class="pill-group">
               <button onclick="setPersonView('monthly')" id="pview-monthly" class="sales-pill active">월별 추이</button>
               <button onclick="setPersonView('rank')" id="pview-rank" class="sales-pill">개인별 순위</button>
             </div>
             <div class="flex gap-2 items-center">
-              <div id="pmode-wrap" class="flex gap-2 border-r border-slate-200 pr-2 mr-1">
+              <div id="pmode-wrap" class="pill-group" style="margin-right:6px;">
                 <button onclick="setPersonTotalMode(false)" id="pmode-individual" class="sales-pill active">개인별</button>
                 <button onclick="setPersonTotalMode(true)"  id="pmode-total"      class="sales-pill">전체합계</button>
               </div>
-              <button onclick="setPersonStatus('청구')" id="pstatus-claim" class="sales-pill active">청구</button>
-              <button onclick="setPersonStatus('취소')" id="pstatus-cancel" class="sales-pill">취소</button>
-              <button onclick="setPersonMetric('amount')" id="pmetric-amount" class="sales-pill active">금액</button>
-              <button onclick="setPersonMetric('count')" id="pmetric-count" class="sales-pill">건수</button>
+              <div class="pill-group">
+                <button onclick="setPersonStatus('청구')" id="pstatus-claim" class="sales-pill active">청구</button>
+                <button onclick="setPersonStatus('취소')" id="pstatus-cancel" class="sales-pill">취소</button>
+              </div>
+              <div class="pill-group">
+                <button onclick="setPersonMetric('amount')" id="pmetric-amount" class="sales-pill active">금액</button>
+                <button onclick="setPersonMetric('count')" id="pmetric-count" class="sales-pill">건수</button>
+              </div>
             </div>
           </div>
           <!-- 월별 추이 차트 -->
@@ -1670,7 +1671,7 @@
           <div class="flex flex-wrap gap-6 items-start">
             <div>
               <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">지점</span>
-              <div class="flex gap-2 flex-wrap">
+              <div class="pill-group">
                 <button onclick="toggleTcBranch('all')" id="tc-fbranch-all" class="sales-pill active">전체</button>
                 <button onclick="toggleTcBranch('전주')" id="tc-fbranch-전주" class="sales-pill">전주</button>
                 <button onclick="toggleTcBranch('평택')" id="tc-fbranch-평택" class="sales-pill">평택</button>
@@ -1681,7 +1682,7 @@
             </div>
             <div>
               <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">월</span>
-              <div class="flex gap-2 flex-wrap" id="tc-month-filter"></div>
+              <div class="pill-group" id="tc-month-filter"></div>
             </div>
           </div>
         </div>
@@ -1723,7 +1724,7 @@
           <!-- 지점 필터 -->
           <div class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">지점</span>
-            <div class="flex gap-2 flex-wrap">
+            <div class="pill-group">
               <button onclick="toggleSalesBranch('all')" id="fbranch-all" class="sales-pill active">전체</button>
               <button onclick="toggleSalesBranch('전주')" id="fbranch-전주" class="sales-pill">전주</button>
               <button onclick="toggleSalesBranch('평택')" id="fbranch-평택" class="sales-pill">평택</button>
@@ -1735,7 +1736,7 @@
           <!-- 타입 필터 -->
           <div class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">타입</span>
-            <div class="flex gap-2 flex-wrap">
+            <div class="pill-group">
               <button onclick="toggleSalesType('all')" id="ftype-all" class="sales-pill active">전체</button>
               <button onclick="toggleSalesType('BSI')" id="ftype-BSI" class="sales-pill">BSI</button>
               <button onclick="toggleSalesType('Warranty')" id="ftype-Warranty" class="sales-pill">Warranty</button>
@@ -1748,7 +1749,7 @@
           <!-- 년도 필터 -->
           <div class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">년도</span>
-            <div class="flex gap-2 flex-wrap">
+            <div class="pill-group">
               <button onclick="toggleSalesYear('all')" id="fyear-all" class="sales-pill active">전체</button>
               <button onclick="toggleSalesYear('25')" id="fyear-25" class="sales-pill">2025</button>
               <button onclick="toggleSalesYear('26')" id="fyear-26" class="sales-pill">2026</button>
@@ -1757,7 +1758,7 @@
           <!-- 월별 필터 -->
           <div class="flex items-center gap-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">월별</span>
-            <div class="flex gap-1.5 flex-wrap">
+            <div class="pill-group">
               <button onclick="toggleSalesMonth('all')" id="fmonth-all" class="sales-pill active">전체</button>
               <button onclick="toggleSalesMonth('01')" id="fmonth-01" class="sales-pill">1월</button>
               <button onclick="toggleSalesMonth('02')" id="fmonth-02" class="sales-pill">2월</button>
@@ -1778,18 +1779,18 @@
         <!-- 금액/건수 토글 + 설명 -->
         <div class="flex items-center justify-between mb-4">
           <p class="text-xs text-slate-400">취소 제외 · 바스크 1번 기준 건수 · Claim 상세_전체</p>
-          <div class="flex bg-slate-100 rounded-xl p-1 gap-0.5">
-            <button onclick="setSalesMode('amount')" id="btn-sales-amount" class="sales-seg active">금액</button>
-            <button onclick="setSalesMode('count')" id="btn-sales-count" class="sales-seg">건수</button>
-            <button onclick="setSalesMode('totalamount')" id="btn-sales-totalamount" class="sales-seg">전체 금액</button>
+          <div class="pill-group">
+            <button onclick="setSalesMode('amount')" id="btn-sales-amount" class="sales-pill active">금액</button>
+            <button onclick="setSalesMode('count')" id="btn-sales-count" class="sales-pill">건수</button>
+            <button onclick="setSalesMode('totalamount')" id="btn-sales-totalamount" class="sales-pill">전체 금액</button>
           </div>
         </div>
 
         <!-- KPI 카드 4개 -->
         <div class="flex items-center justify-between mb-2">
-          <div class="flex bg-slate-100 rounded-xl p-1 gap-0.5">
-            <button onclick="setKpiMode('A')" id="btn-kpi-A" class="sales-seg active">매출 중심</button>
-            <button onclick="setKpiMode('C')" id="btn-kpi-C" class="sales-seg">균형형</button>
+          <div class="pill-group">
+            <button onclick="setKpiMode('A')" id="btn-kpi-A" class="sales-pill active">매출 중심</button>
+            <button onclick="setKpiMode('C')" id="btn-kpi-C" class="sales-pill">균형형</button>
           </div>
         </div>
         <div class="grid grid-cols-4 gap-3 mb-4">
@@ -3099,8 +3100,8 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
 
   function setKpiMode(mode) {
     kpiMode = mode;
-    document.getElementById('btn-kpi-A').className = 'sales-seg'+(mode==='A'?' active':'');
-    document.getElementById('btn-kpi-C').className = 'sales-seg'+(mode==='C'?' active':'');
+    document.getElementById('btn-kpi-A').className = 'sales-pill'+(mode==='A'?' active':'');
+    document.getElementById('btn-kpi-C').className = 'sales-pill'+(mode==='C'?' active':'');
     updateSalesKPIs();
   }
 
@@ -3203,9 +3204,9 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
 
   function setSalesMode(mode) {
     salesMode = mode;
-    document.getElementById('btn-sales-amount').className      = 'sales-seg'+(mode==='amount'      ?' active':'');
-    document.getElementById('btn-sales-count').className       = 'sales-seg'+(mode==='count'       ?' active':'');
-    document.getElementById('btn-sales-totalamount').className = 'sales-seg'+(mode==='totalamount' ?' active':'');
+    document.getElementById('btn-sales-amount').className      = 'sales-pill'+(mode==='amount'      ?' active':'');
+    document.getElementById('btn-sales-count').className       = 'sales-pill'+(mode==='count'       ?' active':'');
+    document.getElementById('btn-sales-totalamount').className = 'sales-pill'+(mode==='totalamount' ?' active':'');
     updateSalesChart();
   }
 
