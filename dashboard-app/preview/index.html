@@ -3810,7 +3810,11 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
   let pChartCount   = null;
 
   function pGetVisibleMonths() {
-    return DATA_MO_P.filter(m => pActiveYears.has(m.slice(0,2)) && pActiveMonths.has(m.slice(3,5)));
+    const years = [...pActiveYears].sort();
+    const mos   = [...pActiveMonths].sort();
+    const result = [];
+    for (const y of years) for (const m of mos) result.push(y + '-' + m);
+    return result;
   }
 
   function setPersonView(v) {
