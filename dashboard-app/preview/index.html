@@ -1623,7 +1623,10 @@
           <!-- 월별 추이 차트 -->
           <div id="person-monthly-area" class="p-5" style="background:#1e2433; border-top:1px solid #2d3748;">
             <div class="flex items-center justify-between mb-3">
-              <p class="text-xs font-semibold text-slate-300">월별 추이</p>
+              <div class="flex gap-2">
+                <button onclick="setPersonTotalMode(false)" id="pmode-individual" class="sales-pill active">개인별</button>
+                <button onclick="setPersonTotalMode(true)"  id="pmode-total"      class="sales-pill">전체합계</button>
+              </div>
               <span id="person-unit-label" class="text-xs text-slate-400">단위: 백만원</span>
             </div>
             <div style="height:360px;"><canvas id="person-monthly-chart"></canvas></div>
@@ -3808,6 +3811,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
   let pChartMonthly = null;
   let pChartAmount  = null;
   let pChartCount   = null;
+  let pShowTotal    = false;
 
   function pGetVisibleMonths() {
     const years = [...pActiveYears].sort();
@@ -3815,6 +3819,13 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     const result = [];
     for (const y of years) for (const m of mos) result.push(y + '-' + m);
     return result;
+  }
+
+  function setPersonTotalMode(isTotal) {
+    pShowTotal = isTotal;
+    document.getElementById('pmode-individual').className = 'sales-pill' + (!isTotal ? ' active' : '');
+    document.getElementById('pmode-total').className      = 'sales-pill' + (isTotal  ? ' active' : '');
+    renderPersonChart();
   }
 
   function setPersonView(v) {
@@ -3872,17 +3883,33 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
       if (pChartMonthly) { pChartMonthly.destroy(); pChartMonthly = null; }
       const ctx = document.getElementById('person-monthly-chart');
       if (!ctx) return;
-      const datasets = activePeople.map((person, i) => ({
-        label: getName(person),
-        data: visMo.map(mo => {
-          const v = monthAgg[person]?.[mo]?.[pMetric] || 0;
+
+      let datasets;
+      if (pShowTotal) {
+        // 전체 합계 라인 하나
+        const totalData = visMo.map(mo => {
+          const v = activePeople.reduce((s, p) => s + (monthAgg[p]?.[mo]?.[pMetric] || 0), 0);
           return v ? (pMetric === 'amount' ? Math.round(v / 1000000) : v) : null;
-        }),
-        borderColor: PERSON_COLORS[i % PERSON_COLORS.length],
-        backgroundColor: PERSON_COLORS[i % PERSON_COLORS.length] + '22',
-        tension: 0.3, fill: false, pointRadius: 5, pointHoverRadius: 7,
-        spanGaps: false,
-      }));
+        });
+        datasets = [{
+          label: '전체 합계',
+          data: totalData,
+          borderColor: '#38bdf8',
+          backgroundColor: '#38bdf822',
+          tension: 0.3, fill: false, pointRadius: 5, pointHoverRadius: 7, spanGaps: false,
+        }];
+      } else {
+        datasets = activePeople.map((person, i) => ({
+          label: getName(person),
+          data: visMo.map(mo => {
+            const v = monthAgg[person]?.[mo]?.[pMetric] || 0;
+            return v ? (pMetric === 'amount' ? Math.round(v / 1000000) : v) : null;
+          }),
+          borderColor: PERSON_COLORS[i % PERSON_COLORS.length],
+          backgroundColor: PERSON_COLORS[i % PERSON_COLORS.length] + '22',
+          tension: 0.3, fill: false, pointRadius: 5, pointHoverRadius: 7, spanGaps: false,
+        }));
+      }
       pChartMonthly = new Chart(ctx, {
         type: 'line',
         data: { labels: visMo, datasets },
