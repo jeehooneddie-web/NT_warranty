@@ -40,24 +40,34 @@ for src, dst, name in [
 
 # ── 2. RAW 클레임 읽기 ────────────────────────────────────
 step('RAW 클레임 집계 중...')
-df = pd.read_excel(RAW_TMP, sheet_name=3, header=1, engine='openpyxl')
+df = pd.read_excel(RAW_TMP, sheet_name=2, header=1, engine='openpyxl')
 cols = df.columns.tolist()
 status_col = cols[1]; city_col = cols[5]; code_col = cols[12]
 amount_col = cols[22]; month_col = cols[28]; type_col = cols[30]
+task_col   = cols[8]
+
+# 지점 코드 → 지점명 매핑 (숫자코드 또는 AS_ 형식 모두 처리)
+BRANCH_MAP = {'26999':'전주','40699':'군산','41967':'목포','419668':'서산','44835':'평택'}
 
 TYPES = ['BSI','Warranty','TC/RECALL','WP','LOCAL TC','Goodwill']
 df_c = df[df[status_col].str.contains('청구', na=False)].copy()
 df_c = df_c[df_c[type_col].isin(TYPES)].copy()
-df_c[city_col]  = df_c[city_col].str.replace('AS_','', regex=False)
+df_c[city_col] = df_c[city_col].astype(str).str.replace('AS_','', regex=False)
+df_c[city_col] = df_c[city_col].replace(BRANCH_MAP)
 df_c[code_col]  = df_c[code_col].astype(str).str.strip()
 df_c[amount_col] = pd.to_numeric(df_c[amount_col], errors='coerce').fillna(0)
-ok(f'청구 행 수: {len(df_c):,}')
+# M열이 '99'로 시작하는 경우 BSI → Warranty 재분류 (99코드는 BSI 아님)
+mask_99 = (df_c[type_col] == 'BSI') & (df_c[code_col].str.startswith('99'))
+df_c.loc[mask_99, type_col] = 'Warranty'
+ok(f'청구 행 수: {len(df_c):,}  /  99코드 재분류: {mask_99.sum():,}건 (BSI→Warranty)')
 
 # ── 3. BRANCH_DATA 집계 ───────────────────────────────────
 step('BRANCH_DATA 집계 중...')
-branch_agg = df_c.groupby([city_col, month_col, type_col]).agg(
-    count=(amount_col,'count'), total=(amount_col,'sum')
-).reset_index()
+df_branch_count = df_c[df_c[task_col] == 1].copy()
+branch_cnt = df_branch_count.groupby([city_col, month_col, type_col]).agg(count=(amount_col,'count')).reset_index()
+branch_tot = df_c.groupby([city_col, month_col, type_col]).agg(total=(amount_col,'sum')).reset_index()
+branch_agg = branch_cnt.merge(branch_tot, on=[city_col, month_col, type_col], how='outer').fillna(0)
+branch_agg['count'] = branch_agg['count'].astype(int)
 
 branch_data = {}
 for _, r in branch_agg.iterrows():
@@ -102,23 +112,38 @@ unmatched = [{'code':r[code_col],'count':int(r['count']),'amount':int(r['amount'
 
 ok(f'집계 행: {len(defect_raw):,}  /  미매칭: {len(unmatched)}개')
 
-# ── 6. 개인별 청구 현황 집계 (Task=1, X열 기준) ──────────
+# ── 6. 개인별 청구 현황 집계 (Task=1, 금액=클레임금액 cols[22]) ──────────
 step('개인별 청구 현황 집계 중...')
 task_col   = cols[8]
 person_col = cols[23]
-u_amt_col  = cols[20]
+# 금액: 보증매출(BRANCH_DATA)과 동일하게 cols[22] 사용
+p_amt_col  = cols[22]
 
-df_task1 = df_c[df_c[task_col] == 1].copy()
-df_task1[u_amt_col] = pd.to_numeric(df_task1[u_amt_col], errors='coerce').fillna(0)
+# 청구 + 취소 모두 포함
+df_person_base = df[df[status_col].str.contains('청구|취소', na=False)].copy()
+df_person_base = df_person_base[df_person_base[type_col].isin(TYPES)].copy()
+df_person_base[city_col] = df_person_base[city_col].str.replace('AS_','', regex=False)
+df_person_base[p_amt_col] = pd.to_numeric(df_person_base[p_amt_col], errors='coerce').fillna(0)
+
+# 개인별: Task=1 필터
+df_task1 = df_person_base[df_person_base[task_col] == 1].copy()
 
 person_agg = df_task1.groupby([person_col, month_col, type_col, status_col]).agg(
-    count=(u_amt_col, 'count'), amount=(u_amt_col, 'sum')
+    count=(p_amt_col, 'count'), amount=(p_amt_col, 'sum')
 ).reset_index()
 
 person_raw = [
     [r[person_col], r[month_col], r[type_col], r[status_col], int(r['count']), int(r['amount'])]
     for _, r in person_agg.iterrows()
 ]
+
+# 전체합계: Task 필터 없이 전체 집계 (보증매출과 동일 기준)
+total_agg = df_person_base.groupby([month_col, type_col, status_col]).agg(
+    count=(p_amt_col, 'count'), amount=(p_amt_col, 'sum')
+).reset_index()
+for _, r in total_agg.iterrows():
+    person_raw.append(['전체합계', r[month_col], r[type_col], r[status_col], int(r['count']), int(r['amount'])])
+
 ok(f'개인별 집계 행: {len(person_raw)}  /  고유 ID: {df_task1[person_col].nunique()}명')
 
 # ── 7. TC 미실시율 집계 ────────────────────────────────────
@@ -145,6 +170,33 @@ for _, r in tc_agg.iterrows():
     }
 ok(f'TC 집계 완료: {len(tc_clean)}행 → {sum(len(v) for v in tc_data.values())}개월치')
 
+# ── 8. CLAIM_DATA 집계 (불승인/보완요청/보완완료, Task=1) ─
+step('CLAIM_DATA 집계 중...')
+df_claim_all = df[df[cols[6]].isin(['불승인', '보완요청', '보완완료'])].copy()
+df_claim_all[cols[22]] = pd.to_numeric(df_claim_all[cols[22]], errors='coerce').fillna(0)
+
+# 클레임번호별 전체 금액 합산 (Task 무관)
+claim_amount_total = df_claim_all.groupby(cols[7])[cols[22]].sum().to_dict()
+
+# Task=1 행만 표시 (금액은 클레임번호 단위 합산값으로 대체)
+df_claim = df_claim_all[df_claim_all[cols[8]] == 1].copy()
+claim_raw = []
+for _, r in df_claim.iterrows():
+    date_val = str(r[cols[13]])[:10] if pd.notna(r[cols[13]]) and str(r[cols[13]]) not in ('nan','NaT') else ''
+    claim_no = str(r[cols[7]])
+    claim_raw.append([
+        claim_no,                                             # H: 클레임번호
+        str(r[cols[5]]).replace('AS_',''),                    # F: 지점
+        str(r[cols[6]]),                                      # G: 클레임상태
+        str(r[cols[10]]),                                     # K: 워런티Stage
+        str(r[cols[11]]),                                     # L: Claim Type
+        str(r[cols[12]]),                                     # M: Defect Code
+        date_val,                                             # N: 날짜
+        int(claim_amount_total.get(claim_no, 0)),             # W: 클레임금액 (전체합산)
+        str(r[cols[23]]),                                     # X: 담당확인자
+    ])
+ok(f'CLAIM_DATA: {len(claim_raw):,}행 (불승인/보완요청/보완완료, Task=1)')
+
 # ── 8-1. JS 문자열 생성 ───────────────────────────────────
 step('JS 데이터 문자열 생성 중...')
 desc_js     = 'const DEFECT_DESC='    + json.dumps(matched_desc, ensure_ascii=False, separators=(',',':')) + ';'
@@ -152,6 +204,7 @@ raw_js      = 'const DEFECT_RAW='     + json.dumps(defect_raw,   ensure_ascii=Fa
 um_js       = 'const DEFECT_UNMATCHED=' + json.dumps(unmatched,  ensure_ascii=False, separators=(',',':')) + ';'
 person_js   = 'const PERSON_DATA='    + json.dumps(person_raw,   ensure_ascii=False, separators=(',',':')) + ';'
 tc_js       = 'const TC_DATA='        + json.dumps(tc_data,      ensure_ascii=False, separators=(',',':')) + ';'
+claim_js    = 'const CLAIM_DATA='     + json.dumps(claim_raw,    ensure_ascii=False, separators=(',',':')) + ';'
 ok('완료')
 
 # ── 7. HTML embed ─────────────────────────────────────────
@@ -165,6 +218,7 @@ html = re.sub(r'const DEFECT_RAW=\[.*?\];',          raw_js,     html, flags=re.
 html = re.sub(r'const DEFECT_UNMATCHED=\[.*?\];',    um_js,      html, flags=re.DOTALL)
 html = re.sub(r'const PERSON_DATA=\[.*?\];',         person_js,  html, flags=re.DOTALL)
 html = re.sub(r'const TC_DATA=\{.*?\};',             tc_js,      html, flags=re.DOTALL)
+html = re.sub(r'const CLAIM_DATA=\[.*?\];',          claim_js,   html, flags=re.DOTALL)
 
 with open(HTML_PATH, 'w', encoding='utf-8') as f:
     f.write(html)
@@ -177,9 +231,16 @@ subprocess.run(['git', 'add', 'dashboard-app/preview/index.html'], check=True)
 
 from datetime import datetime
 today = datetime.now().strftime('%Y-%m-%d %H:%M')
-subprocess.run(['git', 'commit', '-m', f'데이터 자동 업데이트 ({today})'], check=True)
-subprocess.run(['git', 'push'], check=True)
-ok('배포 완료!')
+
+# 변경사항이 있을 때만 커밋
+status = subprocess.run(['git', 'status', '--porcelain', 'dashboard-app/preview/index.html'],
+                        capture_output=True, text=True).stdout.strip()
+if status:
+    subprocess.run(['git', 'commit', '-m', f'데이터 자동 업데이트 ({today})'], check=True)
+    subprocess.run(['git', 'push'], check=True)
+    ok('배포 완료!')
+else:
+    ok('데이터 변경 없음 — 커밋 스킵 (이미 최신 상태)')
 
 print('\n' + '='*50)
 print('  모든 작업이 완료됐습니다.')

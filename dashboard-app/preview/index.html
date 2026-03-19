@@ -3624,7 +3624,12 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
   const DATA_MO_P    = [...new Set(PERSON_DATA.map(r => r[1]))].sort();
   const PERSON_COLORS = ['#1d4ed8','#0891b2','#059669','#7c3aed','#d97706','#dc2626','#0d9488','#9333ea','#f59e0b','#ef4444','#3b82f6','#10b981','#8b5cf6','#f97316'];
 
-  const PERSON_NAMES = {};
+  const PERSON_NAMES = {
+    'bna157':'이지훈','bna255':'최금환','bna358':'김민철','bna377':'강청호',
+    'bna472':'기준혁','bna557':'유정현','nt230403':'최희원','nt250204':'고서진',
+    'nt250601':'신기섭','nt250702':'고형민','nt250911':'김선기','nt250917':'한현구',
+    'nt251001':'권승리','nt251104':'오정훈',
+  };
 
   // ===================== TC 미실시율 =====================
   const TC_BRANCHES = ['전주','평택','군산','목포','서산'];
@@ -4366,7 +4371,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
         <td class="px-3 py-2 font-mono text-slate-600 whitespace-nowrap">${defectCode}</td>
         <td class="px-3 py-2 text-slate-500 whitespace-nowrap">${date}</td>
         <td class="px-3 py-2 text-right text-slate-700 whitespace-nowrap">${amount.toLocaleString()}</td>
-        <td class="px-3 py-2 text-slate-600 whitespace-nowrap">${person}</td>
+        <td class="px-3 py-2 text-slate-600 whitespace-nowrap">${PERSON_NAMES[person]||person}</td>
       </tr>`;
     }).join('');
   }
