@@ -40,8 +40,17 @@ for src, dst, name in [
 
 # ── 2. RAW 클레임 읽기 ────────────────────────────────────
 step('RAW 클레임 집계 중...')
-df = pd.read_excel(RAW_TMP, sheet_name=2, header=1, engine='openpyxl')
+# header 행 자동 감지: B열(index 1)이 '청구/취소' 또는 '청구'를 포함하는 행을 헤더로 사용
+_raw = pd.read_excel(RAW_TMP, sheet_name=2, header=None, engine='openpyxl', nrows=5)
+_header_row = 0
+for i in range(5):
+    val = str(_raw.iloc[i, 1])
+    if '청구' in val or '취소' in val or 'Claim' in val:
+        _header_row = i
+        break
+df = pd.read_excel(RAW_TMP, sheet_name=2, header=_header_row, engine='openpyxl')
 cols = df.columns.tolist()
+ok(f'헤더 행: {_header_row}행  /  총 컬럼: {len(cols)}개  /  B열: {cols[1]}')
 status_col = cols[1]; city_col = cols[5]; code_col = cols[12]
 amount_col = cols[22]; month_col = cols[28]; type_col = cols[30]
 task_col   = cols[8]
