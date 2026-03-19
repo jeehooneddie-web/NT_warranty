@@ -4004,6 +4004,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
       const rankAgg = {};
       for (const row of PERSON_DATA) {
         const [person, mo, tp, status, cnt, amt] = row;
+        if (person === '전체합계') continue;
         if (pStatus !== '취소' && !pActiveTypes.has(tp)) continue;
         if (!visMoSet.has(mo)) continue;
         if (status !== pStatus) continue;
