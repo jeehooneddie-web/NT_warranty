@@ -1722,20 +1722,16 @@
         </div>
 
         <!-- 필터 카드 -->
-        <div class="sales-card mb-4">
-          <div class="flex flex-wrap gap-6">
-            <div>
-              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">지점</span>
-              <div id="cs-branch-group" class="pill-group"></div>
-            </div>
-            <div>
-              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">클레임 상태</span>
-              <div id="cs-status-group" class="pill-group"></div>
-            </div>
-            <div>
-              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">데이터 기간</span>
-              <span id="cs-period-label" class="text-xs text-slate-500 font-medium self-center">-</span>
-            </div>
+        <div class="capturable sales-card p-5 mb-4">
+          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'CLAIM_필터')">📷</button>
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">지점</span>
+            <div id="cs-branch-group" class="pill-group"></div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">상태</span>
+            <div id="cs-status-group" class="pill-group"></div>
+            <span id="cs-period-label" class="text-[11px] text-slate-400 ml-4"></span>
           </div>
         </div>
 
@@ -1743,26 +1739,27 @@
         <div id="cs-kpi-wrap" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4"></div>
 
         <!-- 테이블 카드 -->
-        <div class="sales-card">
-          <div class="flex items-center justify-between mb-3">
+        <div class="capturable sales-card p-5">
+          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'CLAIM_목록')">📷</button>
+          <div class="flex items-center justify-between mb-4">
             <span class="text-sm font-bold text-slate-700">클레임 목록 <span id="cs-count" class="text-slate-400 font-normal ml-1"></span></span>
             <input id="cs-search" type="text" placeholder="클레임번호 / 담당자 검색..."
               oninput="renderClaimTable()"
-              class="text-xs border border-slate-200 rounded-lg px-3 py-1.5 w-52 focus:outline-none focus:border-blue-400">
+              class="text-xs border border-slate-200 rounded-lg px-3 py-1.5 w-52 focus:outline-none focus:border-slate-400">
           </div>
           <div class="overflow-x-auto">
             <table class="w-full border-collapse" style="font-size:13px;">
               <thead>
                 <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
-                  <th class="text-left px-3 py-2 text-slate-600 font-bold whitespace-nowrap">지점</th>
-                  <th class="text-left px-3 py-2 text-slate-600 font-bold whitespace-nowrap">클레임번호</th>
-                  <th class="text-left px-3 py-2 text-slate-600 font-bold whitespace-nowrap">상태</th>
-                  <th class="text-left px-3 py-2 text-slate-600 font-bold whitespace-nowrap">워런티 Stage</th>
-                  <th class="text-left px-3 py-2 text-slate-600 font-bold whitespace-nowrap">Claim Type</th>
-                  <th class="text-left px-3 py-2 text-slate-600 font-bold whitespace-nowrap">Defect Code</th>
-                  <th class="text-left px-3 py-2 text-slate-600 font-bold whitespace-nowrap">날짜</th>
-                  <th class="text-right px-3 py-2 text-slate-600 font-bold whitespace-nowrap">클레임금액</th>
-                  <th class="text-left px-3 py-2 text-slate-600 font-bold whitespace-nowrap">담당확인자</th>
+                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">지점</th>
+                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">클레임번호</th>
+                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">상태</th>
+                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">워런티 Stage</th>
+                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">Claim Type</th>
+                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">Defect Code</th>
+                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">날짜</th>
+                  <th class="text-right px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">클레임금액</th>
+                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">담당확인자</th>
                 </tr>
               </thead>
               <tbody id="cs-tbody"></tbody>
@@ -4284,14 +4281,13 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
   };
 
   function initClaimView() {
-    // 지점 목록
-    const branches = ['전체', ...new Set(CLAIM_DATA.map(r => r[2]))].sort((a,b) => a==='전체'?-1:b==='전체'?1:a.localeCompare(b,'ko'));
-    // 상태 목록
-    const statuses = ['전체', ...new Set(CLAIM_DATA.map(r => r[3]))].sort((a,b) => a==='전체'?-1:b==='전체'?1:0);
+    // [0:클레임번호, 1:지점, 2:상태, 3:stage, 4:claimType, 5:defectCode, 6:날짜, 7:금액, 8:담당자]
+    const branches = ['전체', ...new Set(CLAIM_DATA.map(r => r[1]))].sort((a,b) => a==='전체'?-1:b==='전체'?1:a.localeCompare(b,'ko'));
+    const statuses = ['전체', ...new Set(CLAIM_DATA.map(r => r[2]))].sort((a,b) => a==='전체'?-1:b==='전체'?1:0);
 
     // 기간 표시
-    const months = [...new Set(CLAIM_DATA.map(r => r[7].slice(0,7)))].sort();
-    document.getElementById('cs-period-label').textContent = months.length ? months[0] + ' ~ ' + months[months.length-1] : '-';
+    const months = [...new Set(CLAIM_DATA.map(r => r[6].slice(0,7)))].filter(Boolean).sort();
+    document.getElementById('cs-period-label').textContent = months.length ? months[0] + ' ~ ' + months[months.length-1] : '';
 
     // 지점 필터 버튼
     const bg = document.getElementById('cs-branch-group');
@@ -4327,15 +4323,15 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
   function renderClaimTable() {
     const keyword = (document.getElementById('cs-search')?.value || '').trim().toLowerCase();
     const filtered = CLAIM_DATA.filter(r => {
-      if (csActiveBranch !== '전체' && r[2] !== csActiveBranch) return false;
-      if (csActiveStatus !== '전체' && r[3] !== csActiveStatus) return false;
-      if (keyword && !r[0].toLowerCase().includes(keyword) && !r[9].toLowerCase().includes(keyword)) return false;
+      if (csActiveBranch !== '전체' && r[1] !== csActiveBranch) return false;
+      if (csActiveStatus !== '전체' && r[2] !== csActiveStatus) return false;
+      if (keyword && !r[0].toLowerCase().includes(keyword) && !r[8].toLowerCase().includes(keyword)) return false;
       return true;
     });
 
     // KPI
     const statusCount = {};
-    filtered.forEach(r => { statusCount[r[3]] = (statusCount[r[3]]||0) + 1; });
+    filtered.forEach(r => { statusCount[r[2]] = (statusCount[r[2]]||0) + 1; });
     const kpiWrap = document.getElementById('cs-kpi-wrap');
     const kpiStatuses = Object.entries(statusCount).sort((a,b) => b[1]-a[1]);
     kpiWrap.innerHTML = kpiStatuses.map(([s,cnt]) => {
