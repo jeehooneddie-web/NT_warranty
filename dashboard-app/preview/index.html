@@ -1614,6 +1614,7 @@
             <div class="pill-group">
               <button onclick="setPersonView('monthly')" id="pview-monthly" class="sales-pill active">월별 추이</button>
               <button onclick="setPersonView('rank')" id="pview-rank" class="sales-pill">개인별 순위</button>
+              <button onclick="setPersonView('daily')" id="pview-daily" class="sales-pill">일별 현황</button>
             </div>
             <div class="flex gap-2 items-center">
               <div id="pmode-wrap" class="pill-group" style="margin-right:6px;">
@@ -1637,6 +1638,19 @@
             </div>
             <div id="person-chart-legend" class="flex flex-wrap gap-x-4 gap-y-2 mb-3 items-center"></div>
             <div style="height:320px;"><canvas id="person-monthly-chart"></canvas></div>
+          </div>
+          <!-- 일별 현황 차트 -->
+          <div id="person-daily-area" class="hidden p-5" style="background:#1e2433; border-top:1px solid #2d3748;">
+            <div class="flex items-center justify-between mb-4">
+              <span id="person-daily-month-label" class="text-xs font-semibold text-slate-400"></span>
+              <div class="pill-group">
+                <button onclick="setDailySubTab('bar')" id="pdaily-bar" class="sales-pill active">일별 현황</button>
+                <button onclick="setDailySubTab('cum')" id="pdaily-cum" class="sales-pill">누적 현황</button>
+              </div>
+            </div>
+            <div id="person-chart-legend-daily" class="flex flex-wrap gap-x-4 gap-y-2 mb-3 items-center"></div>
+            <div id="pdaily-bar-area" style="height:320px;"><canvas id="daily-bar-chart"></canvas></div>
+            <div id="pdaily-cum-area" class="hidden" style="height:320px;"><canvas id="daily-cum-chart"></canvas></div>
           </div>
           <!-- 개인별 순위 차트 (좌: 금액, 우: 건수) -->
           <div id="person-rank-area" class="hidden grid grid-cols-2 divide-x divide-slate-200 dark:divide-slate-700">
@@ -3622,6 +3636,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
   const P_ALL_YEARS  = ['25','26'];
   const P_ALL_MO     = ['01','02','03','04','05','06','07','08','09','10','11','12'];
   const DATA_MO_P    = [...new Set(PERSON_DATA.map(r => r[1]))].sort();
+const PERSON_DAILY=[["bna157","26-03-03","BSI",1,18712],["bna157","26-03-09","Warranty",2,17517227],["bna157","26-03-10","Warranty",1,19206332],["bna157","26-03-11","BSI",1,18712],["bna157","26-03-11","Goodwill",2,9777960],["bna157","26-03-11","Warranty",2,3331600],["bna157","26-03-12","BSI",6,112272],["bna157","26-03-12","TC/RECALL",11,7254334],["bna157","26-03-12","Warranty",1,838980],["bna157","26-03-16","BSI",5,377192],["bna157","26-03-16","Goodwill",3,2129826],["bna157","26-03-16","TC/RECALL",9,6157539],["bna157","26-03-16","Warranty",2,5447598],["bna157","26-03-17","Goodwill",3,11735621],["bna157","26-03-17","Warranty",2,1318725],["nt230403","26-03-04","BSI",24,566164],["nt230403","26-03-04","LOCAL TC",1,71672],["nt230403","26-03-04","TC/RECALL",5,1449388],["nt230403","26-03-05","BSI",12,320088],["nt230403","26-03-05","LOCAL TC",2,143344],["nt230403","26-03-05","TC/RECALL",3,841915],["nt230403","26-03-05","Warranty",2,731651],["nt230403","26-03-09","BSI",16,600024],["nt230403","26-03-09","Goodwill",1,890177],["nt230403","26-03-09","LOCAL TC",2,143344],["nt230403","26-03-09","TC/RECALL",1,701888],["nt230403","26-03-09","Warranty",4,2889013],["nt230403","26-03-10","BSI",12,506176],["nt230403","26-03-10","Goodwill",1,221099],["nt230403","26-03-10","LOCAL TC",2,143344],["nt230403","26-03-10","TC/RECALL",7,2986603],["nt230403","26-03-11","BSI",8,347784],["nt230403","26-03-11","TC/RECALL",11,6297568],["nt230403","26-03-11","Warranty",1,103496],["nt230403","26-03-12","BSI",6,207816],["nt230403","26-03-12","TC/RECALL",9,6042056],["nt230403","26-03-12","Warranty",4,3516236],["nt230403","26-03-13","BSI",5,382192],["nt230403","26-03-13","LOCAL TC",1,71672],["nt230403","26-03-13","TC/RECALL",3,2211358],["nt230403","26-03-13","Warranty",4,3878255],["nt230403","26-03-17","BSI",28,1007844],["nt230403","26-03-17","TC/RECALL",33,20597748],["nt230403","26-03-17","Warranty",6,6908971],["nt230403","26-03-19","BSI",12,711264],["nt230403","26-03-19","Goodwill",3,7259680],["nt230403","26-03-19","LOCAL TC",9,645048],["nt230403","26-03-19","TC/RECALL",17,11586612],["nt230403","26-03-19","Warranty",6,5228145],["nt250204","26-03-04","BSI",5,93560],["nt250204","26-03-04","TC/RECALL",3,1485093],["nt250204","26-03-05","BSI",5,93560],["nt250204","26-03-05","LOCAL TC",1,71672],["nt250204","26-03-05","TC/RECALL",3,757946],["nt250204","26-03-06","BSI",16,779112],["nt250204","26-03-06","LOCAL TC",1,71672],["nt250204","26-03-06","TC/RECALL",2,710829],["nt250204","26-03-06","Warranty",1,147017],["nt250204","26-03-09","BSI",15,478768],["nt250204","26-03-09","Goodwill",1,442480],["nt250204","26-03-09","LOCAL TC",1,71672],["nt250204","26-03-09","TC/RECALL",5,2201551],["nt250204","26-03-09","Warranty",1,1408472],["nt250204","26-03-10","BSI",8,340784],["nt250204","26-03-10","TC/RECALL",1,775190],["nt250204","26-03-11","BSI",9,168408],["nt250204","26-03-11","TC/RECALL",6,3421822],["nt250204","26-03-11","Warranty",1,1632800],["nt250204","26-03-12","BSI",9,263952],["nt250204","26-03-12","TC/RECALL",5,3693295],["nt250204","26-03-12","Warranty",2,357601],["nt250204","26-03-16","BSI",17,723568],["nt250204","26-03-16","TC/RECALL",10,6340917],["nt250204","26-03-16","Warranty",3,1118459],["nt250204","26-03-17","BSI",15,774400],["nt250204","26-03-17","Goodwill",1,6451183],["nt250204","26-03-17","TC/RECALL",10,6716436],["nt250204","26-03-17","Warranty",1,1222556],["nt250204","26-03-18","BSI",11,487464],["nt250204","26-03-18","TC/RECALL",3,1360648],["nt250204","26-03-18","Warranty",2,1851308],["nt250204","26-03-19","BSI",8,245240],["nt250204","26-03-19","LOCAL TC",4,286688],["nt250204","26-03-19","TC/RECALL",6,3632485],["nt250204","26-03-19","Warranty",2,1073787],["nt250204","26-03-20","Warranty",1,312133],["nt250601","26-03-03","BSI",5,387192],["nt250601","26-03-03","LOCAL TC",2,143344],["nt250601","26-03-03","TC/RECALL",1,826462],["nt250601","26-03-03","Warranty",5,4702506],["nt250601","26-03-04","BSI",4,260936],["nt250601","26-03-04","Goodwill",1,1011003],["nt250601","26-03-04","TC/RECALL",1,71672],["nt250601","26-03-04","Warranty",8,22620933],["nt250601","26-03-05","BSI",3,151680],["nt250601","26-03-05","Warranty",3,6053039],["nt250601","26-03-09","BSI",6,202816],["nt250601","26-03-09","Warranty",7,2440974],["nt250601","26-03-10","Goodwill",1,961541],["nt250601","26-03-10","Warranty",3,8778090],["nt250601","26-03-11","BSI",5,226528],["nt250601","26-03-11","TC/RECALL",1,8959],["nt250601","26-03-11","Warranty",3,2317311],["nt250601","26-03-12","BSI",6,112272],["nt250601","26-03-12","Goodwill",3,1998063],["nt250601","26-03-12","TC/RECALL",2,2025865],["nt250601","26-03-12","Warranty",7,27826616],["nt250601","26-03-13","BSI",6,303360],["nt250601","26-03-13","Goodwill",2,7584744],["nt250601","26-03-13","TC/RECALL",1,666101],["nt250601","26-03-13","Warranty",7,5195270],["nt250601","26-03-16","BSI",18,814840],["nt250601","26-03-16","TC/RECALL",15,7625503],["nt250601","26-03-16","Warranty",12,12790096],["nt250601","26-03-17","BSI",1,18712],["nt250601","26-03-17","TC/RECALL",4,2078769],["nt250601","26-03-17","Warranty",1,1832100],["nt250601","26-03-18","BSI",18,756416],["nt250601","26-03-18","TC/RECALL",9,4355014],["nt250601","26-03-18","Warranty",10,7507359],["nt250601","26-03-19","BSI",7,454072],["nt250601","26-03-19","Goodwill",2,1359141],["nt250601","26-03-19","LOCAL TC",3,215016],["nt250601","26-03-19","TC/RECALL",3,687296],["nt250601","26-03-19","Warranty",6,3581741],["nt250601","26-03-20","BSI",2,52880],["nt250601","26-03-20","LOCAL TC",11,788392],["nt250601","26-03-20","TC/RECALL",2,21202],["nt250601","26-03-20","Warranty",3,1980494],["nt250702","26-03-03","BSI",1,18712],["nt250702","26-03-03","TC/RECALL",1,666378],["nt250702","26-03-03","Warranty",6,4513606],["nt250702","26-03-04","BSI",7,354496],["nt250702","26-03-04","Goodwill",1,8784023],["nt250702","26-03-04","LOCAL TC",1,71672],["nt250702","26-03-04","TC/RECALL",3,2089952],["nt250702","26-03-04","Warranty",4,1390024],["nt250702","26-03-05","BSI",1,18712],["nt250702","26-03-05","TC/RECALL",5,7453428],["nt250702","26-03-05","Warranty",7,5583901],["nt250702","26-03-06","BSI",7,130984],["nt250702","26-03-06","Goodwill",1,332106],["nt250702","26-03-06","LOCAL TC",2,143344],["nt250702","26-03-06","TC/RECALL",1,10593],["nt250702","26-03-06","Warranty",5,29016812],["nt250702","26-03-07","BSI",6,207816],["nt250702","26-03-07","LOCAL TC",3,215016],["nt250702","26-03-07","TC/RECALL",1,724846],["nt250702","26-03-07","Warranty",3,1694143],["nt250702","26-03-09","BSI",15,478768],["nt250702","26-03-09","LOCAL TC",2,143344],["nt250702","26-03-10","BSI",2,242512],["nt250702","26-03-10","TC/RECALL",2,1346155],["nt250702","26-03-10","Warranty",1,552200],["nt250702","26-03-11","BSI",4,358480],["nt250702","26-03-11","TC/RECALL",5,3610597],["nt250702","26-03-11","Warranty",3,8777413],["nt250702","26-03-12","BSI",5,184104],["nt250702","26-03-12","Goodwill",1,1996708],["nt250702","26-03-12","TC/RECALL",1,751731],["nt250702","26-03-12","Warranty",5,6676404],["nt250702","26-03-13","BSI",3,242224],["nt250702","26-03-13","Goodwill",2,2318356],["nt250702","26-03-16","BSI",5,99648],["nt250702","26-03-16","TC/RECALL",4,3027973],["nt250702","26-03-16","Warranty",4,803259],["nt250702","26-03-17","BSI",2,37424],["nt250702","26-03-17","Goodwill",1,511257],["nt250702","26-03-17","LOCAL TC",4,286688],["nt250702","26-03-17","TC/RECALL",6,4094959],["nt250702","26-03-17","Warranty",4,2264233],["nt250702","26-03-18","BSI",4,177392],["nt250702","26-03-18","Goodwill",3,7738138],["nt250702","26-03-18","TC/RECALL",5,2782480],["nt250702","26-03-18","Warranty",2,1241245],["nt250702","26-03-19","BSI",6,605692],["nt250702","26-03-19","LOCAL TC",6,430032],["nt250702","26-03-19","TC/RECALL",9,4806754],["nt250702","26-03-19","Warranty",4,4725063],["nt250702","26-03-20","Goodwill",1,2068793],["nt250702","26-03-20","TC/RECALL",1,802876],["nt250911","26-03-03","BSI",14,563188],["nt250911","26-03-03","TC/RECALL",5,2871009],["nt250911","26-03-04","BSI",10,373208],["nt250911","26-03-05","BSI",15,851680],["nt250911","26-03-05","TC/RECALL",2,1453085],["nt250911","26-03-06","BSI",8,252240],["nt250911","26-03-06","TC/RECALL",3,660687],["nt250911","26-03-07","BSI",20,579328],["nt250911","26-03-07","TC/RECALL",5,681873],["nt250911","26-03-09","BSI",9,258952],["nt250911","26-03-09","TC/RECALL",1,10593],["nt250911","26-03-09","Warranty",1,243381],["nt250911","26-03-10","BSI",3,56136],["nt250911","26-03-10","TC/RECALL",1,10593],["nt250911","26-03-11","BSI",5,279648],["nt250911","26-03-11","TC/RECALL",1,665534],["nt250911","26-03-11","Warranty",1,57418],["nt250911","26-03-12","BSI",8,245240],["nt250911","26-03-12","TC/RECALL",3,1392004],["nt250911","26-03-16","BSI",31,2037932],["nt250911","26-03-16","TC/RECALL",14,7665482],["nt250911","26-03-17","BSI",9,552584],["nt250911","26-03-17","TC/RECALL",6,3537534],["nt250911","26-03-18","BSI",8,438328],["nt250911","26-03-18","Warranty",1,111594],["nt250911","26-03-19","BSI",4,306048],["nt250911","26-03-19","LOCAL TC",2,143344],["nt250911","26-03-19","TC/RECALL",2,1539298],["nt250911","26-03-19","Warranty",1,111594],["nt250911","26-03-20","BSI",1,18712],["nt250911","26-03-20","TC/RECALL",1,8959],["nt250917","26-03-03","BSI",7,226528],["nt250917","26-03-03","Goodwill",1,6510627],["nt250917","26-03-03","TC/RECALL",2,874873],["nt250917","26-03-04","BSI",1,18712],["nt250917","26-03-04","TC/RECALL",2,1332079],["nt250917","26-03-04","Warranty",2,1638514],["nt250917","26-03-05","BSI",18,645036],["nt250917","26-03-05","LOCAL TC",3,215016],["nt250917","26-03-05","TC/RECALL",7,1596578],["nt250917","26-03-05","Warranty",3,2896357],["nt250917","26-03-06","BSI",3,56136],["nt250917","26-03-06","TC/RECALL",4,3387609],["nt250917","26-03-06","Warranty",9,6293673],["nt250917","26-03-09","BSI",10,289664],["nt250917","26-03-09","LOCAL TC",1,71672],["nt250917","26-03-09","TC/RECALL",4,1363041],["nt250917","26-03-09","Warranty",7,8481779],["nt250917","26-03-10","BSI",6,407604],["nt250917","26-03-10","LOCAL TC",1,71672],["nt250917","26-03-10","TC/RECALL",4,748959],["nt250917","26-03-10","Warranty",7,3585393],["nt250917","26-03-11","BSI",1,18712],["nt250917","26-03-11","Goodwill",1,814763],["nt250917","26-03-11","TC/RECALL",1,10601],["nt250917","26-03-11","Warranty",8,6480261],["nt250917","26-03-12","BSI",23,799252],["nt250917","26-03-12","Goodwill",1,345179],["nt250917","26-03-12","LOCAL TC",1,71672],["nt250917","26-03-12","TC/RECALL",2,1065004],["nt250917","26-03-12","Warranty",2,1473585],["nt250917","26-03-13","BSI",9,270052],["nt250917","26-03-13","Goodwill",1,395657],["nt250917","26-03-13","LOCAL TC",3,215016],["nt250917","26-03-13","TC/RECALL",8,2894438],["nt250917","26-03-13","Warranty",4,2480451],["nt250917","26-03-16","BSI",3,158680],["nt250917","26-03-16","Goodwill",5,13524080],["nt250917","26-03-16","Warranty",8,5485725],["nt250917","26-03-17","BSI",18,540992],["nt250917","26-03-17","TC/RECALL",12,7345872],["nt250917","26-03-17","Warranty",3,890928],["nt250917","26-03-18","BSI",7,419616],["nt250917","26-03-18","Goodwill",2,2436677],["nt250917","26-03-18","TC/RECALL",5,2770892],["nt250917","26-03-18","Warranty",3,1477366],["nt250917","26-03-19","BSI",7,356296],["nt250917","26-03-19","TC/RECALL",2,736015],["nt250917","26-03-19","Warranty",5,2847683],["nt250917","26-03-20","LOCAL TC",1,71672],["nt250917","26-03-20","Warranty",1,26877],["nt251001","26-03-04","BSI",15,478768],["nt251001","26-03-04","Goodwill",1,835728],["nt251001","26-03-04","TC/RECALL",2,161262],["nt251001","26-03-04","Warranty",1,79105],["nt251001","26-03-05","BSI",10,517132],["nt251001","26-03-05","Goodwill",2,906953],["nt251001","26-03-05","LOCAL TC",1,71672],["nt251001","26-03-05","TC/RECALL",5,3481190],["nt251001","26-03-06","BSI",11,491752],["nt251001","26-03-06","TC/RECALL",5,2826312],["nt251001","26-03-09","BSI",9,168408],["nt251001","26-03-09","TC/RECALL",3,2086192],["nt251001","26-03-09","Warranty",1,243381],["nt251001","26-03-10","BSI",14,453056],["nt251001","26-03-10","LOCAL TC",1,71672],["nt251001","26-03-10","TC/RECALL",7,4190297],["nt251001","26-03-10","Warranty",2,2659962],["nt251001","26-03-11","BSI",20,853960],["nt251001","26-03-11","Goodwill",1,337608],["nt251001","26-03-11","TC/RECALL",9,4256400],["nt251001","26-03-11","Warranty",2,567983],["nt251001","26-03-12","BSI",12,620720],["nt251001","26-03-12","TC/RECALL",10,6226185],["nt251001","26-03-12","Warranty",1,148822],["nt251001","26-03-13","BSI",1,18712],["nt251001","26-03-13","TC/RECALL",2,1509507],["nt251001","26-03-16","BSI",35,2859920],["nt251001","26-03-16","TC/RECALL",24,14445651],["nt251001","26-03-16","Warranty",1,246662],["nt251001","26-03-17","BSI",16,882420],["nt251001","26-03-17","Goodwill",1,2125049],["nt251001","26-03-17","LOCAL TC",6,430032],["nt251001","26-03-17","TC/RECALL",12,7212521],["nt251001","26-03-17","Warranty",1,878911],["nt251001","26-03-18","BSI",13,524888],["nt251001","26-03-18","Goodwill",1,376735],["nt251001","26-03-18","TC/RECALL",9,7421997],["nt251001","26-03-19","BSI",11,543232],["nt251001","26-03-19","Goodwill",1,360221],["nt251001","26-03-19","LOCAL TC",3,215016],["nt251001","26-03-19","TC/RECALL",8,5220715],["nt251001","26-03-19","Warranty",2,951014],["nt251001","26-03-20","TC/RECALL",1,751731],["nt251104","26-03-03","BSI",18,674872],["nt251104","26-03-03","LOCAL TC",2,143344],["nt251104","26-03-03","TC/RECALL",11,5212760],["nt251104","26-03-03","Warranty",2,2869408],["nt251104","26-03-04","BSI",36,1685660],["nt251104","26-03-04","LOCAL TC",2,143344],["nt251104","26-03-04","TC/RECALL",15,6545200],["nt251104","26-03-05","BSI",32,1379136],["nt251104","26-03-05","LOCAL TC",1,71672],["nt251104","26-03-05","TC/RECALL",13,6434166],["nt251104","26-03-05","Warranty",2,2865630],["nt251104","26-03-06","BSI",26,881776],["nt251104","26-03-06","LOCAL TC",1,71672],["nt251104","26-03-06","TC/RECALL",13,5039406],["nt251104","26-03-06","Warranty",2,2860110],["nt251104","26-03-09","BSI",67,2917408],["nt251104","26-03-09","LOCAL TC",4,286688],["nt251104","26-03-09","TC/RECALL",14,5036793],["nt251104","26-03-09","Warranty",2,2869069],["nt251104","26-03-10","BSI",32,1975888],["nt251104","26-03-10","TC/RECALL",16,9347261],["nt251104","26-03-11","BSI",23,917096],["nt251104","26-03-11","TC/RECALL",11,6249283],["nt251104","26-03-12","BSI",37,1856064],["nt251104","26-03-12","TC/RECALL",15,10593499],["nt251104","26-03-12","Warranty",1,1434554],["nt251104","26-03-13","BSI",2,132968],["nt251104","26-03-16","BSI",66,3195892],["nt251104","26-03-16","TC/RECALL",21,10625589],["nt251104","26-03-16","Warranty",1,1443513],["nt251104","26-03-17","BSI",36,1785040],["nt251104","26-03-17","TC/RECALL",12,8267180],["nt251104","26-03-18","BSI",20,1078048],["nt251104","26-03-18","TC/RECALL",12,6687633],["nt251104","26-03-18","Warranty",1,1425518],["nt251104","26-03-19","BSI",32,1222528],["nt251104","26-03-19","LOCAL TC",1,71672],["nt251104","26-03-19","TC/RECALL",26,12877378]];
   const PERSON_COLORS = ['#1d4ed8','#0891b2','#059669','#7c3aed','#d97706','#dc2626','#0d9488','#9333ea','#f59e0b','#ef4444','#3b82f6','#10b981','#8b5cf6','#f97316'];
 
   const PERSON_NAMES = {
@@ -3878,10 +3893,13 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
   let pStatus       = '청구';
   let pMetric       = 'amount';
   let pViewMode     = 'monthly';
-  let pChartMonthly = null;
-  let pChartAmount  = null;
-  let pChartCount   = null;
-  let pShowTotal    = false;
+  let pChartMonthly  = null;
+  let pChartAmount   = null;
+  let pChartCount    = null;
+  let pShowTotal     = false;
+  let pDailySubTab   = 'bar';
+  let pChartDailyBar = null;
+  let pChartDailyCum = null;
 
   function pGetVisibleMonths() {
     const years = [...pActiveYears].sort();
@@ -3947,10 +3965,13 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     pViewMode = v;
     document.getElementById('pview-monthly').className = 'sales-pill' + (v==='monthly'?' active':'');
     document.getElementById('pview-rank').className    = 'sales-pill' + (v==='rank'?' active':'');
+    document.getElementById('pview-daily').className   = 'sales-pill' + (v==='daily'?' active':'');
     document.getElementById('person-monthly-area').classList.toggle('hidden', v!=='monthly');
     document.getElementById('person-rank-area').classList.toggle('hidden', v!=='rank');
+    document.getElementById('person-daily-area').classList.toggle('hidden', v!=='daily');
     document.getElementById('pmode-wrap').classList.toggle('hidden', v!=='monthly');
-    renderPersonChart();
+    if (v === 'daily') renderPersonDailyCharts();
+    else renderPersonChart();
   }
 
   function setPersonStatus(s) {
@@ -3966,7 +3987,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     document.getElementById('pmetric-count').className  = 'sales-pill' + (m==='count'?' active':'');
     const unitEl = document.getElementById('person-unit-label');
     if (unitEl) unitEl.textContent = m==='amount' ? '단위: 백만원' : '단위: 건';
-    renderPersonChart();
+    if (pViewMode === 'daily') renderPersonDailyCharts(); else renderPersonChart();
   }
 
   function renderPersonChart() {
@@ -4135,7 +4156,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
       if (el) el.className = 'sales-pill'+(pActiveTypes.has(t)&&pActiveTypes.size<P_ALL_TYPES.length?' active':'');
     });
     document.getElementById('ptype-all').className = 'sales-pill'+(pActiveTypes.size===P_ALL_TYPES.length?' active':'');
-    renderPersonChart();
+    if (pViewMode === 'daily') renderPersonDailyCharts(); else renderPersonChart();
   }
 
   function togglePersonYear(yr) {
@@ -4166,6 +4187,124 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     });
     document.getElementById('pmonth-all').className = 'sales-pill'+(pActiveMonths.size===P_ALL_MO.length?' active':'');
     renderPersonChart();
+  }
+  // ── 일별 현황 ──────────────────────────────────────────────
+  function setDailySubTab(tab) {
+    pDailySubTab = tab;
+    document.getElementById('pdaily-bar').className = 'sales-pill' + (tab==='bar'?' active':'');
+    document.getElementById('pdaily-cum').className = 'sales-pill' + (tab==='cum'?' active':'');
+    document.getElementById('pdaily-bar-area').classList.toggle('hidden', tab!=='bar');
+    document.getElementById('pdaily-cum-area').classList.toggle('hidden', tab!=='cum');
+    renderPersonDailyCharts();
+  }
+
+  function renderPersonDailyCharts() {
+    if (!PERSON_DAILY || PERSON_DAILY.length === 0) {
+      ['person-chart-legend-daily'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML='<span class="text-xs text-slate-500">당월 데이터 없음</span>'; });
+      return;
+    }
+    function getName(id) { return PERSON_NAMES[id] || id; }
+    const allDates   = [...new Set(PERSON_DAILY.map(r => r[1]))].sort();
+    const allPersons = [...new Set(PERSON_DAILY.map(r => r[0]))].sort();
+    const labels     = allDates.map(d => d.substring(3)); // MM-DD
+
+    const monthLbl = document.getElementById('person-daily-month-label');
+    if (monthLbl && allDates.length > 0) monthLbl.textContent = '당월 (' + allDates[0].substring(0,5) + ')';
+
+    // type 필터 집계
+    const dayAgg = {};
+    for (const [person, date, tp, cnt, amt] of PERSON_DAILY) {
+      if (!pActiveTypes.has(tp)) continue;
+      if (!dayAgg[person]) dayAgg[person] = {};
+      if (!dayAgg[person][date]) dayAgg[person][date] = {count:0, amount:0};
+      dayAgg[person][date].count  += cnt;
+      dayAgg[person][date].amount += amt;
+    }
+    const activePeople = allPersons.filter(p => dayAgg[p]);
+
+    function makeDatasets(cumulative) {
+      return activePeople.map((person, i) => {
+        let cum = 0;
+        const data = allDates.map(d => {
+          const v = dayAgg[person]?.[d]?.[pMetric] || 0;
+          if (cumulative) { cum += v; return cum ? (pMetric==='amount' ? Math.round(cum/1000000) : cum) : null; }
+          return v ? (pMetric==='amount' ? Math.round(v/1000000) : v) : null;
+        });
+        return {
+          label: getName(person),
+          data,
+          borderColor: PERSON_COLORS[i % PERSON_COLORS.length],
+          backgroundColor: PERSON_COLORS[i % PERSON_COLORS.length] + (cumulative ? '22' : 'cc'),
+          borderWidth: cumulative ? 2 : 1,
+          tension: 0.3, fill: false, pointRadius: cumulative ? 3 : 0,
+          pointHoverRadius: 6, spanGaps: true,
+        };
+      });
+    }
+
+    const scaleOpts = {
+      x: { stacked: !pDailySubTab==='cum', ticks: { color:'#94a3b8', font:{size:10} }, grid: { color:'#334155' } },
+      y: { ticks: { color:'#94a3b8', callback: v => pMetric==='amount' ? v.toLocaleString() : v }, grid: { color:'#334155' }, beginAtZero: true },
+    };
+    const pluginOpts = {
+      legend: { display: false },
+      tooltip: { mode:'index', intersect:false, callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw?.toLocaleString()??'-'}${pMetric==='amount'?'백만원':'건'}` } },
+      datalabels: { display: false },
+    };
+
+    if (pDailySubTab === 'bar') {
+      if (pChartDailyBar) { pChartDailyBar.destroy(); pChartDailyBar = null; }
+      const ctx = document.getElementById('daily-bar-chart');
+      if (!ctx) return;
+      pChartDailyBar = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: makeDatasets(false).map(ds => ({...ds, fill:undefined, tension:undefined, pointRadius:undefined, pointHoverRadius:undefined})) },
+        options: { responsive:true, maintainAspectRatio:false,
+          plugins: pluginOpts,
+          scales: { x:{...scaleOpts.x, stacked:true}, y:{...scaleOpts.y, stacked:true} } }
+      });
+    } else {
+      if (pChartDailyCum) { pChartDailyCum.destroy(); pChartDailyCum = null; }
+      const ctx = document.getElementById('daily-cum-chart');
+      if (!ctx) return;
+      pChartDailyCum = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: makeDatasets(true) },
+        options: { responsive:true, maintainAspectRatio:false,
+          plugins: pluginOpts,
+          scales: scaleOpts }
+      });
+    }
+    renderPersonDailyLegend(activePeople);
+  }
+
+  function renderPersonDailyLegend(activePeople) {
+    const wrap = document.getElementById('person-chart-legend-daily');
+    if (!wrap) return;
+    function getName(id) { return PERSON_NAMES[id] || id; }
+    wrap.innerHTML = activePeople.map((person, i) => {
+      const color = PERSON_COLORS[i % PERSON_COLORS.length];
+      return `<span class="flex items-center gap-1 cursor-pointer select-none text-xs text-slate-300" onclick="toggleDailyPerson('${person}',${i})">
+        <span id="dlgnd-${i}" style="width:14px;height:14px;border-radius:3px;border:2px solid ${color};background:${color};display:inline-flex;align-items:center;justify-content:center;">
+          <svg width="8" height="8" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </span>
+        <span>${getName(person)}</span>
+      </span>`;
+    }).join('');
+  }
+
+  function toggleDailyPerson(person, idx) {
+    const chart = pDailySubTab === 'bar' ? pChartDailyBar : pChartDailyCum;
+    if (!chart) return;
+    function getName(id) { return PERSON_NAMES[id] || id; }
+    const dsIdx = chart.data.datasets.findIndex(ds => ds.label === getName(person));
+    if (dsIdx < 0) return;
+    const vis = chart.isDatasetVisible(dsIdx);
+    chart.setDatasetVisibility(dsIdx, !vis);
+    chart.update();
+    const color = PERSON_COLORS[idx % PERSON_COLORS.length];
+    const el = document.getElementById(`dlgnd-${idx}`);
+    if (el) el.style.background = !vis ? color : 'transparent';
   }
   // ===================== /개인별 청구 현황 =====================
 
