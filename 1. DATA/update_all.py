@@ -52,8 +52,29 @@ df = pd.read_excel(RAW_TMP, sheet_name=2, header=_header_row, engine='openpyxl')
 cols = df.columns.tolist()
 ok(f'헤더 행: {_header_row}행  /  총 컬럼: {len(cols)}개  /  B열: {cols[1]}')
 status_col = cols[1]; city_col = cols[5]; code_col = cols[12]
-amount_col = cols[22]; month_col = cols[28]; type_col = cols[30]
-task_col   = cols[8]
+amount_col = cols[22]; task_col = cols[8]
+k_col = cols[10]  # K열: Warranty Stage
+# month/type은 수식열(AC/AE) 대신 원본열(N열 날짜, K/M열)로 직접 계산
+df['_month'] = pd.to_datetime(df[cols[13]], errors='coerce').dt.strftime('%y-%m')
+month_col = '_month'
+
+def _compute_type(k_val, m_val):
+    k = str(k_val).strip() if pd.notna(k_val) else ''
+    m = str(m_val).strip() if pd.notna(m_val) else ''
+    if 'goodwill' in k.lower(): return 'Goodwill'
+    if k == 'Warranty plus': return 'WP'
+    if 'LA' in m: return 'LOCAL TC'
+    try:
+        m_num = float(m.replace(',',''))
+        if m_num < 100_000_000: return 'TC/RECALL'
+        if m_num > 8_700_000_000 and not m.startswith('99'): return 'BSI'
+        return 'Warranty'
+    except Exception:
+        return 'Warranty'
+
+df['_type'] = df.apply(lambda r: _compute_type(r[k_col], r[code_col]), axis=1)
+type_col = '_type'
+ok(f'month/type 직접 계산 완료 (수식열 비의존)')
 
 # 지점 코드 → 지점명 매핑 (숫자코드 또는 AS_ 형식 모두 처리)
 BRANCH_MAP = {'26999':'전주','40699':'군산','41967':'목포','419668':'서산','44835':'평택'}
@@ -155,6 +176,25 @@ for _, r in total_agg.iterrows():
 
 ok(f'개인별 집계 행: {len(person_raw)}  /  고유 ID: {df_task1[person_col].nunique()}명')
 
+# ── 6-2. 일별 현황 집계 (당월 기준, Task=1, 청구) ──────────────────────
+step('일별 현황 집계 중...')
+import datetime as _dt
+_cur_month = _dt.date.today().strftime('%y-%m')
+df_daily = df[df[status_col].str.contains('청구', na=False)].copy()
+df_daily = df_daily[df_daily[type_col].isin(TYPES)].copy()
+df_daily = df_daily[df_daily[month_col] == _cur_month].copy()
+df_daily['_date'] = pd.to_datetime(df_daily[cols[13]], errors='coerce').dt.strftime('%y-%m-%d')
+df_daily[amount_col] = pd.to_numeric(df_daily[amount_col], errors='coerce').fillna(0)
+df_daily_t1 = df_daily[df_daily[task_col] == 1].copy()
+daily_agg = df_daily_t1.groupby([person_col, '_date', type_col]).agg(
+    count=(amount_col, 'count'), amount=(amount_col, 'sum')
+).reset_index()
+daily_raw = [
+    [r[person_col], r['_date'], r[type_col], int(r['count']), int(r['amount'])]
+    for _, r in daily_agg.iterrows()
+]
+ok(f'일별 집계: {len(daily_raw):,}행 (당월 {_cur_month})')
+
 # ── 7. TC 미실시율 집계 ────────────────────────────────────
 step('TC 미실시율 집계 중...')
 tc_df = pd.read_excel(TC_TMP, header=0, engine='openpyxl')
@@ -206,14 +246,58 @@ for _, r in df_claim.iterrows():
     ])
 ok(f'CLAIM_DATA: {len(claim_raw):,}행 (불승인/보완요청/보완완료, Task=1)')
 
+# ── 9. WHOLESALE_DATA 집계 (클레임현황 시트) ──────────────────
+step('WHOLESALE_DATA 집계 중...')
+wholesale_data = {}
+try:
+    df_kh = pd.read_excel(RAW_TMP, sheet_name='클레임현황', header=0, engine='openpyxl')
+    kc = df_kh.columns.tolist()
+    # 열 인덱스: 지점=0, J=9, M=12, O=14, R=17, S=18, T=19, W=22
+    kh_J = kc[9];  kh_M = kc[12]; kh_O = kc[14]; kh_R = kc[17]
+    kh_S = 'S';    kh_T = 'T';    kh_W = 'W'
+    for col in [kh_J, kh_M, kh_O, kh_R]:
+        df_kh[col] = pd.to_numeric(df_kh[col], errors='coerce').fillna(0)
+    df_kh[kh_S] = df_kh[kh_S].astype(str).str.strip()
+    df_kh[kh_T] = df_kh[kh_T].astype(str).str.strip()
+    df_kh[kh_W] = df_kh[kh_W].astype(str).str.strip()
+    df_kh = df_kh[df_kh[kh_S].str.match(r'\d{2}-\d{2}')]  # 유효 월만
+
+    for _, r in df_kh.groupby([kh_T, kh_S]).agg(
+        amount=(kh_M,'sum'), parts=(kh_J,'sum'), count=(kh_M,'count')
+    ).reset_index().iterrows():
+        ct, mo = str(r[kh_T]), str(r[kh_S])
+        wholesale_data.setdefault(ct, {}).setdefault(mo, {})['charge'] = {
+            'amount': int(r['amount']), 'parts': int(r['parts']), 'count': int(r['count'])
+        }
+    for _, r in df_kh.groupby([kh_T, kh_S]).agg(
+        amount=(kh_R,'sum'), parts=(kh_O,'sum')
+    ).reset_index().iterrows():
+        ct, mo = str(r[kh_T]), str(r[kh_S])
+        wholesale_data.setdefault(ct, {}).setdefault(mo, {})['approve'] = {
+            'amount': int(r['amount']), 'parts': int(r['parts'])
+        }
+    df_pend = df_kh[df_kh[kh_W] == '승인대기']
+    for _, r in df_pend.groupby([kh_T, kh_S]).agg(
+        amount=(kh_M,'sum'), parts=(kh_J,'sum')
+    ).reset_index().iterrows():
+        ct, mo = str(r[kh_T]), str(r[kh_S])
+        wholesale_data.setdefault(ct, {}).setdefault(mo, {})['pending'] = {
+            'amount': int(r['amount']), 'parts': int(r['parts'])
+        }
+    ok(f'Claim Type: {len(wholesale_data)}종  /  총 행: {len(df_kh):,}')
+except Exception as _e:
+    ok(f'클레임현황 시트 없음 또는 오류 → WHOLESALE_DATA 빈값 ({_e})')
+
 # ── 8-1. JS 문자열 생성 ───────────────────────────────────
 step('JS 데이터 문자열 생성 중...')
 desc_js     = 'const DEFECT_DESC='    + json.dumps(matched_desc, ensure_ascii=False, separators=(',',':')) + ';'
 raw_js      = 'const DEFECT_RAW='     + json.dumps(defect_raw,   ensure_ascii=False, separators=(',',':')) + ';'
 um_js       = 'const DEFECT_UNMATCHED=' + json.dumps(unmatched,  ensure_ascii=False, separators=(',',':')) + ';'
 person_js   = 'const PERSON_DATA='    + json.dumps(person_raw,   ensure_ascii=False, separators=(',',':')) + ';'
+daily_js    = 'const PERSON_DAILY='   + json.dumps(daily_raw,    ensure_ascii=False, separators=(',',':')) + ';'
 tc_js       = 'const TC_DATA='        + json.dumps(tc_data,      ensure_ascii=False, separators=(',',':')) + ';'
-claim_js    = 'const CLAIM_DATA='     + json.dumps(claim_raw,    ensure_ascii=False, separators=(',',':')) + ';'
+claim_js      = 'const CLAIM_DATA='      + json.dumps(claim_raw,      ensure_ascii=False, separators=(',',':')) + ';'
+wholesale_js  = 'const WHOLESALE_DATA=' + json.dumps(wholesale_data, ensure_ascii=False, separators=(',',':')) + ';'
 ok('완료')
 
 # ── 7. HTML embed ─────────────────────────────────────────
@@ -226,8 +310,10 @@ html = re.sub(r'const DEFECT_DESC=\{.*?\};',         desc_js,    html, flags=re.
 html = re.sub(r'const DEFECT_RAW=\[.*?\];',          raw_js,     html, flags=re.DOTALL)
 html = re.sub(r'const DEFECT_UNMATCHED=\[.*?\];',    um_js,      html, flags=re.DOTALL)
 html = re.sub(r'const PERSON_DATA=\[.*?\];',         person_js,  html, flags=re.DOTALL)
+html = re.sub(r'const PERSON_DAILY=\[.*?\];',        daily_js,   html, flags=re.DOTALL)
 html = re.sub(r'const TC_DATA=\{.*?\};',             tc_js,      html, flags=re.DOTALL)
-html = re.sub(r'const CLAIM_DATA=\[.*?\];',          claim_js,   html, flags=re.DOTALL)
+html = re.sub(r'const CLAIM_DATA=\[.*?\];',          claim_js,      html, flags=re.DOTALL)
+html = re.sub(r'const WHOLESALE_DATA=\{.*?\};',     wholesale_js,  html, flags=re.DOTALL)
 
 with open(HTML_PATH, 'w', encoding='utf-8') as f:
     f.write(html)

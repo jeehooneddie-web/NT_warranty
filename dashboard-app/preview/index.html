@@ -326,6 +326,11 @@
         <span>CLAIM 상태 확인</span>
       </div>
 
+      <div class="nav-item admin-only" data-view="view-wholesale" onclick="showView('view-wholesale')">
+        <i data-lucide="layout-dashboard"></i>
+        <span>클레임 볼륨</span>
+      </div>
+
       <!-- 구분선 (관리자) -->
       <div class="admin-only pt-3 pb-1 px-1">
         <span class="text-blue-400/60 text-xs uppercase tracking-wider font-medium">관리자</span>
@@ -1911,6 +1916,70 @@
 
       </div><!-- /view-sales -->
 
+      <!-- =============================================
+           뷰: 클레임 볼륨 (파일2 역할)
+           ============================================= -->
+      <div id="view-wholesale" class="view hidden">
+        <div class="flex justify-end mb-3">
+          <button onclick="captureEl(document.getElementById('view-wholesale'),'클레임볼륨')" class="capture-btn">📷 전체 캡쳐</button>
+        </div>
+        <!-- 필터 카드 -->
+        <div class="capturable sales-card p-5 mb-4">
+          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'볼륨_필터')">📷</button>
+          <div class="flex flex-wrap gap-6 items-start">
+            <div>
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">구분</span>
+              <div class="pill-group">
+                <button onclick="setWsStatus('charge')"  id="ws-charge"  class="sales-pill active">청구</button>
+                <button onclick="setWsStatus('approve')" id="ws-approve" class="sales-pill">승인</button>
+                <button onclick="setWsStatus('pending')" id="ws-pending" class="sales-pill">승인대기</button>
+              </div>
+            </div>
+            <div>
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">금액 기준</span>
+              <div class="pill-group">
+                <button onclick="setWsMetric('amount')" id="ws-amount" class="sales-pill active">총클레임금액</button>
+                <button onclick="setWsMetric('parts')"  id="ws-parts"  class="sales-pill">부품금액</button>
+              </div>
+            </div>
+            <div>
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">년도</span>
+              <div class="pill-group">
+                <button onclick="setWsYear('all')" id="wsyr-all" class="sales-pill active">전체</button>
+                <button onclick="setWsYear('25')"  id="wsyr-25"  class="sales-pill">2025</button>
+                <button onclick="setWsYear('26')"  id="wsyr-26"  class="sales-pill">2026</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 차트 카드 -->
+        <div class="capturable sales-card mb-4 overflow-hidden">
+          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'볼륨_차트')">📷</button>
+          <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700">
+            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">월별 추이</span>
+            <span id="ws-unit-label" class="text-xs text-slate-400">단위: 백만원</span>
+          </div>
+          <div class="p-5" style="background:#1e2433;">
+            <div id="ws-chart-legend" class="flex flex-wrap gap-x-4 gap-y-2 mb-3"></div>
+            <div style="height:320px;"><canvas id="ws-chart"></canvas></div>
+          </div>
+        </div>
+        <!-- 매트릭스 표 카드 -->
+        <div class="capturable sales-card overflow-hidden">
+          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'볼륨_표')">📷</button>
+          <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-700">
+            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Claim Type × 월별 매트릭스</span>
+            <span class="text-xs text-slate-400 ml-2">단위: 백만원</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs" id="ws-table">
+              <thead><tr id="ws-table-head" class="bg-slate-50 dark:bg-slate-700/50"></tr></thead>
+              <tbody id="ws-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div><!-- /view-wholesale -->
+
     </main>
   </div>
 </div><!-- /최상위 레이아웃 -->
@@ -2179,6 +2248,7 @@
       'view-person':           '개인별 청구 현황',
       'view-tc':               'TC 미실시율',
       'view-claim':            'CLAIM 상태 확인',
+      'view-wholesale':        '클레임 볼륨',
     };
     document.getElementById('page-title').textContent = titles[viewId] || '';
 
@@ -2190,6 +2260,7 @@
     if (viewId === 'view-person') renderPersonChart();
     if (viewId === 'view-tc') renderTcView();
     if (viewId === 'view-claim') initClaimView();
+    if (viewId === 'view-wholesale') renderWholesale();
     // 대시보드 드래그 초기화
     if (viewId === 'view-dashboard') setTimeout(initDashboard, 50);
 
@@ -3638,6 +3709,9 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
   const DATA_MO_P    = [...new Set(PERSON_DATA.map(r => r[1]))].sort();
 const PERSON_DAILY=[["bna157","26-03-03","BSI",1,18712],["bna157","26-03-09","Warranty",2,17517227],["bna157","26-03-10","Warranty",1,19206332],["bna157","26-03-11","BSI",1,18712],["bna157","26-03-11","Goodwill",2,9777960],["bna157","26-03-11","Warranty",2,3331600],["bna157","26-03-12","BSI",6,112272],["bna157","26-03-12","TC/RECALL",11,7254334],["bna157","26-03-12","Warranty",1,838980],["bna157","26-03-16","BSI",5,377192],["bna157","26-03-16","Goodwill",3,2129826],["bna157","26-03-16","TC/RECALL",9,6157539],["bna157","26-03-16","Warranty",2,5447598],["bna157","26-03-17","Goodwill",3,11735621],["bna157","26-03-17","Warranty",2,1318725],["nt230403","26-03-04","BSI",24,566164],["nt230403","26-03-04","LOCAL TC",1,71672],["nt230403","26-03-04","TC/RECALL",5,1449388],["nt230403","26-03-05","BSI",12,320088],["nt230403","26-03-05","LOCAL TC",2,143344],["nt230403","26-03-05","TC/RECALL",3,841915],["nt230403","26-03-05","Warranty",2,731651],["nt230403","26-03-09","BSI",16,600024],["nt230403","26-03-09","Goodwill",1,890177],["nt230403","26-03-09","LOCAL TC",2,143344],["nt230403","26-03-09","TC/RECALL",1,701888],["nt230403","26-03-09","Warranty",4,2889013],["nt230403","26-03-10","BSI",12,506176],["nt230403","26-03-10","Goodwill",1,221099],["nt230403","26-03-10","LOCAL TC",2,143344],["nt230403","26-03-10","TC/RECALL",7,2986603],["nt230403","26-03-11","BSI",8,347784],["nt230403","26-03-11","TC/RECALL",11,6297568],["nt230403","26-03-11","Warranty",1,103496],["nt230403","26-03-12","BSI",6,207816],["nt230403","26-03-12","TC/RECALL",9,6042056],["nt230403","26-03-12","Warranty",4,3516236],["nt230403","26-03-13","BSI",5,382192],["nt230403","26-03-13","LOCAL TC",1,71672],["nt230403","26-03-13","TC/RECALL",3,2211358],["nt230403","26-03-13","Warranty",4,3878255],["nt230403","26-03-17","BSI",28,1007844],["nt230403","26-03-17","TC/RECALL",33,20597748],["nt230403","26-03-17","Warranty",6,6908971],["nt230403","26-03-19","BSI",12,711264],["nt230403","26-03-19","Goodwill",3,7259680],["nt230403","26-03-19","LOCAL TC",9,645048],["nt230403","26-03-19","TC/RECALL",17,11586612],["nt230403","26-03-19","Warranty",6,5228145],["nt230403","26-03-20","BSI",1,18712],["nt230403","26-03-20","Goodwill",1,388165],["nt230403","26-03-20","TC/RECALL",1,725411],["nt230403","26-03-20","Warranty",3,3091936],["nt250204","26-03-04","BSI",5,93560],["nt250204","26-03-04","TC/RECALL",3,1485093],["nt250204","26-03-05","BSI",5,93560],["nt250204","26-03-05","LOCAL TC",1,71672],["nt250204","26-03-05","TC/RECALL",3,757946],["nt250204","26-03-06","BSI",16,779112],["nt250204","26-03-06","LOCAL TC",1,71672],["nt250204","26-03-06","TC/RECALL",2,710829],["nt250204","26-03-06","Warranty",1,147017],["nt250204","26-03-09","BSI",15,478768],["nt250204","26-03-09","Goodwill",1,442480],["nt250204","26-03-09","LOCAL TC",1,71672],["nt250204","26-03-09","TC/RECALL",5,2201551],["nt250204","26-03-09","Warranty",1,1408472],["nt250204","26-03-10","BSI",8,340784],["nt250204","26-03-10","TC/RECALL",1,775190],["nt250204","26-03-11","BSI",9,168408],["nt250204","26-03-11","TC/RECALL",6,3421822],["nt250204","26-03-11","Warranty",1,1632800],["nt250204","26-03-12","BSI",9,263952],["nt250204","26-03-12","TC/RECALL",5,3693295],["nt250204","26-03-12","Warranty",2,357601],["nt250204","26-03-16","BSI",17,723568],["nt250204","26-03-16","TC/RECALL",10,6340917],["nt250204","26-03-16","Warranty",3,1118459],["nt250204","26-03-17","BSI",15,774400],["nt250204","26-03-17","Goodwill",1,6451183],["nt250204","26-03-17","TC/RECALL",10,6716436],["nt250204","26-03-17","Warranty",1,1222556],["nt250204","26-03-18","BSI",11,487464],["nt250204","26-03-18","TC/RECALL",3,1360648],["nt250204","26-03-18","Warranty",2,1851308],["nt250204","26-03-19","BSI",8,245240],["nt250204","26-03-19","LOCAL TC",4,286688],["nt250204","26-03-19","TC/RECALL",6,3632485],["nt250204","26-03-19","Warranty",2,1073787],["nt250204","26-03-20","BSI",4,74848],["nt250204","26-03-20","LOCAL TC",3,215016],["nt250204","26-03-20","TC/RECALL",3,1352544],["nt250204","26-03-20","Warranty",2,1694654],["nt250601","26-03-03","BSI",5,387192],["nt250601","26-03-03","LOCAL TC",2,143344],["nt250601","26-03-03","TC/RECALL",1,826462],["nt250601","26-03-03","Warranty",5,4702506],["nt250601","26-03-04","BSI",4,260936],["nt250601","26-03-04","Goodwill",1,1011003],["nt250601","26-03-04","TC/RECALL",1,71672],["nt250601","26-03-04","Warranty",8,22620933],["nt250601","26-03-05","BSI",3,151680],["nt250601","26-03-05","Warranty",3,6053039],["nt250601","26-03-09","BSI",6,202816],["nt250601","26-03-09","Warranty",7,2440974],["nt250601","26-03-10","Goodwill",1,961541],["nt250601","26-03-10","Warranty",3,8778090],["nt250601","26-03-11","BSI",5,226528],["nt250601","26-03-11","TC/RECALL",1,8959],["nt250601","26-03-11","Warranty",3,2317311],["nt250601","26-03-12","BSI",6,112272],["nt250601","26-03-12","Goodwill",3,1998063],["nt250601","26-03-12","TC/RECALL",2,2025865],["nt250601","26-03-12","Warranty",7,27826616],["nt250601","26-03-13","BSI",6,303360],["nt250601","26-03-13","Goodwill",2,7584744],["nt250601","26-03-13","TC/RECALL",1,666101],["nt250601","26-03-13","Warranty",7,5195270],["nt250601","26-03-16","BSI",18,814840],["nt250601","26-03-16","TC/RECALL",15,7625503],["nt250601","26-03-16","Warranty",12,12790096],["nt250601","26-03-17","BSI",1,18712],["nt250601","26-03-17","TC/RECALL",4,2078769],["nt250601","26-03-17","Warranty",1,1832100],["nt250601","26-03-18","BSI",18,756416],["nt250601","26-03-18","TC/RECALL",9,4355014],["nt250601","26-03-18","Warranty",10,7507359],["nt250601","26-03-19","BSI",7,454072],["nt250601","26-03-19","Goodwill",2,1359141],["nt250601","26-03-19","LOCAL TC",3,215016],["nt250601","26-03-19","TC/RECALL",3,687296],["nt250601","26-03-19","Warranty",6,3581741],["nt250601","26-03-20","BSI",4,90304],["nt250601","26-03-20","Goodwill",2,2251227],["nt250601","26-03-20","LOCAL TC",11,788392],["nt250601","26-03-20","TC/RECALL",2,21202],["nt250601","26-03-20","Warranty",9,12190875],["nt250702","26-03-03","BSI",1,18712],["nt250702","26-03-03","TC/RECALL",1,666378],["nt250702","26-03-03","Warranty",6,4513606],["nt250702","26-03-04","BSI",7,354496],["nt250702","26-03-04","Goodwill",1,8784023],["nt250702","26-03-04","LOCAL TC",1,71672],["nt250702","26-03-04","TC/RECALL",3,2089952],["nt250702","26-03-04","Warranty",4,1390024],["nt250702","26-03-05","BSI",1,18712],["nt250702","26-03-05","TC/RECALL",5,7453428],["nt250702","26-03-05","Warranty",7,5583901],["nt250702","26-03-06","BSI",7,130984],["nt250702","26-03-06","Goodwill",1,332106],["nt250702","26-03-06","LOCAL TC",2,143344],["nt250702","26-03-06","TC/RECALL",1,10593],["nt250702","26-03-06","Warranty",5,29016812],["nt250702","26-03-07","BSI",6,207816],["nt250702","26-03-07","LOCAL TC",3,215016],["nt250702","26-03-07","TC/RECALL",1,724846],["nt250702","26-03-07","Warranty",3,1694143],["nt250702","26-03-09","BSI",15,478768],["nt250702","26-03-09","LOCAL TC",2,143344],["nt250702","26-03-10","BSI",2,242512],["nt250702","26-03-10","TC/RECALL",2,1346155],["nt250702","26-03-10","Warranty",1,552200],["nt250702","26-03-11","BSI",4,358480],["nt250702","26-03-11","TC/RECALL",5,3610597],["nt250702","26-03-11","Warranty",3,8777413],["nt250702","26-03-12","BSI",5,184104],["nt250702","26-03-12","Goodwill",1,1996708],["nt250702","26-03-12","TC/RECALL",1,751731],["nt250702","26-03-12","Warranty",5,6676404],["nt250702","26-03-13","BSI",3,242224],["nt250702","26-03-13","Goodwill",2,2318356],["nt250702","26-03-16","BSI",5,99648],["nt250702","26-03-16","TC/RECALL",4,3027973],["nt250702","26-03-16","Warranty",4,803259],["nt250702","26-03-17","BSI",2,37424],["nt250702","26-03-17","Goodwill",1,511257],["nt250702","26-03-17","LOCAL TC",4,286688],["nt250702","26-03-17","TC/RECALL",6,4094959],["nt250702","26-03-17","Warranty",4,2264233],["nt250702","26-03-18","BSI",4,177392],["nt250702","26-03-18","Goodwill",3,7738138],["nt250702","26-03-18","TC/RECALL",5,2782480],["nt250702","26-03-18","Warranty",2,1241245],["nt250702","26-03-19","BSI",6,605692],["nt250702","26-03-19","LOCAL TC",6,430032],["nt250702","26-03-19","TC/RECALL",9,4806754],["nt250702","26-03-19","Warranty",4,4725063],["nt250702","26-03-20","Goodwill",1,2068793],["nt250702","26-03-20","TC/RECALL",1,802876],["nt250911","26-03-03","BSI",14,563188],["nt250911","26-03-03","TC/RECALL",5,2871009],["nt250911","26-03-04","BSI",10,373208],["nt250911","26-03-05","BSI",15,851680],["nt250911","26-03-05","TC/RECALL",2,1453085],["nt250911","26-03-06","BSI",8,252240],["nt250911","26-03-06","TC/RECALL",3,660687],["nt250911","26-03-07","BSI",20,579328],["nt250911","26-03-07","TC/RECALL",5,681873],["nt250911","26-03-09","BSI",9,258952],["nt250911","26-03-09","TC/RECALL",1,10593],["nt250911","26-03-09","Warranty",1,243381],["nt250911","26-03-10","BSI",3,56136],["nt250911","26-03-10","TC/RECALL",1,10593],["nt250911","26-03-11","BSI",5,279648],["nt250911","26-03-11","TC/RECALL",1,665534],["nt250911","26-03-11","Warranty",1,57418],["nt250911","26-03-12","BSI",8,245240],["nt250911","26-03-12","TC/RECALL",3,1392004],["nt250911","26-03-16","BSI",31,2037932],["nt250911","26-03-16","TC/RECALL",14,7665482],["nt250911","26-03-17","BSI",9,552584],["nt250911","26-03-17","TC/RECALL",6,3537534],["nt250911","26-03-18","BSI",8,438328],["nt250911","26-03-18","Warranty",1,111594],["nt250911","26-03-19","BSI",4,306048],["nt250911","26-03-19","LOCAL TC",2,143344],["nt250911","26-03-19","TC/RECALL",2,1539298],["nt250911","26-03-19","Warranty",1,111594],["nt250911","26-03-20","BSI",5,279648],["nt250911","26-03-20","TC/RECALL",2,760690],["nt250917","26-03-03","BSI",7,226528],["nt250917","26-03-03","Goodwill",1,6510627],["nt250917","26-03-03","TC/RECALL",2,874873],["nt250917","26-03-04","BSI",1,18712],["nt250917","26-03-04","TC/RECALL",2,1332079],["nt250917","26-03-04","Warranty",2,1638514],["nt250917","26-03-05","BSI",18,645036],["nt250917","26-03-05","LOCAL TC",3,215016],["nt250917","26-03-05","TC/RECALL",7,1596578],["nt250917","26-03-05","Warranty",3,2896357],["nt250917","26-03-06","BSI",3,56136],["nt250917","26-03-06","TC/RECALL",4,3387609],["nt250917","26-03-06","Warranty",9,6293673],["nt250917","26-03-09","BSI",10,289664],["nt250917","26-03-09","LOCAL TC",1,71672],["nt250917","26-03-09","TC/RECALL",4,1363041],["nt250917","26-03-09","Warranty",7,8481779],["nt250917","26-03-10","BSI",6,407604],["nt250917","26-03-10","LOCAL TC",1,71672],["nt250917","26-03-10","TC/RECALL",4,748959],["nt250917","26-03-10","Warranty",7,3585393],["nt250917","26-03-11","BSI",1,18712],["nt250917","26-03-11","Goodwill",1,814763],["nt250917","26-03-11","TC/RECALL",1,10601],["nt250917","26-03-11","Warranty",8,6480261],["nt250917","26-03-12","BSI",23,799252],["nt250917","26-03-12","Goodwill",1,345179],["nt250917","26-03-12","LOCAL TC",1,71672],["nt250917","26-03-12","TC/RECALL",2,1065004],["nt250917","26-03-12","Warranty",2,1473585],["nt250917","26-03-13","BSI",9,270052],["nt250917","26-03-13","Goodwill",1,395657],["nt250917","26-03-13","LOCAL TC",3,215016],["nt250917","26-03-13","TC/RECALL",8,2894438],["nt250917","26-03-13","Warranty",4,2480451],["nt250917","26-03-16","BSI",3,158680],["nt250917","26-03-16","Goodwill",5,13524080],["nt250917","26-03-16","Warranty",8,5485725],["nt250917","26-03-17","BSI",18,540992],["nt250917","26-03-17","TC/RECALL",12,7345872],["nt250917","26-03-17","Warranty",3,890928],["nt250917","26-03-18","BSI",7,419616],["nt250917","26-03-18","Goodwill",2,2436677],["nt250917","26-03-18","TC/RECALL",5,2770892],["nt250917","26-03-18","Warranty",3,1477366],["nt250917","26-03-19","BSI",7,356296],["nt250917","26-03-19","TC/RECALL",2,736015],["nt250917","26-03-19","Warranty",5,2847683],["nt250917","26-03-20","BSI",1,121256],["nt250917","26-03-20","LOCAL TC",1,71672],["nt250917","26-03-20","Warranty",5,1492055],["nt251001","26-03-04","BSI",15,478768],["nt251001","26-03-04","Goodwill",1,835728],["nt251001","26-03-04","TC/RECALL",2,161262],["nt251001","26-03-04","Warranty",1,79105],["nt251001","26-03-05","BSI",10,517132],["nt251001","26-03-05","Goodwill",2,906953],["nt251001","26-03-05","LOCAL TC",1,71672],["nt251001","26-03-05","TC/RECALL",5,3481190],["nt251001","26-03-06","BSI",11,491752],["nt251001","26-03-06","TC/RECALL",5,2826312],["nt251001","26-03-09","BSI",9,168408],["nt251001","26-03-09","TC/RECALL",3,2086192],["nt251001","26-03-09","Warranty",1,243381],["nt251001","26-03-10","BSI",14,453056],["nt251001","26-03-10","LOCAL TC",1,71672],["nt251001","26-03-10","TC/RECALL",7,4190297],["nt251001","26-03-10","Warranty",2,2659962],["nt251001","26-03-11","BSI",20,853960],["nt251001","26-03-11","Goodwill",1,337608],["nt251001","26-03-11","TC/RECALL",9,4256400],["nt251001","26-03-11","Warranty",2,567983],["nt251001","26-03-12","BSI",12,620720],["nt251001","26-03-12","TC/RECALL",10,6226185],["nt251001","26-03-12","Warranty",1,148822],["nt251001","26-03-13","BSI",1,18712],["nt251001","26-03-13","TC/RECALL",2,1509507],["nt251001","26-03-16","BSI",35,2859920],["nt251001","26-03-16","TC/RECALL",24,14445651],["nt251001","26-03-16","Warranty",1,246662],["nt251001","26-03-17","BSI",16,882420],["nt251001","26-03-17","Goodwill",1,2125049],["nt251001","26-03-17","LOCAL TC",6,430032],["nt251001","26-03-17","TC/RECALL",12,7212521],["nt251001","26-03-17","Warranty",1,878911],["nt251001","26-03-18","BSI",13,524888],["nt251001","26-03-18","Goodwill",1,376735],["nt251001","26-03-18","TC/RECALL",9,7421997],["nt251001","26-03-19","BSI",11,543232],["nt251001","26-03-19","Goodwill",1,360221],["nt251001","26-03-19","LOCAL TC",3,215016],["nt251001","26-03-19","TC/RECALL",8,5220715],["nt251001","26-03-19","Warranty",2,951014],["nt251001","26-03-20","BSI",4,181780],["nt251001","26-03-20","TC/RECALL",3,1392889],["nt251001","26-03-20","Warranty",1,147430],["nt251104","26-03-03","BSI",18,674872],["nt251104","26-03-03","LOCAL TC",2,143344],["nt251104","26-03-03","TC/RECALL",11,5212760],["nt251104","26-03-03","Warranty",2,2869408],["nt251104","26-03-04","BSI",36,1685660],["nt251104","26-03-04","LOCAL TC",2,143344],["nt251104","26-03-04","TC/RECALL",15,6545200],["nt251104","26-03-05","BSI",32,1379136],["nt251104","26-03-05","LOCAL TC",1,71672],["nt251104","26-03-05","TC/RECALL",13,6434166],["nt251104","26-03-05","Warranty",2,2865630],["nt251104","26-03-06","BSI",26,881776],["nt251104","26-03-06","LOCAL TC",1,71672],["nt251104","26-03-06","TC/RECALL",13,5039406],["nt251104","26-03-06","Warranty",2,2860110],["nt251104","26-03-09","BSI",67,2917408],["nt251104","26-03-09","LOCAL TC",4,286688],["nt251104","26-03-09","TC/RECALL",14,5036793],["nt251104","26-03-09","Warranty",2,2869069],["nt251104","26-03-10","BSI",32,1975888],["nt251104","26-03-10","TC/RECALL",16,9347261],["nt251104","26-03-11","BSI",23,917096],["nt251104","26-03-11","TC/RECALL",11,6249283],["nt251104","26-03-12","BSI",37,1856064],["nt251104","26-03-12","TC/RECALL",15,10593499],["nt251104","26-03-12","Warranty",1,1434554],["nt251104","26-03-13","BSI",2,132968],["nt251104","26-03-16","BSI",66,3195892],["nt251104","26-03-16","TC/RECALL",21,10625589],["nt251104","26-03-16","Warranty",1,1443513],["nt251104","26-03-17","BSI",36,1785040],["nt251104","26-03-17","TC/RECALL",12,8267180],["nt251104","26-03-18","BSI",20,1078048],["nt251104","26-03-18","TC/RECALL",12,6687633],["nt251104","26-03-18","Warranty",1,1425518],["nt251104","26-03-19","BSI",32,1222528],["nt251104","26-03-19","LOCAL TC",1,71672],["nt251104","26-03-19","TC/RECALL",26,12877378],["nt251104","26-03-20","BSI",6,317360],["nt251104","26-03-20","LOCAL TC",2,143344],["nt251104","26-03-20","TC/RECALL",5,3642089]];
   const PERSON_COLORS = ['#1d4ed8','#0891b2','#059669','#7c3aed','#d97706','#dc2626','#0d9488','#9333ea','#f59e0b','#ef4444','#3b82f6','#10b981','#8b5cf6','#f97316'];
+const WHOLESALE_DATA={};
+  const WS_TYPES = ['BSI and BRI','일반보증(TC/Recall)','AG Goodwill','KR Goodwill','Warranty Plus','Pre-Delivery Defect'];
+  const WS_COLORS = {'BSI and BRI':'#1d4ed8','일반보증(TC/Recall)':'#059669','AG Goodwill':'#7c3aed','KR Goodwill':'#9333ea','Warranty Plus':'#d97706','Pre-Delivery Defect':'#dc2626'};
 
   const PERSON_NAMES = {
     'bna157':'이지훈','bna255':'최금환','bna358':'김민철','bna377':'강청호',
@@ -4338,6 +4412,124 @@ const PERSON_DAILY=[["bna157","26-03-03","BSI",1,18712],["bna157","26-03-09","Wa
     if (allEl) allEl.style.background = allVis ? '#94a3b8' : 'transparent';
   }
   // ===================== /개인별 청구 현황 =====================
+
+  // ===================== 클레임 볼륨 =====================
+  let wsStatus = 'charge', wsMetric = 'amount', wsYear = 'all', wsChart = null;
+
+  function setWsStatus(s) {
+    wsStatus = s;
+    ['charge','approve','pending'].forEach(v => {
+      document.getElementById('ws-'+v).className = 'sales-pill' + (v===s?' active':'');
+    });
+    renderWholesale();
+  }
+  function setWsMetric(m) {
+    wsMetric = m;
+    document.getElementById('ws-amount').className = 'sales-pill' + (m==='amount'?' active':'');
+    document.getElementById('ws-parts').className  = 'sales-pill' + (m==='parts'?' active':'');
+    const lbl = document.getElementById('ws-unit-label');
+    if (lbl) lbl.textContent = '단위: 백만원';
+    renderWholesale();
+  }
+  function setWsYear(y) {
+    wsYear = y;
+    ['all','25','26'].forEach(v => {
+      document.getElementById('wsyr-'+v).className = 'sales-pill' + (v===y?' active':'');
+    });
+    renderWholesale();
+  }
+
+  function renderWholesale() {
+    if (!WHOLESALE_DATA || Object.keys(WHOLESALE_DATA).length === 0) {
+      document.getElementById('ws-table-body').innerHTML =
+        '<tr><td colspan="20" class="text-center py-6 text-slate-400 text-xs">데이터 없음 — 업데이트.bat 실행 후 새로고침</td></tr>';
+      return;
+    }
+
+    // 월 목록 (년도 필터 적용)
+    const allMonths = [...new Set(
+      Object.values(WHOLESALE_DATA).flatMap(mo => Object.keys(mo))
+    )].filter(m => wsYear==='all' || m.startsWith(wsYear)).sort();
+
+    // ── 차트 ──
+    if (wsChart) { wsChart.destroy(); wsChart = null; }
+    const ctx = document.getElementById('ws-chart');
+    if (ctx) {
+      const datasets = WS_TYPES.filter(t => WHOLESALE_DATA[t]).map(t => ({
+        label: t,
+        data: allMonths.map(mo => {
+          const v = WHOLESALE_DATA[t]?.[mo]?.[wsStatus]?.[wsMetric] || 0;
+          return v ? Math.round(v / 1000000) : null;
+        }),
+        backgroundColor: (WS_COLORS[t] || '#94a3b8') + 'cc',
+        borderColor: WS_COLORS[t] || '#94a3b8',
+        borderWidth: 1,
+      }));
+      wsChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: allMonths, datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { mode: 'index', intersect: false,
+              callbacks: { label: c => ` ${c.dataset.label}: ${c.raw?.toLocaleString() ?? '-'}백만원` } },
+            datalabels: { display: false },
+          },
+          scales: {
+            x: { stacked: true, ticks: { color:'#94a3b8', font:{size:10} }, grid:{color:'#334155'} },
+            y: { stacked: true, ticks: { color:'#94a3b8', callback: v => v.toLocaleString() }, grid:{color:'#334155'}, beginAtZero:true },
+          }
+        }
+      });
+      // 범례
+      const leg = document.getElementById('ws-chart-legend');
+      if (leg) leg.innerHTML = WS_TYPES.filter(t => WHOLESALE_DATA[t]).map(t =>
+        `<span class="flex items-center gap-1 text-xs text-slate-300">
+          <span style="width:10px;height:10px;border-radius:2px;background:${WS_COLORS[t]||'#94a3b8'};display:inline-block;"></span>
+          ${t}</span>`
+      ).join('');
+    }
+
+    // ── 매트릭스 표 ──
+    const thead = document.getElementById('ws-table-head');
+    const tbody = document.getElementById('ws-table-body');
+    if (!thead || !tbody) return;
+
+    thead.innerHTML = '<th class="px-3 py-2 text-left text-slate-500 font-semibold whitespace-nowrap">Claim Type</th>' +
+      '<th class="px-3 py-2 text-right text-slate-500 font-semibold">Total</th>' +
+      allMonths.map(m => `<th class="px-3 py-2 text-right text-slate-500 font-semibold whitespace-nowrap">${m}</th>`).join('');
+
+    const rows = WS_TYPES.filter(t => WHOLESALE_DATA[t]);
+    const totals = {};
+    allMonths.forEach(m => { totals[m] = 0; });
+    let grandTotal = 0;
+
+    tbody.innerHTML = rows.map(t => {
+      let rowTotal = 0;
+      const cells = allMonths.map(mo => {
+        const v = WHOLESALE_DATA[t]?.[mo]?.[wsStatus]?.[wsMetric] || 0;
+        const m = Math.round(v / 1000000);
+        rowTotal += m; totals[mo] = (totals[mo]||0) + m;
+        return `<td class="px-3 py-2 text-right tabular-nums text-slate-700 dark:text-slate-300">${m ? m.toLocaleString() : '-'}</td>`;
+      }).join('');
+      grandTotal += rowTotal;
+      const dot = `<span style="width:8px;height:8px;border-radius:2px;background:${WS_COLORS[t]||'#94a3b8'};display:inline-block;margin-right:4px;"></span>`;
+      return `<tr class="border-t border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30">
+        <td class="px-3 py-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-xs">${dot}${t}</td>
+        <td class="px-3 py-2 text-right font-semibold text-slate-800 dark:text-slate-200 tabular-nums">${rowTotal.toLocaleString()}</td>
+        ${cells}
+      </tr>`;
+    }).join('');
+
+    // Total 행
+    tbody.innerHTML += `<tr class="border-t-2 border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-700/50 font-semibold">
+      <td class="px-3 py-2 text-slate-800 dark:text-slate-200">Total</td>
+      <td class="px-3 py-2 text-right tabular-nums text-slate-800 dark:text-slate-200">${grandTotal.toLocaleString()}</td>
+      ${allMonths.map(m => `<td class="px-3 py-2 text-right tabular-nums text-slate-800 dark:text-slate-200">${(totals[m]||0).toLocaleString()}</td>`).join('')}
+    </tr>`;
+  }
+  // ===================== /클레임 볼륨 =====================
 
   function toggleSalesTotal() {
     showTotalLabels = !showTotalLabels;
