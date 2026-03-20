@@ -4267,12 +4267,16 @@ const PERSON_DAILY=[["bna157","26-03-03","BSI",1,18712],["bna157","26-03-09","Wa
       if (pChartDailyCum) { pChartDailyCum.destroy(); pChartDailyCum = null; }
       const ctx = document.getElementById('daily-cum-chart');
       if (!ctx) return;
+      const cumDatasets = makeDatasets(true).map(ds => ({
+        ...ds, fill: undefined, tension: undefined, pointRadius: undefined, pointHoverRadius: undefined,
+        backgroundColor: ds.borderColor + 'cc', borderWidth: 1,
+      }));
       pChartDailyCum = new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets: makeDatasets(true) },
+        type: 'bar',
+        data: { labels, datasets: cumDatasets },
         options: { responsive:true, maintainAspectRatio:false,
           plugins: pluginOpts,
-          scales: scaleOpts }
+          scales: { x:{...scaleOpts.x, stacked:true}, y:{...scaleOpts.y, stacked:true} } }
       });
     }
     renderPersonDailyLegend(activePeople);
@@ -4282,7 +4286,13 @@ const PERSON_DAILY=[["bna157","26-03-03","BSI",1,18712],["bna157","26-03-09","Wa
     const wrap = document.getElementById('person-chart-legend-daily');
     if (!wrap) return;
     function getName(id) { return PERSON_NAMES[id] || id; }
-    wrap.innerHTML = activePeople.map((person, i) => {
+    const allCheck = `<span class="flex items-center gap-1 cursor-pointer select-none text-xs text-slate-300 mr-2" onclick="toggleDailyAll()" id="dlgnd-all-wrap">
+      <span id="dlgnd-all" style="width:14px;height:14px;border-radius:3px;border:2px solid #94a3b8;background:#94a3b8;display:inline-flex;align-items:center;justify-content:center;">
+        <svg width="8" height="8" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </span>
+      <span class="font-semibold text-slate-400">전체</span>
+    </span>`;
+    const items = activePeople.map((person, i) => {
       const color = PERSON_COLORS[i % PERSON_COLORS.length];
       return `<span class="flex items-center gap-1 cursor-pointer select-none text-xs text-slate-300" onclick="toggleDailyPerson('${person}',${i})">
         <span id="dlgnd-${i}" style="width:14px;height:14px;border-radius:3px;border:2px solid ${color};background:${color};display:inline-flex;align-items:center;justify-content:center;">
@@ -4291,6 +4301,23 @@ const PERSON_DAILY=[["bna157","26-03-03","BSI",1,18712],["bna157","26-03-09","Wa
         <span>${getName(person)}</span>
       </span>`;
     }).join('');
+    wrap.innerHTML = allCheck + items;
+  }
+
+  function toggleDailyAll() {
+    const chart = pDailySubTab === 'bar' ? pChartDailyBar : pChartDailyCum;
+    if (!chart) return;
+    const anyHidden = chart.data.datasets.some((_, i) => !chart.isDatasetVisible(i));
+    chart.data.datasets.forEach((_, i) => chart.setDatasetVisibility(i, anyHidden));
+    chart.update();
+    // 개별 체크박스 색상 동기화
+    chart.data.datasets.forEach((ds, i) => {
+      const el = document.getElementById(`dlgnd-${i}`);
+      const color = PERSON_COLORS[i % PERSON_COLORS.length];
+      if (el) el.style.background = anyHidden ? color : 'transparent';
+    });
+    const allEl = document.getElementById('dlgnd-all');
+    if (allEl) allEl.style.background = anyHidden ? '#94a3b8' : 'transparent';
   }
 
   function toggleDailyPerson(person, idx) {
@@ -4305,6 +4332,10 @@ const PERSON_DAILY=[["bna157","26-03-03","BSI",1,18712],["bna157","26-03-09","Wa
     const color = PERSON_COLORS[idx % PERSON_COLORS.length];
     const el = document.getElementById(`dlgnd-${idx}`);
     if (el) el.style.background = !vis ? color : 'transparent';
+    // 전체 체크박스 상태 갱신
+    const allVis = chart.data.datasets.every((_, i) => chart.isDatasetVisible(i));
+    const allEl = document.getElementById('dlgnd-all');
+    if (allEl) allEl.style.background = allVis ? '#94a3b8' : 'transparent';
   }
   // ===================== /개인별 청구 현황 =====================
 
