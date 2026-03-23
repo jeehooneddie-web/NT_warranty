@@ -256,17 +256,20 @@ try:
     # 열 인덱스: 지점=0, J=9, M=12, O=14, R=17
     kh_J = kc[9];  kh_M = kc[12]; kh_O = kc[14]; kh_R = kc[17]
     # 헤더 신구 호환 (BAT 실행 전은 구 헤더 S/T/U/W/Y 사용)
-    kh_T = 'Claim Type'  if 'Claim Type'  in kc else 'T'
-    kh_W = '승인여부'     if '승인여부'     in kc else 'W'
-    kh_U = '보증마감기준' if '보증마감기준' in kc else 'U'
-    kh_Y = '회계마감기준' if '회계마감기준' in kc else 'Y'
+    kh_T = 'Claim Type'   if 'Claim Type'   in kc else 'T'
+    kh_W = '승인여부'      if '승인여부'      in kc else 'W'
+    kh_S = '클레임확정월'  if '클레임확정월'  in kc else kc[18]  # S열: 승인대기 기준월
+    kh_U = '보증마감기준'  if '보증마감기준'  in kc else 'U'
+    kh_Y = '회계마감기준'  if '회계마감기준'  in kc else 'Y'
     for col in [kh_J, kh_M, kh_O, kh_R]:
         df_kh[col] = pd.to_numeric(df_kh[col], errors='coerce').fillna(0)
-    for col in [kh_T, kh_W, kh_U, kh_Y]:
+    for col in [kh_T, kh_W, kh_S, kh_U, kh_Y]:
         df_kh[col] = df_kh[col].astype(str).str.strip()
 
     def _agg_basis(df_base, mo_col):
-        """mo_col 기준으로 charge/approve/pending 집계 → {ClaimType: {month: {...}}}"""
+        """mo_col 기준으로 charge/approve/pending 집계 → {ClaimType: {month: {...}}}
+        승인대기: 아직 정산일 없음 → kh_S(클레임확정월) 기준으로 별도 집계
+        """
         df_v = df_base[df_base[mo_col].str.match(r'\d{2}-\d{2}', na=False)]
         out = {}
         for _, r in df_v.groupby([kh_T, mo_col]).agg(
@@ -283,11 +286,15 @@ try:
             out.setdefault(ct, {}).setdefault(mo, {})['approve'] = {
                 'amount': int(r['amount']), 'parts': int(r['parts']), 'count': int(r['count'])
             }
-        df_pend = df_v[df_v[kh_W] == '승인대기']
-        for _, r in df_pend.groupby([kh_T, mo_col]).agg(
+        # 승인대기: 정산일 없으므로 전체 df_base에서 kh_S(클레임확정월) 기준으로 집계
+        df_pend = df_base[
+            (df_base[kh_W] == '승인대기') &
+            (df_base[kh_S].str.match(r'\d{2}-\d{2}', na=False))
+        ]
+        for _, r in df_pend.groupby([kh_T, kh_S]).agg(
             amount=(kh_M,'sum'), parts=(kh_J,'sum'), count=(kh_M,'count')
         ).reset_index().iterrows():
-            ct, mo = str(r[kh_T]), str(r[mo_col])
+            ct, mo = str(r[kh_T]), str(r[kh_S])
             out.setdefault(ct, {}).setdefault(mo, {})['pending'] = {
                 'amount': int(r['amount']), 'parts': int(r['parts']), 'count': int(r['count'])
             }
