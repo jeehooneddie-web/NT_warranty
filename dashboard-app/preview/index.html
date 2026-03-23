@@ -1889,7 +1889,7 @@
         <div class="flex justify-end mb-3">
         </div>
         <!-- 필터 카드 -->
-        <div class="sales-card p-5 mb-4">
+        <div class="sales-card p-5 mb-4" style="border-top:3px solid #0891b2;">
           <div class="flex flex-wrap gap-6 items-start">
             <div>
               <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">구분</span>
@@ -1918,14 +1918,14 @@
           </div>
         </div>
         <!-- 매트릭스 표 카드 -->
-        <div class="sales-card overflow-hidden">
+        <div class="sales-card overflow-hidden" style="border-top:3px solid #0891b2;">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700">
             <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Claim Type × 월별 매트릭스</span>
             <span id="ws-unit-label" class="text-xs text-slate-400">단위: 백만원</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-xs" id="ws-table">
-              <thead><tr id="ws-table-head" class="bg-slate-50 dark:bg-slate-700/50"></tr></thead>
+              <thead><tr id="ws-table-head" style="background:#1e3a5f;"></tr></thead>
               <tbody id="ws-table-body"></tbody>
             </table>
           </div>
@@ -4400,9 +4400,9 @@ const WHOLESALE_DATA={"AG Goodwill":{"25-01":{"charge":{"amount":118282600,"part
 
     // ── 헤더 ──
     thead.innerHTML =
-      `<th class="px-3 py-2 text-left text-slate-500 dark:text-slate-400 font-semibold whitespace-nowrap sticky left-0 bg-slate-50 dark:bg-slate-700/50 z-10" style="min-width:160px">Claim Type</th>` +
-      `<th class="px-3 py-2 text-right text-slate-500 dark:text-slate-400 font-semibold whitespace-nowrap">합계</th>` +
-      allMonths.map(m => `<th class="px-3 py-2 text-right text-slate-500 dark:text-slate-400 font-semibold whitespace-nowrap">${m}</th>`).join('');
+      `<th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap sticky left-0 z-10" style="min-width:160px;color:#93c5fd;background:#1e3a5f;">Claim Type</th>` +
+      `<th class="px-3 py-2.5 text-right font-semibold whitespace-nowrap" style="color:#e2e8f0;">합계</th>` +
+      allMonths.map(m => `<th class="px-3 py-2.5 text-right font-semibold whitespace-nowrap" style="color:#e2e8f0;">${m}</th>`).join('');
 
     // ── 본문 ──
     const rows = WS_TYPES.filter(t => WHOLESALE_DATA[t]);
@@ -4420,25 +4420,25 @@ const WHOLESALE_DATA={"AG Goodwill":{"25-01":{"charge":{"amount":118282600,"part
         const v = toVal(raw);
         rowTotal += v;
         colTotals[mo] = (colTotals[mo] || 0) + v;
-        return `<td class="px-3 py-2 text-right tabular-nums text-slate-700 dark:text-slate-300">${fmt(v)}</td>`;
+        return `<td class="px-3 py-2.5 text-right tabular-nums text-slate-700">${fmt(v)}</td>`;
       }).join('');
       grandTotal += rowTotal;
       const dot = `<span style="width:8px;height:8px;border-radius:2px;background:${WS_COLORS[t]||'#94a3b8'};display:inline-block;margin-right:6px;flex-shrink:0"></span>`;
-      const rowBg = i % 2 === 1 ? ' bg-slate-50/50 dark:bg-slate-800/30' : '';
-      return `<tr class="border-t border-slate-100 dark:border-slate-700 hover:bg-blue-50/40 dark:hover:bg-slate-700/30${rowBg}">
-        <td class="px-3 py-2 whitespace-nowrap sticky left-0 bg-white dark:bg-slate-800 z-10" style="background:inherit">
-          <span class="flex items-center text-xs text-slate-700 dark:text-slate-300">${dot}${t}</span>
+      const rowBg = i % 2 === 1 ? 'background:#f8fafc;' : 'background:#ffffff;';
+      return `<tr style="${rowBg}border-bottom:1px solid #e2e8f0;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===1?'#f8fafc':'#ffffff'}'">
+        <td class="px-3 py-2.5 whitespace-nowrap sticky left-0 z-10" style="${rowBg}">
+          <span class="flex items-center text-xs font-medium text-slate-700">${dot}${t}</span>
         </td>
-        <td class="px-3 py-2 text-right font-semibold text-slate-800 dark:text-slate-200 tabular-nums">${rowTotal.toLocaleString()}</td>
+        <td class="px-3 py-2.5 text-right font-bold text-slate-800 tabular-nums">${rowTotal.toLocaleString()}</td>
         ${cells}
       </tr>`;
     }).join('');
 
     // ── Total 행 ──
-    tbody.innerHTML += `<tr class="border-t-2 border-slate-400 dark:border-slate-500 bg-slate-100 dark:bg-slate-700/60 font-semibold text-xs">
-      <td class="px-3 py-2 text-slate-800 dark:text-slate-200 sticky left-0 bg-slate-100 dark:bg-slate-700/60 z-10">합계</td>
-      <td class="px-3 py-2 text-right tabular-nums text-slate-800 dark:text-slate-200">${grandTotal.toLocaleString()}</td>
-      ${allMonths.map(m => `<td class="px-3 py-2 text-right tabular-nums text-slate-800 dark:text-slate-200">${(colTotals[m]||0).toLocaleString()}</td>`).join('')}
+    tbody.innerHTML += `<tr style="border-top:2px solid #0891b2;background:#e0f2fe;font-weight:700;font-size:12px;">
+      <td class="px-3 py-2.5 sticky left-0 z-10" style="background:#e0f2fe;color:#0c4a6e;">합계</td>
+      <td class="px-3 py-2.5 text-right tabular-nums" style="color:#0c4a6e;">${grandTotal.toLocaleString()}</td>
+      ${allMonths.map(m => `<td class="px-3 py-2.5 text-right tabular-nums" style="color:#0c4a6e;">${(colTotals[m]||0).toLocaleString()}</td>`).join('')}
     </tr>`;
   }
   // ===================== /클레임 볼륨 =====================
