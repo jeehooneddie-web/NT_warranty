@@ -1886,8 +1886,6 @@
            뷰: 클레임 볼륨 (파일2 역할)
            ============================================= -->
       <div id="view-wholesale" class="view hidden">
-        <div class="flex justify-end mb-3">
-        </div>
         <!-- 필터 카드 -->
         <div class="sales-card p-5 mb-4" style="border-top:3px solid #0891b2;">
           <div class="flex flex-wrap gap-6 items-start">
@@ -1907,26 +1905,31 @@
                 <button onclick="setWsMetric('count')"  id="ws-count"  class="sales-pill">건수</button>
               </div>
             </div>
-            <div>
-              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">년도</span>
-              <div class="pill-group">
-                <button onclick="setWsYear('all')" id="wsyr-all" class="sales-pill active">전체</button>
-                <button onclick="setWsYear('25')"  id="wsyr-25"  class="sales-pill">2025</button>
-                <button onclick="setWsYear('26')"  id="wsyr-26"  class="sales-pill">2026</button>
-              </div>
-            </div>
           </div>
         </div>
-        <!-- 매트릭스 표 카드 -->
-        <div class="sales-card overflow-hidden" style="border-top:3px solid #0891b2;">
-          <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700">
-            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Claim Type × 월별 매트릭스</span>
+        <!-- 2025 매트릭스 카드 -->
+        <div class="sales-card overflow-hidden mb-4" style="border-top:3px solid #0891b2;">
+          <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+            <span class="text-sm font-semibold text-slate-700">2025 · Claim Type × 월별 매트릭스</span>
             <span id="ws-unit-label" class="text-xs text-slate-400">단위: 백만원</span>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full text-xs" id="ws-table">
-              <thead><tr id="ws-table-head" style="background:#1e3a5f;"></tr></thead>
-              <tbody id="ws-table-body"></tbody>
+            <table class="w-full text-xs" id="ws-table-25">
+              <thead><tr id="ws-head-25" style="background:#1e3a5f;"></tr></thead>
+              <tbody id="ws-body-25"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- 2026 매트릭스 카드 -->
+        <div class="sales-card overflow-hidden" style="border-top:3px solid #0891b2;">
+          <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+            <span class="text-sm font-semibold text-slate-700">2026 · Claim Type × 월별 매트릭스</span>
+            <span id="ws-unit-label-26" class="text-xs text-slate-400">단위: 백만원</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs" id="ws-table-26">
+              <thead><tr id="ws-head-26" style="background:#1e3a5f;"></tr></thead>
+              <tbody id="ws-body-26"></tbody>
             </table>
           </div>
         </div>
@@ -4354,7 +4357,7 @@ const WHOLESALE_DATA={"AG Goodwill":{"25-01":{"charge":{"amount":118282600,"part
   // ===================== /개인별 청구 현황 =====================
 
   // ===================== 클레임 볼륨 =====================
-  let wsStatus = 'charge', wsMetric = 'amount', wsYear = 'all';
+  let wsStatus = 'charge', wsMetric = 'amount';
 
   function setWsStatus(s) {
     wsStatus = s;
@@ -4368,54 +4371,52 @@ const WHOLESALE_DATA={"AG Goodwill":{"25-01":{"charge":{"amount":118282600,"part
     ['amount','parts','count'].forEach(v => {
       document.getElementById('ws-'+v).className = 'sales-pill' + (v===m?' active':'');
     });
-    const lbl = document.getElementById('ws-unit-label');
-    if (lbl) lbl.textContent = m==='count' ? '단위: 건' : '단위: 백만원';
-    renderWholesale();
-  }
-  function setWsYear(y) {
-    wsYear = y;
-    ['all','25','26'].forEach(v => {
-      document.getElementById('wsyr-'+v).className = 'sales-pill' + (v===y?' active':'');
+    const unit = m === 'count' ? '단위: 건' : '단위: 백만원';
+    ['ws-unit-label','ws-unit-label-26'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = unit;
     });
     renderWholesale();
   }
 
   function renderWholesale() {
-    const thead = document.getElementById('ws-table-head');
-    const tbody = document.getElementById('ws-table-body');
-    if (!thead || !tbody) return;
-
     if (!WHOLESALE_DATA || Object.keys(WHOLESALE_DATA).length === 0) {
-      thead.innerHTML = '';
-      tbody.innerHTML = '<tr><td colspan="20" class="text-center py-6 text-slate-400 text-xs">데이터 없음 — 업데이트.bat 실행 후 새로고침</td></tr>';
+      ['25','26'].forEach(yr => {
+        const h = document.getElementById('ws-head-'+yr);
+        const b = document.getElementById('ws-body-'+yr);
+        if (h) h.innerHTML = '';
+        if (b) b.innerHTML = `<tr><td colspan="14" class="text-center py-6 text-slate-400 text-xs">데이터 없음 — 업데이트.bat 실행 후 새로고침</td></tr>`;
+      });
       return;
     }
+    ['25','26'].forEach(yr => renderWsYear(yr));
+  }
+
+  function renderWsYear(yr) {
+    const thead = document.getElementById('ws-head-'+yr);
+    const tbody = document.getElementById('ws-body-'+yr);
+    if (!thead || !tbody) return;
 
     const isCount = wsMetric === 'count';
+    const months = Array.from({length:12}, (_,i) => `${yr}-${String(i+1).padStart(2,'0')}`);
+    const fmt = v => v ? v.toLocaleString() : '-';
+    const toVal = raw => isCount ? (raw || 0) : Math.round((raw || 0) / 1000000);
 
-    // 월 목록 (년도 필터 적용)
-    const allMonths = [...new Set(
-      Object.values(WHOLESALE_DATA).flatMap(mo => Object.keys(mo))
-    )].filter(m => wsYear==='all' || m.startsWith(wsYear)).sort();
-
-    // ── 헤더 ──
+    // 헤더
     thead.innerHTML =
       `<th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap sticky left-0 z-10" style="min-width:160px;color:#93c5fd;background:#1e3a5f;">Claim Type</th>` +
       `<th class="px-3 py-2.5 text-right font-semibold whitespace-nowrap" style="color:#e2e8f0;">합계</th>` +
-      allMonths.map(m => `<th class="px-3 py-2.5 text-right font-semibold whitespace-nowrap" style="color:#e2e8f0;">${m}</th>`).join('');
+      months.map(m => `<th class="px-3 py-2.5 text-right font-semibold whitespace-nowrap" style="color:#e2e8f0;">${m}</th>`).join('');
 
-    // ── 본문 ──
+    // 본문
     const rows = WS_TYPES.filter(t => WHOLESALE_DATA[t]);
     const colTotals = {};
-    allMonths.forEach(m => { colTotals[m] = 0; });
+    months.forEach(m => { colTotals[m] = 0; });
     let grandTotal = 0;
-
-    const fmt = v => isCount ? (v ? v.toLocaleString() : '-') : (v ? v.toLocaleString() : '-');
-    const toVal = raw => isCount ? (raw || 0) : Math.round((raw || 0) / 1000000);
 
     tbody.innerHTML = rows.map((t, i) => {
       let rowTotal = 0;
-      const cells = allMonths.map(mo => {
+      const cells = months.map(mo => {
         const raw = WHOLESALE_DATA[t]?.[mo]?.[wsStatus]?.[wsMetric] || 0;
         const v = toVal(raw);
         rowTotal += v;
@@ -4424,21 +4425,21 @@ const WHOLESALE_DATA={"AG Goodwill":{"25-01":{"charge":{"amount":118282600,"part
       }).join('');
       grandTotal += rowTotal;
       const dot = `<span style="width:8px;height:8px;border-radius:2px;background:${WS_COLORS[t]||'#94a3b8'};display:inline-block;margin-right:6px;flex-shrink:0"></span>`;
-      const rowBg = i % 2 === 1 ? 'background:#f8fafc;' : 'background:#ffffff;';
-      return `<tr style="${rowBg}border-bottom:1px solid #e2e8f0;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===1?'#f8fafc':'#ffffff'}'">
-        <td class="px-3 py-2.5 whitespace-nowrap sticky left-0 z-10" style="${rowBg}">
+      const rowBg = i % 2 === 1 ? '#f8fafc' : '#ffffff';
+      return `<tr style="background:${rowBg};border-bottom:1px solid #e2e8f0;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${rowBg}'">
+        <td class="px-3 py-2.5 whitespace-nowrap sticky left-0 z-10" style="background:${rowBg};">
           <span class="flex items-center text-xs font-medium text-slate-700">${dot}${t}</span>
         </td>
-        <td class="px-3 py-2.5 text-right font-bold text-slate-800 tabular-nums">${rowTotal.toLocaleString()}</td>
+        <td class="px-3 py-2.5 text-right font-bold text-slate-800 tabular-nums">${fmt(rowTotal)}</td>
         ${cells}
       </tr>`;
     }).join('');
 
-    // ── Total 행 ──
+    // 합계 행
     tbody.innerHTML += `<tr style="border-top:2px solid #0891b2;background:#e0f2fe;font-weight:700;font-size:12px;">
       <td class="px-3 py-2.5 sticky left-0 z-10" style="background:#e0f2fe;color:#0c4a6e;">합계</td>
-      <td class="px-3 py-2.5 text-right tabular-nums" style="color:#0c4a6e;">${grandTotal.toLocaleString()}</td>
-      ${allMonths.map(m => `<td class="px-3 py-2.5 text-right tabular-nums" style="color:#0c4a6e;">${(colTotals[m]||0).toLocaleString()}</td>`).join('')}
+      <td class="px-3 py-2.5 text-right tabular-nums" style="color:#0c4a6e;">${fmt(grandTotal)}</td>
+      ${months.map(m => `<td class="px-3 py-2.5 text-right tabular-nums" style="color:#0c4a6e;">${fmt(colTotals[m]||0)}</td>`).join('')}
     </tr>`;
   }
   // ===================== /클레임 볼륨 =====================
