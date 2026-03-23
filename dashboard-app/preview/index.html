@@ -1654,8 +1654,11 @@
            뷰: TC 미실시율
            ============================================= -->
       <div id="view-tc" class="view hidden">
-        <!-- 뷰 전체 캡쳐 -->
         <div class="flex justify-end mb-3">
+          <button onclick="exportTcExcel()" class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white" style="background:#059669">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Excel 내보내기
+          </button>
         </div>
         <!-- 필터 카드 (다크) -->
         <div class="rounded-2xl p-5 mb-4" style="background:#fff; border:1px solid #e2e8f0; box-shadow:0 2px 12px rgba(0,0,0,0.06)">
@@ -4000,6 +4003,54 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
       });
       wrap.innerHTML = '<table class="w-full" style="border-collapse:collapse"><thead>' + th + '</thead><tbody>' + rows + '</tbody></table>';
     }
+  }
+  function exportTcExcel() {
+    const allMonths = _tcAllMonths();
+    const selMonths = tcPeriodMode === 'quarterly'
+      ? (tcActiveQuarters.size === 0 ? allMonths : allMonths.filter(m => tcActiveQuarters.has(_moToQ(m.slice(-2)))))
+      : (tcActiveMonths.size === 0   ? allMonths : allMonths.filter(m => tcActiveMonths.has(m.slice(-2))));
+    const activeBranches = tcActiveBranches.size === TC_BRANCHES.length ? TC_BRANCHES : [...tcActiveBranches];
+
+    const rows = [['지점', '기간', '방문대수', '미실시대수', '미실시율(%)']];
+
+    if (tcPeriodMode === 'quarterly') {
+      const allQ = [...new Set(selMonths.map(_monthToQ))].sort();
+      activeBranches.forEach(b => {
+        if (!TC_DATA[b]) return;
+        const agg = _tcQAgg(b);
+        allQ.forEach(q => {
+          const v = agg[q];
+          if (!v || !v.total) return;
+          const rate = parseFloat((v.n_count / v.total * 100).toFixed(1));
+          rows.push([b, q, v.total, v.n_count, rate]);
+        });
+        // 지점 합계
+        let tot = 0, n = 0;
+        allQ.forEach(q => { const v = agg[q]; if (v) { tot += v.total; n += v.n_count; } });
+        if (tot) rows.push([b, '합계', tot, n, parseFloat((n / tot * 100).toFixed(1))]);
+      });
+    } else {
+      activeBranches.forEach(b => {
+        if (!TC_DATA[b]) return;
+        selMonths.forEach(m => {
+          const v = TC_DATA[b][m];
+          if (!v) return;
+          const rate = parseFloat((v.n_count / v.total * 100).toFixed(1));
+          rows.push([b, m, v.total, v.n_count, rate]);
+        });
+        // 지점 합계
+        let tot = 0, n = 0;
+        selMonths.forEach(m => { const v = TC_DATA[b] && TC_DATA[b][m]; if (v) { tot += v.total; n += v.n_count; } });
+        if (tot) rows.push([b, '합계', tot, n, parseFloat((n / tot * 100).toFixed(1))]);
+      });
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:8},{wch:10},{wch:10},{wch:10},{wch:12}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'TC미실시율');
+    const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    XLSX.writeFile(wb, 'TC미실시율_' + today + '.xlsx');
   }
   // ===================== /TC 미실시율 =====================
 
