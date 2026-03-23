@@ -4509,11 +4509,29 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     const fmt = v => v ? v.toLocaleString() : '-';
     const toVal = raw => raw || 0;
 
+    // 컬럼 너비 고정 (두 테이블 동일 적용)
+    const table = thead.closest('table');
+    if (table) {
+      table.style.tableLayout = 'fixed';
+      table.style.width = '100%';
+    }
+    const colgroup = `<colgroup>
+      <col style="width:150px">
+      <col style="width:90px">
+      ${months.map(() => '<col style="width:72px">').join('')}
+    </colgroup>`;
+    // colgroup 삽입 (table 첫번째 자식으로)
+    if (table && !table.querySelector('colgroup')) {
+      table.insertAdjacentHTML('afterbegin', colgroup);
+    } else if (table) {
+      table.querySelector('colgroup').outerHTML = colgroup;
+    }
+
     // 헤더
     thead.innerHTML =
-      `<th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap sticky left-0 z-10" style="min-width:160px;color:#93c5fd;background:#1e3a5f;">Claim Type</th>` +
+      `<th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap sticky left-0 z-10" style="color:#93c5fd;background:#1e3a5f;">Claim Type</th>` +
       `<th class="px-3 py-2.5 text-right font-semibold whitespace-nowrap" style="color:#e2e8f0;">합계</th>` +
-      months.map(m => `<th class="px-3 py-2.5 text-right font-semibold whitespace-nowrap" style="color:#e2e8f0;">${m}</th>`).join('');
+      months.map(m => `<th class="px-3 py-2.5 text-right font-semibold whitespace-nowrap overflow-hidden" style="color:#e2e8f0;">${m}</th>`).join('');
 
     // 본문
     const rows = WS_TYPES.filter(t => base[t]);
@@ -4528,7 +4546,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
         const v = toVal(raw);
         rowTotal += v;
         colTotals[mo] = (colTotals[mo] || 0) + v;
-        return `<td class="px-3 py-2.5 text-right tabular-nums text-slate-700">${fmt(v)}</td>`;
+        return `<td class="px-3 py-2.5 text-right tabular-nums text-slate-700" style="overflow:hidden;">${fmt(v)}</td>`;
       }).join('');
       grandTotal += rowTotal;
       const dot = `<span style="width:8px;height:8px;border-radius:2px;background:${WS_COLORS[t]||'#94a3b8'};display:inline-block;margin-right:6px;flex-shrink:0"></span>`;
