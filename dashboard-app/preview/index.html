@@ -1680,7 +1680,31 @@
             </div>
             <div id="tc-month-wrap">
               <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">월</span>
-              <div class="pill-group" id="tc-month-filter"></div>
+              <div class="pill-group">
+                <button onclick="toggleTcMonth('all')" id="tc-fmonth-all" class="sales-pill active">전체</button>
+                <button onclick="toggleTcMonth('01')" id="tc-fmonth-01" class="sales-pill">1월</button>
+                <button onclick="toggleTcMonth('02')" id="tc-fmonth-02" class="sales-pill">2월</button>
+                <button onclick="toggleTcMonth('03')" id="tc-fmonth-03" class="sales-pill">3월</button>
+                <button onclick="toggleTcMonth('04')" id="tc-fmonth-04" class="sales-pill">4월</button>
+                <button onclick="toggleTcMonth('05')" id="tc-fmonth-05" class="sales-pill">5월</button>
+                <button onclick="toggleTcMonth('06')" id="tc-fmonth-06" class="sales-pill">6월</button>
+                <button onclick="toggleTcMonth('07')" id="tc-fmonth-07" class="sales-pill">7월</button>
+                <button onclick="toggleTcMonth('08')" id="tc-fmonth-08" class="sales-pill">8월</button>
+                <button onclick="toggleTcMonth('09')" id="tc-fmonth-09" class="sales-pill">9월</button>
+                <button onclick="toggleTcMonth('10')" id="tc-fmonth-10" class="sales-pill">10월</button>
+                <button onclick="toggleTcMonth('11')" id="tc-fmonth-11" class="sales-pill">11월</button>
+                <button onclick="toggleTcMonth('12')" id="tc-fmonth-12" class="sales-pill">12월</button>
+              </div>
+            </div>
+            <div id="tc-quarter-wrap" style="display:none">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">분기</span>
+              <div class="pill-group">
+                <button onclick="toggleTcQuarter('all')" id="tc-fq-all" class="sales-pill active">전체</button>
+                <button onclick="toggleTcQuarter('Q1')" id="tc-fq-Q1" class="sales-pill">Q1</button>
+                <button onclick="toggleTcQuarter('Q2')" id="tc-fq-Q2" class="sales-pill">Q2</button>
+                <button onclick="toggleTcQuarter('Q3')" id="tc-fq-Q3" class="sales-pill">Q3</button>
+                <button onclick="toggleTcQuarter('Q4')" id="tc-fq-Q4" class="sales-pill">Q4</button>
+              </div>
             </div>
           </div>
         </div>
@@ -3677,7 +3701,8 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   };
   const TC_TARGET = 35;
   let tcActiveBranches = new Set(TC_BRANCHES);
-  let tcActiveMonths = new Set(); // empty = all
+  let tcActiveMonths   = new Set(); // empty = all, values = '01'~'12'
+  let tcActiveQuarters = new Set(); // empty = all, values = 'Q1'~'Q4'
   let tcPeriodMode = 'monthly'; // 'monthly' | 'quarterly'
   let tcBarChart = null;
 
@@ -3699,14 +3724,21 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     return out;
   }
 
+  function _moToQ(mo) { return 'Q' + Math.ceil(parseInt(mo) / 3); }
+
   function setTcPeriodMode(mode) {
     tcPeriodMode = mode;
     document.getElementById('tc-mode-monthly').className   = 'sales-pill' + (mode==='monthly'   ? ' active' : '');
     document.getElementById('tc-mode-quarterly').className = 'sales-pill' + (mode==='quarterly' ? ' active' : '');
-    // 월 필터 표시/숨김
-    const wrap = document.getElementById('tc-month-wrap');
-    if (wrap) wrap.style.display = mode === 'quarterly' ? 'none' : '';
-    if (mode === 'quarterly') tcActiveMonths = new Set(); // 분기 전환 시 월 선택 초기화
+    document.getElementById('tc-month-wrap').style.display   = mode === 'monthly'   ? '' : 'none';
+    document.getElementById('tc-quarter-wrap').style.display = mode === 'quarterly' ? '' : 'none';
+    renderTcView();
+  }
+
+  function toggleTcQuarter(q) {
+    tcActiveQuarters = q === 'all' ? new Set() : new Set([q]);
+    document.querySelectorAll('[id^="tc-fq-"]').forEach(el => el.classList.remove('active'));
+    document.getElementById(tcActiveQuarters.size === 0 ? 'tc-fq-all' : 'tc-fq-' + q).classList.add('active');
     renderTcView();
   }
 
@@ -3714,17 +3746,6 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     const s = new Set();
     TC_BRANCHES.forEach(b => { if (TC_DATA[b]) Object.keys(TC_DATA[b]).forEach(m => s.add(m)); });
     return [...s].sort();
-  }
-
-  function _tcInitMonthFilter() {
-    const months = _tcAllMonths();
-    const wrap = document.getElementById('tc-month-filter');
-    if (!wrap || wrap.children.length > 0) return;
-    let html = '<button onclick="toggleTcMonth(\'all\')" id="tc-fmonth-all" class="sales-pill active">전체</button>';
-    months.forEach(m => {
-      html += '<button onclick="toggleTcMonth(\'' + m + '\')" id="tc-fmonth-' + m + '" class="sales-pill">' + m + '</button>';
-    });
-    wrap.innerHTML = html;
   }
 
   function toggleTcBranch(branch) {
@@ -3746,28 +3767,18 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   }
 
   function toggleTcMonth(m) {
-    if (m === 'all') {
-      tcActiveMonths = new Set();
-    } else {
-      tcActiveMonths = new Set([m]);
-    }
+    tcActiveMonths = m === 'all' ? new Set() : new Set([m]);
     document.querySelectorAll('[id^="tc-fmonth-"]').forEach(el => el.classList.remove('active'));
-    if (tcActiveMonths.size === 0) {
-      document.getElementById('tc-fmonth-all').classList.add('active');
-    } else {
-      tcActiveMonths.forEach(mo => {
-        const el = document.getElementById('tc-fmonth-' + mo);
-        if (el) el.classList.add('active');
-      });
-    }
+    document.getElementById(tcActiveMonths.size === 0 ? 'tc-fmonth-all' : 'tc-fmonth-' + m).classList.add('active');
     renderTcView();
   }
 
   function renderTcView() {
-    _tcInitMonthFilter();
-
     const allMonths = _tcAllMonths();
-    const selMonths = tcActiveMonths.size === 0 ? allMonths : [...tcActiveMonths].sort();
+    // 월별 모드: tcActiveMonths = MM ('01'~'12'), 분기 모드: tcActiveQuarters = 'Q1'~'Q4'
+    const selMonths = tcPeriodMode === 'quarterly'
+      ? (tcActiveQuarters.size === 0 ? allMonths : allMonths.filter(m => tcActiveQuarters.has(_moToQ(m.slice(-2)))))
+      : (tcActiveMonths.size === 0   ? allMonths : allMonths.filter(m => tcActiveMonths.has(m.slice(-2))));
     const activeBranches = tcActiveBranches.size === TC_BRANCHES.length ? TC_BRANCHES : [...tcActiveBranches];
 
     // ── KPI 카드 (선택된 월 기준) ──
@@ -3793,26 +3804,19 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
 
     // ── 세로 막대 차트 ──
     const isQuarterly = tcPeriodMode === 'quarterly';
-    const isAllMonths = tcActiveMonths.size === 0;
 
-    // 분기 모드: x축 = 분기, 지점별 시계열 막대
+    // ── 분기 모드: 월별 동일 스타일, 청록색 ──
     if (isQuarterly) {
       const allQuarters = _tcAllQuarters();
-      const BRANCH_COLORS = ['#1e3a5f','#0891b2','#059669','#7c3aed','#d97706'];
-      const barDatasets = activeBranches.map((b, bi) => ({
-        type: 'bar',
-        label: b,
-        data: allQuarters.map(q => {
-          const agg = _tcQAgg(b);
-          const v = agg[q];
-          return v && v.total ? parseFloat((v.n_count / v.total * 100).toFixed(1)) : 0;
-        }),
-        backgroundColor: BRANCH_COLORS[bi % BRANCH_COLORS.length] + 'cc',
-        borderColor:     BRANCH_COLORS[bi % BRANCH_COLORS.length],
-        borderWidth: 1,
-        borderRadius: 5,
-        maxBarThickness: 60,
-      }));
+      const isAllQ = tcActiveQuarters.size === 0;
+      const barLabel = isAllQ ? '전체' : [...tcActiveQuarters][0];
+      const barData = activeBranches.map(b => {
+        let tot = 0, n = 0;
+        selMonths.forEach(m => { const v = TC_DATA[b] && TC_DATA[b][m]; if (v) { tot += v.total; n += v.n_count; } });
+        return tot ? parseFloat((n / tot * 100).toFixed(1)) : 0;
+      });
+      const barColors = barData.map(v => v > TC_TARGET ? '#0e7490' : '#0891b2');
+      const barDatasets = [{ type: 'bar', label: barLabel, data: barData, backgroundColor: barColors, borderWidth: 0, borderRadius: 6, maxBarThickness: 80 }];
 
       const tcDrawPlugin = {
         id: 'tcDraw_' + Date.now(),
@@ -3821,13 +3825,19 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
           if (!y || !chartArea) return;
           const yPx = y.getPixelForValue(TC_TARGET);
           c.save();
-          c.beginPath();
-          c.strokeStyle = '#ef4444'; c.lineWidth = 2;
-          c.setLineDash([6, 3]);
-          c.moveTo(chartArea.left, yPx); c.lineTo(chartArea.right, yPx);
-          c.stroke(); c.setLineDash([]);
-          c.fillStyle = '#ef4444'; c.font = 'bold 11px Arial'; c.textAlign = 'right'; c.textBaseline = 'bottom';
-          c.fillText('목표 35%', chartArea.right, yPx - 4);
+          c.beginPath(); c.strokeStyle = '#ef4444'; c.lineWidth = 2.5;
+          c.moveTo(chartArea.left, yPx); c.lineTo(chartArea.right, yPx); c.stroke();
+          c.fillStyle = '#ef4444'; c.font = 'bold 11px Arial, sans-serif'; c.textAlign = 'right'; c.textBaseline = 'bottom';
+          c.fillText('목표 35%', chartArea.right, yPx - 5);
+          const meta = chart.getDatasetMeta(0);
+          meta.data.forEach((bar, i) => {
+            const val = chart.data.datasets[0].data[i];
+            if (!val) return;
+            c.font = 'bold 13px Arial, sans-serif';
+            c.fillStyle = val > TC_TARGET ? '#fb923c' : '#67e8f9';
+            c.textAlign = 'center'; c.textBaseline = 'bottom';
+            c.fillText(val + '%', bar.x, bar.y - 6);
+          });
           c.restore();
         }
       };
@@ -3835,13 +3845,22 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
       if (tcBarChart) tcBarChart.destroy();
       const ctx = document.getElementById('tc-bar-chart').getContext('2d');
       tcBarChart = new Chart(ctx, {
-        data: { labels: allQuarters, datasets: barDatasets },
+        data: { labels: activeBranches, datasets: barDatasets },
         options: {
           responsive: true, maintainAspectRatio: false,
           layout: { padding: { top: 30, right: 60, bottom: 4, left: 4 } },
           plugins: {
-            legend: { display: true, position: 'top', labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12 } },
-            tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + c.raw + '%' } },
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: c => {
+                  const b = activeBranches[c.dataIndex];
+                  let tot = 0, n = 0;
+                  selMonths.forEach(m => { const v = TC_DATA[b] && TC_DATA[b][m]; if (v) { tot += v.total; n += v.n_count; } });
+                  return ' ' + barLabel + ': ' + c.raw + '% (미실시 ' + n + ' / 모수 ' + tot + ')';
+                }
+              }
+            },
             datalabels: { display: false },
           },
           scales: {
@@ -3885,23 +3904,14 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
       wrap.innerHTML = '<table class="w-full" style="border-collapse:collapse"><thead>' + th + '</thead><tbody>' + rows + '</tbody></table>';
 
     } else {
-      // ── 월별 모드 (기존 로직) ──
-      let barData, barLabel;
-      if (isAllMonths) {
-        barData = activeBranches.map(b => {
-          let tot = 0, n = 0;
-          allMonths.forEach(m => { const v = TC_DATA[b] && TC_DATA[b][m]; if (v) { tot += v.total; n += v.n_count; } });
-          return tot ? parseFloat((n / tot * 100).toFixed(1)) : 0;
-        });
-        barLabel = '전체';
-      } else {
-        const m = selMonths[0];
-        barData = activeBranches.map(b => {
-          const v = TC_DATA[b] && TC_DATA[b][m];
-          return v ? parseFloat((v.n_count / v.total * 100).toFixed(1)) : 0;
-        });
-        barLabel = selMonths[0];
-      }
+      // ── 월별 모드 ──
+      const isAllM = tcActiveMonths.size === 0;
+      const barLabel = isAllM ? '전체' : (selMonths[0] || '전체');
+      const barData = activeBranches.map(b => {
+        let tot = 0, n = 0;
+        selMonths.forEach(m => { const v = TC_DATA[b] && TC_DATA[b][m]; if (v) { tot += v.total; n += v.n_count; } });
+        return tot ? parseFloat((n / tot * 100).toFixed(1)) : 0;
+      });
 
       const barColors = barData.map(v => v > TC_TARGET ? '#1e3a8a' : '#1e3a5f');
       const barDatasets = [{ type: 'bar', label: barLabel, data: barData, backgroundColor: barColors, borderWidth: 0, borderRadius: 6, maxBarThickness: 80 }];
@@ -3941,16 +3951,11 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
             legend: { display: false },
             tooltip: {
               callbacks: {
-                label: ctx => {
-                  const b = activeBranches[ctx.dataIndex];
-                  if (isAllMonths) {
-                    let tot = 0, n = 0;
-                    allMonths.forEach(m => { const v = TC_DATA[b] && TC_DATA[b][m]; if (v) { tot += v.total; n += v.n_count; } });
-                    return ' 전체: ' + ctx.raw + '% (미실시 ' + n + ' / 모수 ' + tot + ')';
-                  }
-                  const m = selMonths[0];
-                  const v = TC_DATA[b] && TC_DATA[b][m];
-                  return ' ' + m + ': ' + ctx.raw + '%' + (v ? ' (미실시 ' + v.n_count + ' / 모수 ' + v.total + ')' : '');
+                label: c => {
+                  const b = activeBranches[c.dataIndex];
+                  let tot = 0, n = 0;
+                  selMonths.forEach(m => { const v = TC_DATA[b] && TC_DATA[b][m]; if (v) { tot += v.total; n += v.n_count; } });
+                  return ' ' + barLabel + ': ' + c.raw + '% (미실시 ' + n + ' / 모수 ' + tot + ')';
                 }
               }
             },
