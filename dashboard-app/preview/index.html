@@ -1654,11 +1654,14 @@
            뷰: TC 미실시율
            ============================================= -->
       <div id="view-tc" class="view hidden">
-        <!-- 필터 카드 -->
+        <!-- 뷰 전체 캡쳐 -->
+        <div class="flex justify-end mb-3">
+        </div>
+        <!-- 필터 카드 (다크) -->
         <div class="rounded-2xl p-5 mb-4" style="background:#fff; border:1px solid #e2e8f0; box-shadow:0 2px 12px rgba(0,0,0,0.06)">
-          <div class="flex flex-wrap gap-6 items-center">
+          <div class="flex flex-wrap gap-6 items-start">
             <div>
-              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">지점 <span class="text-blue-400 normal-case font-normal">복수선택 가능</span></span>
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">지점</span>
               <div class="pill-group">
                 <button onclick="toggleTcBranch('all')" id="tc-fbranch-all" class="sales-pill active">전체</button>
                 <button onclick="toggleTcBranch('전주')" id="tc-fbranch-전주" class="sales-pill">전주</button>
@@ -1667,6 +1670,17 @@
                 <button onclick="toggleTcBranch('목포')" id="tc-fbranch-목포" class="sales-pill">목포</button>
                 <button onclick="toggleTcBranch('서산')" id="tc-fbranch-서산" class="sales-pill">서산</button>
               </div>
+            </div>
+            <div>
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">기간 단위</span>
+              <div class="pill-group">
+                <button onclick="setTcPeriodMode('monthly')"   id="tc-mode-monthly"   class="sales-pill active">월별</button>
+                <button onclick="setTcPeriodMode('quarterly')" id="tc-mode-quarterly" class="sales-pill">분기</button>
+              </div>
+            </div>
+            <div id="tc-month-wrap">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">월</span>
+              <div class="pill-group" id="tc-month-filter"></div>
             </div>
           </div>
         </div>
@@ -1677,19 +1691,12 @@
           <!-- 좌: 차트 (다크) -->
           <div class="rounded-2xl p-5" style="background:#1e2433; border:1px solid #2d3748; box-shadow:0 2px 12px rgba(0,0,0,0.18)">
             <div class="flex items-center justify-between mb-3">
-              <div>
-                <h2 class="text-sm font-semibold" style="color:#f1f5f9">지점별 미실시율 추이</h2>
-                <span class="text-xs" style="color:#64748b;">━ 목표 35%</span>
-              </div>
-              <div class="pill-group" style="background:#374151;">
-                <button onclick="setTcPeriodMode('monthly')" id="tc-mode-monthly" class="sales-pill active" style="color:#f1f5f9;">월별</button>
-                <button onclick="setTcPeriodMode('quarterly')" id="tc-mode-quarterly" class="sales-pill" style="color:#94a3b8;">분기</button>
-              </div>
+              <h2 class="text-sm font-semibold" style="color:#f1f5f9">지점별 미실시율</h2>
+              <span class="text-xs font-semibold text-red-400">━ 목표 35%</span>
             </div>
-            <div id="tc-chart-legend" class="flex flex-wrap gap-3 mb-3"></div>
-            <div style="height:300px;"><canvas id="tc-bar-chart"></canvas></div>
+            <div style="height:320px;"><canvas id="tc-bar-chart"></canvas></div>
           </div>
-          <!-- 우: 테이블 -->
+          <!-- 우: 테이블 (다크) -->
           <div class="rounded-2xl p-5" style="background:#fff; border:1px solid #e2e8f0; box-shadow:0 2px 12px rgba(0,0,0,0.06)">
             <h2 class="text-sm font-semibold text-slate-700 mb-3">지점별 상세</h2>
             <div id="tc-table-wrap" class="overflow-x-auto"></div>
@@ -3664,17 +3671,16 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
 
   // ===================== TC 미실시율 =====================
   const TC_BRANCHES = ['전주','평택','군산','목포','서산'];
-  const TC_BRANCH_COLORS = {'전주':'#1d4ed8','평택':'#059669','군산':'#7c3aed','목포':'#d97706','서산':'#dc2626'};
+  const TC_BRANCH_COLORS = {
+    '전주': '#1d4ed8', '평택': '#0891b2', '군산': '#059669',
+    '목포': '#7c3aed', '서산': '#d97706'
+  };
   const TC_TARGET = 35;
   let tcActiveBranches = new Set(TC_BRANCHES);
+  let tcActiveMonths = new Set(); // empty = all
   let tcPeriodMode = 'monthly'; // 'monthly' | 'quarterly'
   let tcBarChart = null;
 
-  function _tcAllMonths() {
-    const s = new Set();
-    TC_BRANCHES.forEach(b => { if (TC_DATA[b]) Object.keys(TC_DATA[b]).forEach(m => s.add(m)); });
-    return [...s].sort();
-  }
   function _monthToQ(m) {
     const [yr, mo] = m.split('-');
     return yr + '-Q' + Math.ceil(parseInt(mo) / 3);
@@ -3695,36 +3701,40 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
 
   function setTcPeriodMode(mode) {
     tcPeriodMode = mode;
-    [['monthly','tc-mode-monthly'],['quarterly','tc-mode-quarterly']].forEach(([v, id]) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.className = 'sales-pill' + (v === mode ? ' active' : '');
-      el.style.color = v === mode ? '#f1f5f9' : '#94a3b8';
-    });
+    document.getElementById('tc-mode-monthly').className   = 'sales-pill' + (mode==='monthly'   ? ' active' : '');
+    document.getElementById('tc-mode-quarterly').className = 'sales-pill' + (mode==='quarterly' ? ' active' : '');
+    // 월 필터 표시/숨김
+    const wrap = document.getElementById('tc-month-wrap');
+    if (wrap) wrap.style.display = mode === 'quarterly' ? 'none' : '';
+    if (mode === 'quarterly') tcActiveMonths = new Set(); // 분기 전환 시 월 선택 초기화
     renderTcView();
+  }
+
+  function _tcAllMonths() {
+    const s = new Set();
+    TC_BRANCHES.forEach(b => { if (TC_DATA[b]) Object.keys(TC_DATA[b]).forEach(m => s.add(m)); });
+    return [...s].sort();
+  }
+
+  function _tcInitMonthFilter() {
+    const months = _tcAllMonths();
+    const wrap = document.getElementById('tc-month-filter');
+    if (!wrap || wrap.children.length > 0) return;
+    let html = '<button onclick="toggleTcMonth(\'all\')" id="tc-fmonth-all" class="sales-pill active">전체</button>';
+    months.forEach(m => {
+      html += '<button onclick="toggleTcMonth(\'' + m + '\')" id="tc-fmonth-' + m + '" class="sales-pill">' + m + '</button>';
+    });
+    wrap.innerHTML = html;
   }
 
   function toggleTcBranch(branch) {
     if (branch === 'all') {
       tcActiveBranches = new Set(TC_BRANCHES);
     } else {
-      // 전체 선택 상태에서 개별 클릭 → 해당 지점만
-      if (tcActiveBranches.size === TC_BRANCHES.length) {
-        tcActiveBranches = new Set([branch]);
-      } else {
-        // 이미 선택된 경우 토글 (단, 최소 1개 유지)
-        if (tcActiveBranches.has(branch) && tcActiveBranches.size > 1) {
-          tcActiveBranches.delete(branch);
-        } else {
-          tcActiveBranches.add(branch);
-        }
-        // 모두 선택되면 전체로
-        if (tcActiveBranches.size === TC_BRANCHES.length) tcActiveBranches = new Set(TC_BRANCHES);
-      }
+      tcActiveBranches = new Set([branch]);
     }
-    const isAll = tcActiveBranches.size === TC_BRANCHES.length;
     document.querySelectorAll('[id^="tc-fbranch-"]').forEach(el => el.classList.remove('active'));
-    if (isAll) {
+    if (tcActiveBranches.size === TC_BRANCHES.length) {
       document.getElementById('tc-fbranch-all').classList.add('active');
     } else {
       tcActiveBranches.forEach(b => {
@@ -3735,166 +3745,256 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     renderTcView();
   }
 
-  function renderTcView() {
-    const allMonths   = _tcAllMonths();
-    const allQuarters = _tcAllQuarters();
-    const isQ = tcPeriodMode === 'quarterly';
-    const labels = isQ ? allQuarters : allMonths;
-    const activeBranches = [...tcActiveBranches].sort((a,b) => TC_BRANCHES.indexOf(a)-TC_BRANCHES.indexOf(b));
+  function toggleTcMonth(m) {
+    if (m === 'all') {
+      tcActiveMonths = new Set();
+    } else {
+      tcActiveMonths = new Set([m]);
+    }
+    document.querySelectorAll('[id^="tc-fmonth-"]').forEach(el => el.classList.remove('active'));
+    if (tcActiveMonths.size === 0) {
+      document.getElementById('tc-fmonth-all').classList.add('active');
+    } else {
+      tcActiveMonths.forEach(mo => {
+        const el = document.getElementById('tc-fmonth-' + mo);
+        if (el) el.classList.add('active');
+      });
+    }
+    renderTcView();
+  }
 
-    // ── KPI 카드 ──
+  function renderTcView() {
+    _tcInitMonthFilter();
+
+    const allMonths = _tcAllMonths();
+    const selMonths = tcActiveMonths.size === 0 ? allMonths : [...tcActiveMonths].sort();
+    const activeBranches = tcActiveBranches.size === TC_BRANCHES.length ? TC_BRANCHES : [...tcActiveBranches];
+
+    // ── KPI 카드 (선택된 월 기준) ──
     const kpiRow = document.getElementById('tc-kpi-row');
     kpiRow.innerHTML = '';
     TC_BRANCHES.forEach(b => {
       if (!TC_DATA[b]) return;
       let tot = 0, n = 0;
-      allMonths.forEach(m => { const v = TC_DATA[b][m]; if (v) { tot += v.total; n += v.n_count; } });
+      selMonths.forEach(m => {
+        const v = TC_DATA[b][m];
+        if (v) { tot += v.total; n += v.n_count; }
+      });
       const rate = tot ? (n / tot * 100).toFixed(1) : '-';
-      const isActive = tcActiveBranches.has(b);
+      const isActive = tcActiveBranches.has(b) || tcActiveBranches.size === TC_BRANCHES.length;
       const aboveTarget = tot && parseFloat(rate) > TC_TARGET;
-      const clr = TC_BRANCH_COLORS[b] || '#3b82f6';
-      kpiRow.innerHTML += '<div class="rounded-2xl p-4 cursor-pointer ' + (isActive ? '' : 'opacity-35') + '" style="background:#fff;border:1px solid #e2e8f0;border-left:4px solid ' + clr + ';box-shadow:0 2px 8px rgba(0,0,0,0.06)" onclick="toggleTcBranch(\'' + b + '\')">'
-        + '<div class="text-[11px] font-semibold uppercase tracking-wider mb-1" style="color:' + clr + '">' + b + '</div>'
+      const borderClr = aboveTarget ? '#f97316' : '#3b82f6';
+      kpiRow.innerHTML += '<div class="rounded-2xl p-4 cursor-pointer ' + (isActive ? '' : 'opacity-40') + '" style="background:#fff; border:1px solid #e2e8f0; border-left:4px solid ' + borderClr + '; box-shadow:0 2px 8px rgba(0,0,0,0.06)" onclick="toggleTcBranch(\'' + b + '\')">'
+        + '<div class="text-[11px] text-slate-400 mb-1 font-semibold tracking-wider uppercase">' + b + '</div>'
         + '<div class="text-2xl font-bold ' + (aboveTarget ? 'text-orange-500' : 'text-blue-600') + '">' + rate + '%</div>'
         + '<div class="text-[10px] text-slate-400 mt-1">미실시 ' + n.toLocaleString() + ' / ' + tot.toLocaleString() + '</div>'
         + '</div>';
     });
 
-    // ── 차트 ──
-    const datasets = activeBranches.map(b => {
-      const data = labels.map(lbl => {
-        if (isQ) {
-          const agg = _tcQAgg(b);
-          const v = agg[lbl];
-          return v ? parseFloat((v.n_count / v.total * 100).toFixed(1)) : null;
-        } else {
-          const v = TC_DATA[b]?.[lbl];
-          return v ? parseFloat((v.n_count / v.total * 100).toFixed(1)) : null;
-        }
-      });
-      const clr = TC_BRANCH_COLORS[b] || '#3b82f6';
-      return {
+    // ── 세로 막대 차트 ──
+    const isQuarterly = tcPeriodMode === 'quarterly';
+    const isAllMonths = tcActiveMonths.size === 0;
+
+    // 분기 모드: x축 = 분기, 지점별 시계열 막대
+    if (isQuarterly) {
+      const allQuarters = _tcAllQuarters();
+      const BRANCH_COLORS = ['#1e3a5f','#0891b2','#059669','#7c3aed','#d97706'];
+      const barDatasets = activeBranches.map((b, bi) => ({
+        type: 'bar',
         label: b,
-        data,
-        borderColor: clr,
-        backgroundColor: clr + (isQ ? 'cc' : '22'),
-        tension: 0.3,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        fill: isQ,
-        borderWidth: isQ ? 0 : 2,
-        borderRadius: isQ ? 6 : undefined,
-        type: isQ ? 'bar' : 'line',
+        data: allQuarters.map(q => {
+          const agg = _tcQAgg(b);
+          const v = agg[q];
+          return v && v.total ? parseFloat((v.n_count / v.total * 100).toFixed(1)) : 0;
+        }),
+        backgroundColor: BRANCH_COLORS[bi % BRANCH_COLORS.length] + 'cc',
+        borderColor:     BRANCH_COLORS[bi % BRANCH_COLORS.length],
+        borderWidth: 1,
+        borderRadius: 5,
+        maxBarThickness: 60,
+      }));
+
+      const tcDrawPlugin = {
+        id: 'tcDraw_' + Date.now(),
+        afterDraw(chart) {
+          const { ctx: c, chartArea, scales: { y } } = chart;
+          if (!y || !chartArea) return;
+          const yPx = y.getPixelForValue(TC_TARGET);
+          c.save();
+          c.beginPath();
+          c.strokeStyle = '#ef4444'; c.lineWidth = 2;
+          c.setLineDash([6, 3]);
+          c.moveTo(chartArea.left, yPx); c.lineTo(chartArea.right, yPx);
+          c.stroke(); c.setLineDash([]);
+          c.fillStyle = '#ef4444'; c.font = 'bold 11px Arial'; c.textAlign = 'right'; c.textBaseline = 'bottom';
+          c.fillText('목표 35%', chartArea.right, yPx - 4);
+          c.restore();
+        }
       };
-    });
 
-    // 레전드
-    const legendEl = document.getElementById('tc-chart-legend');
-    if (legendEl) {
-      legendEl.innerHTML = activeBranches.map(b => {
-        const clr = TC_BRANCH_COLORS[b] || '#3b82f6';
-        return `<span class="flex items-center gap-1 text-xs" style="color:#94a3b8;">
-          <span style="width:10px;height:10px;border-radius:2px;background:${clr};display:inline-block;"></span>${b}</span>`;
-      }).join('');
-    }
-
-    // 35% 기준선 플러그인
-    const tcLinePlugin = {
-      id: 'tcLine_' + Date.now(),
-      afterDraw(chart) {
-        const { ctx: c, chartArea, scales: { y } } = chart;
-        if (!y || !chartArea) return;
-        const yPx = y.getPixelForValue(TC_TARGET);
-        c.save();
-        c.beginPath();
-        c.strokeStyle = '#ef4444'; c.lineWidth = 2;
-        c.setLineDash([6, 4]);
-        c.moveTo(chartArea.left, yPx); c.lineTo(chartArea.right, yPx);
-        c.stroke();
-        c.setLineDash([]);
-        c.fillStyle = '#ef4444'; c.font = 'bold 10px Arial'; c.textAlign = 'right'; c.textBaseline = 'bottom';
-        c.fillText('목표 35%', chartArea.right, yPx - 4);
-        c.restore();
-      }
-    };
-
-    if (tcBarChart) tcBarChart.destroy();
-    tcBarChart = new Chart(document.getElementById('tc-bar-chart').getContext('2d'), {
-      data: { labels, datasets },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        layout: { padding: { top: 24, right: 16, bottom: 4, left: 4 } },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(15,23,42,0.88)', padding: 10, cornerRadius: 8,
-            callbacks: {
-              label: ctx => {
-                const b = ctx.dataset.label;
-                const lbl = labels[ctx.dataIndex];
-                let tot = 0, n = 0;
-                if (isQ) {
-                  const agg = _tcQAgg(b); const v = agg[lbl];
-                  if (v) { tot = v.total; n = v.n_count; }
-                } else {
-                  const v = TC_DATA[b]?.[lbl];
-                  if (v) { tot = v.total; n = v.n_count; }
-                }
-                return ' ' + b + ': ' + ctx.raw + '% (미실시 ' + n + ' / 모수 ' + tot + ')';
-              }
-            }
+      if (tcBarChart) tcBarChart.destroy();
+      const ctx = document.getElementById('tc-bar-chart').getContext('2d');
+      tcBarChart = new Chart(ctx, {
+        data: { labels: allQuarters, datasets: barDatasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          layout: { padding: { top: 30, right: 60, bottom: 4, left: 4 } },
+          plugins: {
+            legend: { display: true, position: 'top', labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12 } },
+            tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + c.raw + '%' } },
+            datalabels: { display: false },
           },
-          datalabels: { display: false },
+          scales: {
+            x: { ticks: { color: '#cbd5e1', font: { size: 12, weight: 'bold' } }, grid: { display: false }, border: { color: '#334155' } },
+            y: { ticks: { color: '#64748b', callback: v => v + '%', font: { size: 10 } }, grid: { display: false }, border: { color: '#334155' }, min: 0, max: 100 }
+          }
         },
-        scales: {
-          x: { stacked: false, ticks: { color: '#cbd5e1', font: { size: 11, weight: 'bold' } }, grid: { display: false }, border: { color: '#334155' } },
-          y: { min: 0, max: 100, ticks: { color: '#64748b', callback: v => v + '%', font: { size: 10 } }, grid: { display: false }, border: { color: '#334155' } }
-        }
-      },
-      plugins: [tcLinePlugin],
-    });
-
-    // ── 상세 테이블 ──
-    const wrap = document.getElementById('tc-table-wrap');
-    const colKeys = isQ ? allQuarters : allMonths;
-    let th = '<tr style="background:#1e3a5f;">'
-      + '<th class="text-left px-3 py-2.5 text-xs font-semibold whitespace-nowrap" style="color:#93c5fd;">지점</th>';
-    colKeys.forEach(k => { th += '<th class="px-3 py-2.5 text-center text-xs font-semibold whitespace-nowrap" style="color:#e2e8f0;">' + k + '</th>'; });
-    th += '<th class="px-3 py-2.5 text-center text-xs font-semibold whitespace-nowrap" style="color:#93c5fd;">전체</th></tr>';
-
-    let rows = '';
-    TC_BRANCHES.forEach(b => {
-      if (!TC_DATA[b]) return;
-      const isActive = tcActiveBranches.has(b);
-      const clr = TC_BRANCH_COLORS[b] || '#3b82f6';
-      let row = '<tr style="border-bottom:1px solid #f1f5f9;' + (isActive ? '' : 'opacity:0.3') + '">';
-      row += '<td class="px-3 py-2.5 text-sm font-bold" style="color:' + clr + '">' + b + '</td>';
-      let tot = 0, nTot = 0;
-      colKeys.forEach(k => {
-        let kTot = 0, kN = 0;
-        if (isQ) {
-          const agg = _tcQAgg(b); const v = agg[k];
-          if (v) { kTot = v.total; kN = v.n_count; }
-        } else {
-          const v = TC_DATA[b][k];
-          if (v) { kTot = v.total; kN = v.n_count; }
-        }
-        if (kTot) {
-          const r = parseFloat((kN / kTot * 100).toFixed(1));
-          const over = r > TC_TARGET;
-          row += '<td class="px-3 py-2.5 text-center"><div class="text-sm font-bold ' + (over ? 'text-orange-500' : 'text-slate-700') + '">' + r + '%</div>'
-            + '<div class="text-[10px] text-slate-400">' + kN + '/' + kTot + '</div></td>';
-          tot += kTot; nTot += kN;
-        } else {
-          row += '<td class="px-3 py-2.5 text-center text-slate-300 text-sm">-</td>';
-        }
+        plugins: [tcDrawPlugin],
       });
-      const totalRate = tot ? parseFloat((nTot / tot * 100).toFixed(1)) : null;
-      row += '<td class="px-3 py-2.5 text-center" style="background:#f0f4f8"><div class="text-sm font-bold text-slate-800">' + (totalRate !== null ? totalRate + '%' : '-') + '</div>'
-        + '<div class="text-[10px] text-slate-400">' + nTot + '/' + tot + '</div></td></tr>';
-      rows += row;
-    });
-    wrap.innerHTML = '<table class="w-full" style="border-collapse:collapse"><thead>' + th + '</thead><tbody>' + rows + '</tbody></table>';
+
+      // ── 상세 테이블 (분기) ──
+      const wrap = document.getElementById('tc-table-wrap');
+      let th = '<tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0">'
+        + '<th class="text-left px-4 py-2.5 text-sm font-bold text-slate-600 uppercase tracking-wider">지점</th>';
+      allQuarters.forEach(q => { th += '<th class="px-4 py-2.5 text-sm font-bold text-slate-600 uppercase tracking-wider text-center">' + q + '</th>'; });
+      th += '<th class="px-4 py-2.5 text-sm font-bold text-slate-600 uppercase tracking-wider text-center">전체</th></tr>';
+      let rows = '';
+      TC_BRANCHES.forEach(b => {
+        if (!TC_DATA[b]) return;
+        const isActive = tcActiveBranches.has(b) || tcActiveBranches.size === TC_BRANCHES.length;
+        const agg = _tcQAgg(b);
+        let row = '<tr style="border-bottom:1px solid #f1f5f9; ' + (isActive ? '' : 'opacity:0.3') + '">';
+        row += '<td class="px-4 py-3 text-base font-bold text-slate-700">' + b + '</td>';
+        let tot = 0, nTot = 0;
+        allQuarters.forEach(q => {
+          const v = agg[q];
+          if (v && v.total) {
+            const r = parseFloat((v.n_count / v.total * 100).toFixed(1));
+            row += '<td class="px-4 py-3 text-center"><div class="text-sm font-bold text-slate-700">' + r + '%</div>'
+              + '<div class="text-[10px] text-slate-400">' + v.n_count + '/' + v.total + '</div></td>';
+            tot += v.total; nTot += v.n_count;
+          } else {
+            row += '<td class="px-4 py-3 text-center text-slate-300 text-sm">-</td>';
+          }
+        });
+        const totalRate = tot ? parseFloat((nTot / tot * 100).toFixed(1)) : null;
+        row += '<td class="px-4 py-3 text-center" style="background:#f0f4f8"><div class="text-sm font-bold text-slate-800">' + (totalRate !== null ? totalRate + '%' : '-') + '</div>'
+          + '<div class="text-[10px] text-slate-400">' + nTot + '/' + tot + '</div></td></tr>';
+        rows += row;
+      });
+      wrap.innerHTML = '<table class="w-full" style="border-collapse:collapse"><thead>' + th + '</thead><tbody>' + rows + '</tbody></table>';
+
+    } else {
+      // ── 월별 모드 (기존 로직) ──
+      let barData, barLabel;
+      if (isAllMonths) {
+        barData = activeBranches.map(b => {
+          let tot = 0, n = 0;
+          allMonths.forEach(m => { const v = TC_DATA[b] && TC_DATA[b][m]; if (v) { tot += v.total; n += v.n_count; } });
+          return tot ? parseFloat((n / tot * 100).toFixed(1)) : 0;
+        });
+        barLabel = '전체';
+      } else {
+        const m = selMonths[0];
+        barData = activeBranches.map(b => {
+          const v = TC_DATA[b] && TC_DATA[b][m];
+          return v ? parseFloat((v.n_count / v.total * 100).toFixed(1)) : 0;
+        });
+        barLabel = selMonths[0];
+      }
+
+      const barColors = barData.map(v => v > TC_TARGET ? '#1e3a8a' : '#1e3a5f');
+      const barDatasets = [{ type: 'bar', label: barLabel, data: barData, backgroundColor: barColors, borderWidth: 0, borderRadius: 6, maxBarThickness: 80 }];
+
+      const tcDrawPlugin = {
+        id: 'tcDraw_' + Date.now(),
+        afterDraw(chart) {
+          const { ctx: c, chartArea, scales: { x, y } } = chart;
+          if (!y || !chartArea) return;
+          const yPx = y.getPixelForValue(TC_TARGET);
+          c.save();
+          c.beginPath(); c.strokeStyle = '#ef4444'; c.lineWidth = 2.5;
+          c.moveTo(chartArea.left, yPx); c.lineTo(chartArea.right, yPx); c.stroke();
+          c.fillStyle = '#ef4444'; c.font = 'bold 11px Arial, sans-serif'; c.textAlign = 'right'; c.textBaseline = 'bottom';
+          c.fillText('목표 35%', chartArea.right, yPx - 5);
+          const meta = chart.getDatasetMeta(0);
+          meta.data.forEach((bar, i) => {
+            const val = chart.data.datasets[0].data[i];
+            if (!val) return;
+            c.font = 'bold 13px Arial, sans-serif';
+            c.fillStyle = val > TC_TARGET ? '#fb923c' : '#93c5fd';
+            c.textAlign = 'center'; c.textBaseline = 'bottom';
+            c.fillText(val + '%', bar.x, bar.y - 6);
+          });
+          c.restore();
+        }
+      };
+
+      if (tcBarChart) tcBarChart.destroy();
+      const ctx = document.getElementById('tc-bar-chart').getContext('2d');
+      tcBarChart = new Chart(ctx, {
+        data: { labels: activeBranches, datasets: barDatasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          layout: { padding: { top: 30, right: 60, bottom: 4, left: 4 } },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const b = activeBranches[ctx.dataIndex];
+                  if (isAllMonths) {
+                    let tot = 0, n = 0;
+                    allMonths.forEach(m => { const v = TC_DATA[b] && TC_DATA[b][m]; if (v) { tot += v.total; n += v.n_count; } });
+                    return ' 전체: ' + ctx.raw + '% (미실시 ' + n + ' / 모수 ' + tot + ')';
+                  }
+                  const m = selMonths[0];
+                  const v = TC_DATA[b] && TC_DATA[b][m];
+                  return ' ' + m + ': ' + ctx.raw + '%' + (v ? ' (미실시 ' + v.n_count + ' / 모수 ' + v.total + ')' : '');
+                }
+              }
+            },
+            datalabels: { display: false },
+          },
+          scales: {
+            x: { ticks: { color: '#cbd5e1', font: { size: 12, weight: 'bold' } }, grid: { display: false }, border: { color: '#334155' } },
+            y: { ticks: { color: '#64748b', callback: v => v + '%', font: { size: 10 } }, grid: { display: false }, border: { color: '#334155' }, min: 0, max: 100 }
+          }
+        },
+        plugins: [tcDrawPlugin],
+      });
+
+      // ── 상세 테이블 (월별) ──
+      const wrap = document.getElementById('tc-table-wrap');
+      let th = '<tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0">'
+        + '<th class="text-left px-4 py-2.5 text-sm font-bold text-slate-600 uppercase tracking-wider">지점</th>';
+      allMonths.forEach(m => { th += '<th class="px-4 py-2.5 text-sm font-bold text-slate-600 uppercase tracking-wider text-center">' + m + '</th>'; });
+      th += '<th class="px-4 py-2.5 text-sm font-bold text-slate-600 uppercase tracking-wider text-center">전체</th></tr>';
+      let rows = '';
+      TC_BRANCHES.forEach(b => {
+        if (!TC_DATA[b]) return;
+        const isActive = tcActiveBranches.has(b) || tcActiveBranches.size === TC_BRANCHES.length;
+        let row = '<tr style="border-bottom:1px solid #f1f5f9; ' + (isActive ? '' : 'opacity:0.3') + '">';
+        row += '<td class="px-4 py-3 text-base font-bold text-slate-700">' + b + '</td>';
+        let tot = 0, nTot = 0;
+        allMonths.forEach(m => {
+          const v = TC_DATA[b][m];
+          if (v) {
+            const r = parseFloat((v.n_count / v.total * 100).toFixed(1));
+            row += '<td class="px-4 py-3 text-center"><div class="text-sm font-bold text-slate-700">' + r + '%</div>'
+              + '<div class="text-[10px] text-slate-400">' + v.n_count + '/' + v.total + '</div></td>';
+            tot += v.total; nTot += v.n_count;
+          } else {
+            row += '<td class="px-4 py-3 text-center text-slate-300 text-sm">-</td>';
+          }
+        });
+        const totalRate = tot ? parseFloat((nTot / tot * 100).toFixed(1)) : null;
+        row += '<td class="px-4 py-3 text-center" style="background:#f0f4f8"><div class="text-sm font-bold text-slate-800">' + (totalRate !== null ? totalRate + '%' : '-') + '</div>'
+          + '<div class="text-[10px] text-slate-400">' + nTot + '/' + tot + '</div></td></tr>';
+        rows += row;
+      });
+      wrap.innerHTML = '<table class="w-full" style="border-collapse:collapse"><thead>' + th + '</thead><tbody>' + rows + '</tbody></table>';
+    }
   }
   // ===================== /TC 미실시율 =====================
 
