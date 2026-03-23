@@ -17,8 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <!-- SortableJS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-  <!-- html2canvas CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
 
   <!-- 브랜드 색상 설정 -->
   <script>
@@ -197,24 +196,6 @@
     .dash-drag-handle:active { cursor: grabbing; }
     .sortable-ghost  { opacity: 0.35; border: 2px dashed #94a3b8 !important; }
     .sortable-chosen { box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important; }
-
-    /* ── 캡쳐 버튼 ── */
-    .capture-btn {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 5px 12px; border-radius: 8px; font-size: 11px; font-weight: 600;
-      background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1;
-      cursor: pointer; transition: all 0.15s;
-    }
-    .capture-btn:hover { background: #1e3a5f; color: #fff; border-color: #1e3a5f; }
-    .capturable { position: relative; }
-    .cap-btn {
-      position: absolute; top: 10px; right: 10px; z-index: 10;
-      opacity: 0; transition: opacity 0.2s;
-      padding: 3px 8px; border-radius: 6px; font-size: 11px;
-      background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; cursor: pointer;
-    }
-    .cap-btn:hover { background: #1e3a5f; color: #fff; }
-    .capturable:hover .cap-btn { opacity: 1; }
 
     /* 테이블 호버 */
     tbody tr:hover { background: #f8fafc; }
@@ -1456,12 +1437,10 @@
       <div id="view-top-defect" class="view hidden">
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-2xl font-bold text-slate-800 dark:text-white">TOP DEFECT</h1>
-          <button onclick="captureEl(document.getElementById('view-top-defect'),'TOP_DEFECT')" class="capture-btn">📷 전체 캡쳐</button>
         </div>
 
         <!-- 필터 카드 -->
-        <div class="capturable bg-white dark:bg-slate-800 rounded-xl p-4 mb-4 border border-slate-200 dark:border-slate-700">
-          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'DEFECT_필터')">📷</button>
+        <div class="bg-white dark:bg-slate-800 rounded-xl p-4 mb-4 border border-slate-200 dark:border-slate-700">
           <div class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">지점</span>
             <div class="pill-group">
@@ -1514,8 +1493,7 @@
         </div>
 
         <!-- 그래프 / 미매칭 카드 -->
-        <div class="capturable bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'DEFECT_차트')">📷</button>
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div class="flex items-center px-5 py-3 border-b border-slate-200 dark:border-slate-700 gap-2">
             <button onclick="setDefectTab('top')" id="dtab-top" class="sales-pill active">상위 20개</button>
             <button onclick="setDefectTab('unmatched')" id="dtab-unmatched" class="sales-pill">미매칭 코드 <span id="dtab-unmatched-cnt" class="ml-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full"></span></button>
@@ -1565,12 +1543,10 @@
       <div id="view-person" class="view hidden">
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-2xl font-bold text-slate-800 dark:text-white">개인별 청구 현황</h1>
-          <button onclick="captureEl(document.getElementById('view-person'),'개인별청구')" class="capture-btn">📷 전체 캡쳐</button>
         </div>
 
         <!-- 필터 카드 -->
-        <div class="capturable bg-white dark:bg-slate-800 rounded-xl p-4 mb-4 border border-slate-200 dark:border-slate-700">
-          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'개인별_필터')">📷</button>
+        <div class="bg-white dark:bg-slate-800 rounded-xl p-4 mb-4 border border-slate-200 dark:border-slate-700">
           <div class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">타입</span>
             <div class="pill-group">
@@ -1612,8 +1588,7 @@
         </div>
 
         <!-- 차트 카드 -->
-        <div class="capturable bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'개인별_차트')">📷</button>
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <!-- 탭 바 -->
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700">
             <div class="pill-group">
@@ -1687,11 +1662,9 @@
       <div id="view-tc" class="view hidden">
         <!-- 뷰 전체 캡쳐 -->
         <div class="flex justify-end mb-3">
-          <button onclick="captureEl(document.getElementById('view-tc'),'TC_미실시율')" class="capture-btn">📷 전체 캡쳐</button>
         </div>
         <!-- 필터 카드 (다크) -->
-        <div class="capturable rounded-2xl p-5 mb-4" style="background:#fff; border:1px solid #e2e8f0; box-shadow:0 2px 12px rgba(0,0,0,0.06)">
-          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'TC_필터')">📷</button>
+        <div class="rounded-2xl p-5 mb-4" style="background:#fff; border:1px solid #e2e8f0; box-shadow:0 2px 12px rgba(0,0,0,0.06)">
           <div class="flex flex-wrap gap-6 items-start">
             <div>
               <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">지점</span>
@@ -1715,8 +1688,7 @@
         <!-- 차트 + 테이블 좌우 -->
         <div class="grid grid-cols-2 gap-4">
           <!-- 좌: 차트 (다크) -->
-          <div class="capturable rounded-2xl p-5" style="background:#1e2433; border:1px solid #2d3748; box-shadow:0 2px 12px rgba(0,0,0,0.18)">
-            <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'TC_차트')">📷</button>
+          <div class="rounded-2xl p-5" style="background:#1e2433; border:1px solid #2d3748; box-shadow:0 2px 12px rgba(0,0,0,0.18)">
             <div class="flex items-center justify-between mb-3">
               <h2 class="text-sm font-semibold" style="color:#f1f5f9">지점별 미실시율</h2>
               <span class="text-xs font-semibold text-red-400">━ 목표 35%</span>
@@ -1724,8 +1696,7 @@
             <div style="height:320px;"><canvas id="tc-bar-chart"></canvas></div>
           </div>
           <!-- 우: 테이블 (다크) -->
-          <div class="capturable rounded-2xl p-5" style="background:#fff; border:1px solid #e2e8f0; box-shadow:0 2px 12px rgba(0,0,0,0.06)">
-            <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'TC_테이블')">📷</button>
+          <div class="rounded-2xl p-5" style="background:#fff; border:1px solid #e2e8f0; box-shadow:0 2px 12px rgba(0,0,0,0.06)">
             <h2 class="text-sm font-semibold text-slate-700 mb-3">지점별 상세</h2>
             <div id="tc-table-wrap" class="overflow-x-auto"></div>
           </div>
@@ -1737,12 +1708,10 @@
            ============================================= -->
       <div id="view-claim" class="view hidden">
         <div class="flex justify-end mb-3">
-          <button onclick="captureEl(document.getElementById('view-claim'),'CLAIM상태')" class="capture-btn">📷 전체 캡쳐</button>
         </div>
 
         <!-- 필터 카드 -->
-        <div class="capturable sales-card p-5 mb-4">
-          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'CLAIM_필터')">📷</button>
+        <div class="sales-card p-5 mb-4">
           <div class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">지점</span>
             <div id="cs-branch-group" class="pill-group"></div>
@@ -1758,8 +1727,7 @@
         <div id="cs-kpi-wrap" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4"></div>
 
         <!-- 테이블 카드 -->
-        <div class="capturable sales-card p-5">
-          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'CLAIM_목록')">📷</button>
+        <div class="sales-card p-5">
           <div class="flex items-center justify-between mb-4">
             <span class="text-sm font-bold text-slate-700">클레임 목록 <span id="cs-count" class="text-slate-400 font-normal ml-1"></span></span>
             <input id="cs-search" type="text" placeholder="클레임번호 / 담당자 검색..."
@@ -1794,12 +1762,10 @@
       <div id="view-sales" class="view hidden">
         <!-- 뷰 전체 캡쳐 -->
         <div class="flex justify-end mb-3">
-          <button onclick="captureEl(document.getElementById('view-sales'),'보증매출')" class="capture-btn">📷 전체 캡쳐</button>
         </div>
 
         <!-- 상단 필터 카드 -->
-        <div class="capturable sales-card p-5 mb-4">
-          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'매출_필터')">📷</button>
+        <div class="sales-card p-5 mb-4">
           <!-- 지점 필터 -->
           <div class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">지점</span>
@@ -1896,8 +1862,7 @@
         </div>
 
         <!-- 차트 -->
-        <div class="capturable p-6 mb-4" style="position:relative;background:#1e2433;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,0.18);">
-          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'매출_차트')">📷</button>
+        <div class="p-6 mb-4" style="position:relative;background:#1e2433;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,0.18);">
           <div class="flex items-center justify-between mb-5">
             <div>
               <h3 class="text-sm font-semibold" style="color:#f1f5f9;">월별 보증매출</h3>
@@ -1921,11 +1886,9 @@
            ============================================= -->
       <div id="view-wholesale" class="view hidden">
         <div class="flex justify-end mb-3">
-          <button onclick="captureEl(document.getElementById('view-wholesale'),'클레임볼륨')" class="capture-btn">📷 전체 캡쳐</button>
         </div>
         <!-- 필터 카드 -->
-        <div class="capturable sales-card p-5 mb-4">
-          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'볼륨_필터')">📷</button>
+        <div class="sales-card p-5 mb-4">
           <div class="flex flex-wrap gap-6 items-start">
             <div>
               <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">구분</span>
@@ -1954,8 +1917,7 @@
           </div>
         </div>
         <!-- 매트릭스 표 카드 -->
-        <div class="capturable sales-card overflow-hidden">
-          <button class="cap-btn" onclick="event.stopPropagation();captureEl(this.parentElement,'볼륨_표')">📷</button>
+        <div class="sales-card overflow-hidden">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700">
             <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Claim Type × 월별 매트릭스</span>
             <span id="ws-unit-label" class="text-xs text-slate-400">단위: 백만원</span>
@@ -2624,18 +2586,6 @@
     }
     document.getElementById('trans-placeholder').classList.remove('hidden');
     document.getElementById('trans-result-container').classList.add('hidden');
-  }
-
-  /* ── 캡쳐 ── */
-  function captureEl(el, name) {
-    const ts = new Date().toLocaleDateString('ko').replace(/\.\s*/g, '-').replace(/-$/, '');
-    html2canvas(el, { backgroundColor: '#0f172a', scale: 2, useCORS: true, logging: false })
-      .then(canvas => {
-        const a = document.createElement('a');
-        a.href = canvas.toDataURL('image/png');
-        a.download = (name || 'capture') + '_' + ts + '.png';
-        a.click();
-      });
   }
 
   /* ── 테마 (Light / Dark 토글) ── */
