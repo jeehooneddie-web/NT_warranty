@@ -243,6 +243,7 @@ for _, r in df_claim.iterrows():
         date_val,                                             # N: 날짜
         int(claim_amount_total.get(claim_no, 0)),             # W: 클레임금액 (전체합산)
         str(r[cols[23]]),                                     # X: 담당확인자
+        str(r[cols[18]]) if pd.notna(r[cols[18]]) else '',   # S: 차대번호
     ])
 ok(f'CLAIM_DATA: {len(claim_raw):,}행 (불승인/보완요청/보완완료, Task=1)')
 
@@ -252,39 +253,51 @@ wholesale_data = {}
 try:
     df_kh = pd.read_excel(RAW_TMP, sheet_name='클레임현황', header=0, engine='openpyxl')
     kc = df_kh.columns.tolist()
-    # 열 인덱스: 지점=0, J=9, M=12, O=14, R=17, S=18, T=19, W=22
+    # 열 인덱스: 지점=0, J=9, M=12, O=14, R=17
     kh_J = kc[9];  kh_M = kc[12]; kh_O = kc[14]; kh_R = kc[17]
-    kh_S = 'S';    kh_T = 'T';    kh_W = 'W'
+    # 헤더 신구 호환 (BAT 실행 전은 구 헤더 S/T/U/W/Y 사용)
+    kh_T = 'Claim Type'  if 'Claim Type'  in kc else 'T'
+    kh_W = '승인여부'     if '승인여부'     in kc else 'W'
+    kh_U = '보증마감기준' if '보증마감기준' in kc else 'U'
+    kh_Y = '회계마감기준' if '회계마감기준' in kc else 'Y'
     for col in [kh_J, kh_M, kh_O, kh_R]:
         df_kh[col] = pd.to_numeric(df_kh[col], errors='coerce').fillna(0)
-    df_kh[kh_S] = df_kh[kh_S].astype(str).str.strip()
-    df_kh[kh_T] = df_kh[kh_T].astype(str).str.strip()
-    df_kh[kh_W] = df_kh[kh_W].astype(str).str.strip()
-    df_kh = df_kh[df_kh[kh_S].str.match(r'\d{2}-\d{2}')]  # 유효 월만
+    for col in [kh_T, kh_W, kh_U, kh_Y]:
+        df_kh[col] = df_kh[col].astype(str).str.strip()
 
-    for _, r in df_kh.groupby([kh_T, kh_S]).agg(
-        amount=(kh_M,'sum'), parts=(kh_J,'sum'), count=(kh_M,'count')
-    ).reset_index().iterrows():
-        ct, mo = str(r[kh_T]), str(r[kh_S])
-        wholesale_data.setdefault(ct, {}).setdefault(mo, {})['charge'] = {
-            'amount': int(r['amount']), 'parts': int(r['parts']), 'count': int(r['count'])
-        }
-    for _, r in df_kh.groupby([kh_T, kh_S]).agg(
-        amount=(kh_R,'sum'), parts=(kh_O,'sum')
-    ).reset_index().iterrows():
-        ct, mo = str(r[kh_T]), str(r[kh_S])
-        wholesale_data.setdefault(ct, {}).setdefault(mo, {})['approve'] = {
-            'amount': int(r['amount']), 'parts': int(r['parts'])
-        }
-    df_pend = df_kh[df_kh[kh_W] == '승인대기']
-    for _, r in df_pend.groupby([kh_T, kh_S]).agg(
-        amount=(kh_M,'sum'), parts=(kh_J,'sum')
-    ).reset_index().iterrows():
-        ct, mo = str(r[kh_T]), str(r[kh_S])
-        wholesale_data.setdefault(ct, {}).setdefault(mo, {})['pending'] = {
-            'amount': int(r['amount']), 'parts': int(r['parts'])
-        }
-    ok(f'Claim Type: {len(wholesale_data)}종  /  총 행: {len(df_kh):,}')
+    def _agg_basis(df_base, mo_col):
+        """mo_col 기준으로 charge/approve/pending 집계 → {ClaimType: {month: {...}}}"""
+        df_v = df_base[df_base[mo_col].str.match(r'\d{2}-\d{2}', na=False)]
+        out = {}
+        for _, r in df_v.groupby([kh_T, mo_col]).agg(
+            amount=(kh_M,'sum'), parts=(kh_J,'sum'), count=(kh_M,'count')
+        ).reset_index().iterrows():
+            ct, mo = str(r[kh_T]), str(r[mo_col])
+            out.setdefault(ct, {}).setdefault(mo, {})['charge'] = {
+                'amount': int(r['amount']), 'parts': int(r['parts']), 'count': int(r['count'])
+            }
+        for _, r in df_v.groupby([kh_T, mo_col]).agg(
+            amount=(kh_R,'sum'), parts=(kh_O,'sum'), count=(kh_R,'count')
+        ).reset_index().iterrows():
+            ct, mo = str(r[kh_T]), str(r[mo_col])
+            out.setdefault(ct, {}).setdefault(mo, {})['approve'] = {
+                'amount': int(r['amount']), 'parts': int(r['parts']), 'count': int(r['count'])
+            }
+        df_pend = df_v[df_v[kh_W] == '승인대기']
+        for _, r in df_pend.groupby([kh_T, mo_col]).agg(
+            amount=(kh_M,'sum'), parts=(kh_J,'sum'), count=(kh_M,'count')
+        ).reset_index().iterrows():
+            ct, mo = str(r[kh_T]), str(r[mo_col])
+            out.setdefault(ct, {}).setdefault(mo, {})['pending'] = {
+                'amount': int(r['amount']), 'parts': int(r['parts']), 'count': int(r['count'])
+            }
+        return out
+
+    wholesale_data = {
+        '보증마감': _agg_basis(df_kh, kh_U),
+        '회계마감': _agg_basis(df_kh, kh_Y),
+    }
+    ok(f'보증마감 Claim Type: {len(wholesale_data["보증마감"])}종  /  회계마감: {len(wholesale_data["회계마감"])}종  /  총 행: {len(df_kh):,}')
 except Exception as _e:
     ok(f'클레임현황 시트 없음 또는 오류 → WHOLESALE_DATA 빈값 ({_e})')
 

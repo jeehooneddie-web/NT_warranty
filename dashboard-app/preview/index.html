@@ -1918,7 +1918,7 @@
         <div class="sales-card overflow-hidden mb-4" style="border-top:3px solid #0891b2;">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
             <span class="text-sm font-semibold text-slate-700">2025 · Claim Type × 월별 매트릭스</span>
-            <span id="ws-unit-label" class="text-xs text-slate-400">단위: 백만원</span>
+            <span id="ws-unit-label" class="text-xs text-slate-400"></span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-xs" id="ws-table-25">
@@ -1931,7 +1931,7 @@
         <div class="sales-card overflow-hidden" style="border-top:3px solid #0891b2;">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
             <span class="text-sm font-semibold text-slate-700">2026 · Claim Type × 월별 매트릭스</span>
-            <span id="ws-unit-label-26" class="text-xs text-slate-400">단위: 백만원</span>
+            <span id="ws-unit-label-26" class="text-xs text-slate-400"></span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-xs" id="ws-table-26">
@@ -4385,10 +4385,9 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     ['amount','parts','count'].forEach(v => {
       document.getElementById('ws-'+v).className = 'sales-pill' + (v===m?' active':'');
     });
-    const unit = m === 'count' ? '단위: 건' : '단위: 백만원';
     ['ws-unit-label','ws-unit-label-26'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.textContent = unit;
+      if (el) el.textContent = m === 'count' ? '단위: 건' : '';
     });
     renderWholesale();
   }
@@ -4416,7 +4415,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     const isCount = wsMetric === 'count';
     const months = Array.from({length:12}, (_,i) => `${yr}-${String(i+1).padStart(2,'0')}`);
     const fmt = v => v ? v.toLocaleString() : '-';
-    const toVal = raw => isCount ? (raw || 0) : Math.round((raw || 0) / 1000000);
+    const toVal = raw => raw || 0;
 
     // 헤더
     thead.innerHTML =
