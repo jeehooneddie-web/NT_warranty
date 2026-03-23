@@ -1738,16 +1738,16 @@
             <table class="w-full border-collapse" style="font-size:13px;">
               <thead>
                 <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
-                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">지점</th>
-                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">클레임번호</th>
-                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">상태</th>
-                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">워런티 Stage</th>
-                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">Claim Type</th>
-                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">Defect Code</th>
-                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">차대번호</th>
-                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">날짜</th>
-                  <th class="text-right px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">클레임금액</th>
-                  <th class="text-left px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">담당확인자</th>
+                  <th class="text-center px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">지점</th>
+                  <th class="text-center px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">클레임번호</th>
+                  <th class="text-center px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">상태</th>
+                  <th class="text-center px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">워런티 Stage</th>
+                  <th class="text-center px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">Claim Type</th>
+                  <th class="text-center px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">Defect Code</th>
+                  <th class="text-center px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">차대번호</th>
+                  <th class="text-center px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">날짜</th>
+                  <th class="text-center px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">클레임금액</th>
+                  <th class="text-center px-3 py-2.5 text-slate-600 font-bold whitespace-nowrap">담당확인자</th>
                 </tr>
               </thead>
               <tbody id="cs-tbody"></tbody>
@@ -4635,18 +4635,18 @@ const WHOLESALE_DATA={"AG Goodwill":{"25-01":{"charge":{"amount":118282600,"part
       const statusCol = CS_STATUS_COLOR[status] || '#475569';
       const stageShort = stage.replace('일반보증(TC/Recall)','TC/Recall').replace('BSI and BRI','BSI/BRI').replace('Pre-Delivery Defect','Pre-Delivery').replace('AG Goodwill','AG GW').replace('KR Goodwill','KR GW').replace('Warranty Plus','WP');
       return `<tr style="border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
-        <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">${branch}</td>
-        <td class="px-3 py-2 font-mono text-slate-700 whitespace-nowrap">${claimNo}</td>
-        <td class="px-3 py-2 whitespace-nowrap">
+        <td class="px-3 py-2 text-center font-medium text-slate-700 whitespace-nowrap">${branch}</td>
+        <td class="px-3 py-2 text-center font-mono text-slate-700 whitespace-nowrap">${claimNo}</td>
+        <td class="px-3 py-2 text-center whitespace-nowrap">
           <span style="background:${statusCol}18;color:${statusCol};border:1px solid ${statusCol}40;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">${status}</span>
         </td>
-        <td class="px-3 py-2 text-slate-600 whitespace-nowrap">${stageShort}</td>
-        <td class="px-3 py-2 text-slate-600 whitespace-nowrap">${claimType}</td>
-        <td class="px-3 py-2 font-mono text-slate-600 whitespace-nowrap">${defectCode}</td>
-        <td class="px-3 py-2 font-mono text-slate-500 whitespace-nowrap">${vin||'-'}</td>
-        <td class="px-3 py-2 text-slate-500 whitespace-nowrap">${date}</td>
-        <td class="px-3 py-2 text-right text-slate-700 whitespace-nowrap">${amount.toLocaleString()}</td>
-        <td class="px-3 py-2 text-slate-600 whitespace-nowrap">${PERSON_NAMES[person]||person}</td>
+        <td class="px-3 py-2 text-center text-slate-600 whitespace-nowrap">${stageShort}</td>
+        <td class="px-3 py-2 text-center text-slate-600 whitespace-nowrap">${claimType}</td>
+        <td class="px-3 py-2 text-center font-mono text-slate-600 whitespace-nowrap">${defectCode}</td>
+        <td class="px-3 py-2 text-center font-mono text-slate-500 whitespace-nowrap">${vin||'-'}</td>
+        <td class="px-3 py-2 text-center text-slate-500 whitespace-nowrap">${date}</td>
+        <td class="px-3 py-2 text-center text-slate-700 whitespace-nowrap">${amount.toLocaleString()}</td>
+        <td class="px-3 py-2 text-center text-slate-600 whitespace-nowrap">${PERSON_NAMES[person]||person}</td>
       </tr>`;
     }).join('');
   }
