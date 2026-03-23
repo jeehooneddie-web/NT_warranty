@@ -1816,16 +1816,6 @@
           </div>
         </div>
 
-        <!-- 금액/건수 토글 + 설명 -->
-        <div class="flex items-center justify-between mb-4">
-          <p class="text-xs text-slate-400">취소 제외 · 바스크 1번 기준 건수 · Claim 상세_전체</p>
-          <div class="pill-group">
-            <button onclick="setSalesMode('amount')" id="btn-sales-amount" class="sales-pill active">금액</button>
-            <button onclick="setSalesMode('count')" id="btn-sales-count" class="sales-pill">건수</button>
-            <button onclick="setSalesMode('totalamount')" id="btn-sales-totalamount" class="sales-pill">전체 금액</button>
-          </div>
-        </div>
-
         <!-- KPI 카드 4개 -->
         <div class="flex items-center justify-between mb-2">
           <div class="pill-group">
@@ -1861,12 +1851,13 @@
           <div class="flex items-center justify-between mb-5">
             <div>
               <h3 class="text-sm font-semibold" style="color:#f1f5f9;">월별 보증매출</h3>
-              <span class="text-xs" style="color:#64748b;">단위: 백만원 · 2025.01 — 2026.12</span>
+              <span class="text-xs" style="color:#64748b;">취소 제외 · 바스크 1번 기준 건수 · Claim 상세_전체</span>
             </div>
-            <button onclick="toggleSalesTotal()" id="btn-sales-total"
-              class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-nm-blue text-white transition-colors">
-              합계 표시
-            </button>
+            <div class="pill-group" style="background:#374151;">
+              <button onclick="setSalesMode('amount')" id="btn-sales-amount" class="sales-pill active" style="color:#f1f5f9;">금액</button>
+              <button onclick="setSalesMode('count')" id="btn-sales-count" class="sales-pill" style="color:#94a3b8;">건수</button>
+              <button onclick="setSalesMode('totalamount')" id="btn-sales-totalamount" class="sales-pill" style="color:#94a3b8;">전체 금액</button>
+            </div>
           </div>
           <div style="height:340px;position:relative;">
             <canvas id="sales-chart"></canvas>
@@ -3296,9 +3287,13 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
 
   function setSalesMode(mode) {
     salesMode = mode;
-    document.getElementById('btn-sales-amount').className      = 'sales-pill'+(mode==='amount'      ?' active':'');
-    document.getElementById('btn-sales-count').className       = 'sales-pill'+(mode==='count'       ?' active':'');
-    document.getElementById('btn-sales-totalamount').className = 'sales-pill'+(mode==='totalamount' ?' active':'');
+    [['amount','btn-sales-amount'],['count','btn-sales-count'],['totalamount','btn-sales-totalamount']].forEach(([v,id]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const isActive = v === mode;
+      el.className = 'sales-pill' + (isActive ? ' active' : '');
+      el.style.color = isActive ? '#f1f5f9' : '#94a3b8';
+    });
     updateSalesChart();
   }
 
@@ -4455,14 +4450,6 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     </tr>`;
   }
   // ===================== /클레임 볼륨 =====================
-
-  function toggleSalesTotal() {
-    showTotalLabels = !showTotalLabels;
-    const btn = document.getElementById('btn-sales-total');
-    if (btn) btn.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors '
-      + (showTotalLabels ? 'bg-nm-blue text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200');
-    updateSalesChart();
-  }
 
   /* 조치사항 버튼 - 값 설정 후 커서를 끝으로 이동 */
   function setActionTaken(text) {
