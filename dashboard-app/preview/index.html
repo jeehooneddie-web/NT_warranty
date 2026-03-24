@@ -4156,7 +4156,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
       .sort((a, b) => b.n_count - a.n_count)
       .slice(0, 20);
 
-    const labels  = top20.map(d => d.name || d.code);
+    const labels  = top20.map(d => `[${d.code}] ${d.name || d.code}`);
     const values  = top20.map(d => d.n_count);
 
     const ctx = document.getElementById('tc-top20-chart').getContext('2d');
