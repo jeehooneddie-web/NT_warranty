@@ -1734,61 +1734,122 @@
            뷰: 미실시 상위 20
            ============================================= -->
       <div id="view-tc-top20" class="view hidden">
-        <!-- 필터 카드 -->
-        <div class="rounded-2xl p-5 mb-4" style="background:#fff; border:1px solid #e2e8f0; box-shadow:0 2px 12px rgba(0,0,0,0.06)">
-          <div class="flex flex-wrap gap-6 items-start">
-            <div>
-              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">지점</span>
-              <div class="pill-group">
-                <button onclick="setTop20Branch('all')" id="top20-fbranch-all" class="sales-pill active">전체</button>
-                <button onclick="setTop20Branch('전주')" id="top20-fbranch-전주" class="sales-pill">전주</button>
-                <button onclick="setTop20Branch('평택')" id="top20-fbranch-평택" class="sales-pill">평택</button>
-                <button onclick="setTop20Branch('군산')" id="top20-fbranch-군산" class="sales-pill">군산</button>
-                <button onclick="setTop20Branch('목포')" id="top20-fbranch-목포" class="sales-pill">목포</button>
-                <button onclick="setTop20Branch('서산')" id="top20-fbranch-서산" class="sales-pill">서산</button>
+        <!-- 탭 버튼 -->
+        <div class="flex gap-2 mb-4">
+          <button onclick="switchTop20Tab('chart')" id="top20-tab-chart" class="px-5 py-2 rounded-lg text-sm font-semibold transition-all" style="background:#1e3a5f;color:#fff">차트</button>
+          <button onclick="switchTop20Tab('compare')" id="top20-tab-compare" class="px-5 py-2 rounded-lg text-sm font-semibold transition-all" style="background:#e2e8f0;color:#475569">비교</button>
+        </div>
+
+        <!-- 차트 탭 영역 -->
+        <div id="top20-chart-area">
+          <!-- 필터 카드 -->
+          <div class="rounded-2xl p-5 mb-4" style="background:#fff; border:1px solid #e2e8f0; box-shadow:0 2px 12px rgba(0,0,0,0.06)">
+            <div class="flex flex-wrap gap-6 items-start">
+              <div>
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">지점 (복수 선택)</span>
+                <div class="pill-group">
+                  <button onclick="toggleTop20Branch('all')" id="top20-fbranch-all" class="sales-pill active">전체</button>
+                  <button onclick="toggleTop20Branch('전주')" id="top20-fbranch-전주" class="sales-pill">전주</button>
+                  <button onclick="toggleTop20Branch('평택')" id="top20-fbranch-평택" class="sales-pill">평택</button>
+                  <button onclick="toggleTop20Branch('군산')" id="top20-fbranch-군산" class="sales-pill">군산</button>
+                  <button onclick="toggleTop20Branch('목포')" id="top20-fbranch-목포" class="sales-pill">목포</button>
+                  <button onclick="toggleTop20Branch('서산')" id="top20-fbranch-서산" class="sales-pill">서산</button>
+                </div>
               </div>
-            </div>
-            <div>
-              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">기간 단위</span>
-              <div class="pill-group">
-                <button onclick="setTop20PeriodMode('monthly')"   id="top20-mode-monthly"   class="sales-pill active">월별</button>
-                <button onclick="setTop20PeriodMode('quarterly')" id="top20-mode-quarterly" class="sales-pill">분기</button>
+              <div>
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">기간 단위</span>
+                <div class="pill-group">
+                  <button onclick="setTop20PeriodMode('monthly')"   id="top20-mode-monthly"   class="sales-pill active">월별</button>
+                  <button onclick="setTop20PeriodMode('quarterly')" id="top20-mode-quarterly" class="sales-pill">분기</button>
+                </div>
               </div>
-            </div>
-            <div id="top20-month-wrap">
-              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">월</span>
-              <div class="pill-group">
-                <button onclick="toggleTop20Month('all')" id="top20-fmonth-all" class="sales-pill active">전체</button>
-                <button onclick="toggleTop20Month('01')" id="top20-fmonth-01" class="sales-pill">1월</button>
-                <button onclick="toggleTop20Month('02')" id="top20-fmonth-02" class="sales-pill">2월</button>
-                <button onclick="toggleTop20Month('03')" id="top20-fmonth-03" class="sales-pill">3월</button>
-                <button onclick="toggleTop20Month('04')" id="top20-fmonth-04" class="sales-pill">4월</button>
-                <button onclick="toggleTop20Month('05')" id="top20-fmonth-05" class="sales-pill">5월</button>
-                <button onclick="toggleTop20Month('06')" id="top20-fmonth-06" class="sales-pill">6월</button>
-                <button onclick="toggleTop20Month('07')" id="top20-fmonth-07" class="sales-pill">7월</button>
-                <button onclick="toggleTop20Month('08')" id="top20-fmonth-08" class="sales-pill">8월</button>
-                <button onclick="toggleTop20Month('09')" id="top20-fmonth-09" class="sales-pill">9월</button>
-                <button onclick="toggleTop20Month('10')" id="top20-fmonth-10" class="sales-pill">10월</button>
-                <button onclick="toggleTop20Month('11')" id="top20-fmonth-11" class="sales-pill">11월</button>
-                <button onclick="toggleTop20Month('12')" id="top20-fmonth-12" class="sales-pill">12월</button>
+              <div id="top20-month-wrap">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">월</span>
+                <div class="pill-group">
+                  <button onclick="toggleTop20Month('all')" id="top20-fmonth-all" class="sales-pill active">전체</button>
+                  <button onclick="toggleTop20Month('01')" id="top20-fmonth-01" class="sales-pill">1월</button>
+                  <button onclick="toggleTop20Month('02')" id="top20-fmonth-02" class="sales-pill">2월</button>
+                  <button onclick="toggleTop20Month('03')" id="top20-fmonth-03" class="sales-pill">3월</button>
+                  <button onclick="toggleTop20Month('04')" id="top20-fmonth-04" class="sales-pill">4월</button>
+                  <button onclick="toggleTop20Month('05')" id="top20-fmonth-05" class="sales-pill">5월</button>
+                  <button onclick="toggleTop20Month('06')" id="top20-fmonth-06" class="sales-pill">6월</button>
+                  <button onclick="toggleTop20Month('07')" id="top20-fmonth-07" class="sales-pill">7월</button>
+                  <button onclick="toggleTop20Month('08')" id="top20-fmonth-08" class="sales-pill">8월</button>
+                  <button onclick="toggleTop20Month('09')" id="top20-fmonth-09" class="sales-pill">9월</button>
+                  <button onclick="toggleTop20Month('10')" id="top20-fmonth-10" class="sales-pill">10월</button>
+                  <button onclick="toggleTop20Month('11')" id="top20-fmonth-11" class="sales-pill">11월</button>
+                  <button onclick="toggleTop20Month('12')" id="top20-fmonth-12" class="sales-pill">12월</button>
+                </div>
               </div>
-            </div>
-            <div id="top20-quarter-wrap" style="display:none">
-              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">분기</span>
-              <div class="pill-group">
-                <button onclick="toggleTop20Quarter('all')" id="top20-fq-all" class="sales-pill active">전체</button>
-                <button onclick="toggleTop20Quarter('Q1')" id="top20-fq-Q1" class="sales-pill">Q1</button>
-                <button onclick="toggleTop20Quarter('Q2')" id="top20-fq-Q2" class="sales-pill">Q2</button>
-                <button onclick="toggleTop20Quarter('Q3')" id="top20-fq-Q3" class="sales-pill">Q3</button>
-                <button onclick="toggleTop20Quarter('Q4')" id="top20-fq-Q4" class="sales-pill">Q4</button>
+              <div id="top20-quarter-wrap" style="display:none">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">분기</span>
+                <div class="pill-group">
+                  <button onclick="toggleTop20Quarter('all')" id="top20-fq-all" class="sales-pill active">전체</button>
+                  <button onclick="toggleTop20Quarter('Q1')" id="top20-fq-Q1" class="sales-pill">Q1</button>
+                  <button onclick="toggleTop20Quarter('Q2')" id="top20-fq-Q2" class="sales-pill">Q2</button>
+                  <button onclick="toggleTop20Quarter('Q3')" id="top20-fq-Q3" class="sales-pill">Q3</button>
+                  <button onclick="toggleTop20Quarter('Q4')" id="top20-fq-Q4" class="sales-pill">Q4</button>
+                </div>
               </div>
             </div>
           </div>
+          <!-- 차트 -->
+          <div class="rounded-2xl p-5" style="background:#1e2433; border:1px solid #2d3748; box-shadow:0 2px 12px rgba(0,0,0,0.18)">
+            <h2 class="text-sm font-semibold mb-4" style="color:#f1f5f9">미실시 캠페인 상위 10 (건수 기준)</h2>
+            <div style="height:520px;"><canvas id="tc-top20-chart"></canvas></div>
+          </div>
         </div>
-        <!-- 차트 카드 -->
-        <div class="rounded-2xl p-5" style="background:#1e2433; border:1px solid #2d3748; box-shadow:0 2px 12px rgba(0,0,0,0.18)">
-          <h2 class="text-sm font-semibold mb-4" style="color:#f1f5f9">미실시 캠페인 상위 20 (건수 기준)</h2>
-          <div style="height:600px;"><canvas id="tc-top20-chart"></canvas></div>
+
+        <!-- 비교 탭 영역 -->
+        <div id="top20-compare-area" style="display:none">
+          <!-- 비교 필터 카드 -->
+          <div class="rounded-2xl p-5 mb-4" style="background:#fff; border:1px solid #e2e8f0; box-shadow:0 2px 12px rgba(0,0,0,0.06)">
+            <div class="flex flex-wrap gap-6 items-start">
+              <div>
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">비교 기준</span>
+                <div class="pill-group">
+                  <button onclick="setCmpMode('branch')" id="cmp-mode-branch" class="sales-pill active">지점별</button>
+                  <button onclick="setCmpMode('month')"  id="cmp-mode-month"  class="sales-pill">월별</button>
+                </div>
+              </div>
+              <!-- 지점별 비교: 기간 선택 -->
+              <div id="cmp-branch-filter">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">기간</span>
+                <div class="pill-group">
+                  <button onclick="toggleCmpMonth('all')" id="cmp-fmonth-all" class="sales-pill active">전체</button>
+                  <button onclick="toggleCmpMonth('01')" id="cmp-fmonth-01" class="sales-pill">1월</button>
+                  <button onclick="toggleCmpMonth('02')" id="cmp-fmonth-02" class="sales-pill">2월</button>
+                  <button onclick="toggleCmpMonth('03')" id="cmp-fmonth-03" class="sales-pill">3월</button>
+                  <button onclick="toggleCmpMonth('04')" id="cmp-fmonth-04" class="sales-pill">4월</button>
+                  <button onclick="toggleCmpMonth('05')" id="cmp-fmonth-05" class="sales-pill">5월</button>
+                  <button onclick="toggleCmpMonth('06')" id="cmp-fmonth-06" class="sales-pill">6월</button>
+                  <button onclick="toggleCmpMonth('07')" id="cmp-fmonth-07" class="sales-pill">7월</button>
+                  <button onclick="toggleCmpMonth('08')" id="cmp-fmonth-08" class="sales-pill">8월</button>
+                  <button onclick="toggleCmpMonth('09')" id="cmp-fmonth-09" class="sales-pill">9월</button>
+                  <button onclick="toggleCmpMonth('10')" id="cmp-fmonth-10" class="sales-pill">10월</button>
+                  <button onclick="toggleCmpMonth('11')" id="cmp-fmonth-11" class="sales-pill">11월</button>
+                  <button onclick="toggleCmpMonth('12')" id="cmp-fmonth-12" class="sales-pill">12월</button>
+                </div>
+              </div>
+              <!-- 월별 비교: 지점 선택 -->
+              <div id="cmp-month-filter" style="display:none">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">지점</span>
+                <div class="pill-group">
+                  <button onclick="toggleCmpBranch('all')" id="cmp-fbranch-all" class="sales-pill active">전체</button>
+                  <button onclick="toggleCmpBranch('전주')" id="cmp-fbranch-전주" class="sales-pill">전주</button>
+                  <button onclick="toggleCmpBranch('평택')" id="cmp-fbranch-평택" class="sales-pill">평택</button>
+                  <button onclick="toggleCmpBranch('군산')" id="cmp-fbranch-군산" class="sales-pill">군산</button>
+                  <button onclick="toggleCmpBranch('목포')" id="cmp-fbranch-목포" class="sales-pill">목포</button>
+                  <button onclick="toggleCmpBranch('서산')" id="cmp-fbranch-서산" class="sales-pill">서산</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 비교 차트 -->
+          <div class="rounded-2xl p-5" style="background:#1e2433; border:1px solid #2d3748; box-shadow:0 2px 12px rgba(0,0,0,0.18)">
+            <h2 id="cmp-chart-title" class="text-sm font-semibold mb-4" style="color:#f1f5f9">지점별 미실시 상위 10 비교</h2>
+            <div style="height:520px;"><canvas id="tc-compare-chart"></canvas></div>
+          </div>
         </div>
       </div><!-- /view-tc-top20 -->
 
@@ -4119,12 +4180,25 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   // ===================== /TC 미실시율 =====================
 
   // ===================== 미실시 상위 20 =====================
-  let top20Branch      = 'all';
+  let top20Branches    = new Set(['all']);
   let top20PeriodMode  = 'monthly';
   let top20Months      = new Set(['all']);
   let top20Quarters    = new Set(['all']);
   let top20ChartInst   = null;
 
+  let cmpMode               = 'branch';
+  let cmpMonths             = new Set(['all']);
+  let cmpBranches           = new Set(['all']);
+  let top20CompareChartInst = null;
+
+  const BRANCH_LIST   = ['전주','평택','군산','목포','서산'];
+  const BRANCH_COLORS = {
+    '전주': 'rgba(99,102,241,0.8)',
+    '평택': 'rgba(20,184,166,0.8)',
+    '군산': 'rgba(251,191,36,0.8)',
+    '목포': 'rgba(239,68,68,0.8)',
+    '서산': 'rgba(139,92,246,0.8)',
+  };
   const QUARTER_MONTHS = { Q1:['01','02','03'], Q2:['04','05','06'], Q3:['07','08','09'], Q4:['10','11','12'] };
 
   function top20MonthMatch(month) {
@@ -4137,22 +4211,31 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     }
   }
 
+  function switchTop20Tab(tab) {
+    const isChart = tab === 'chart';
+    document.getElementById('top20-chart-area').style.display   = isChart ? '' : 'none';
+    document.getElementById('top20-compare-area').style.display = isChart ? 'none' : '';
+    document.getElementById('top20-tab-chart').style.background   = isChart ? '#1e3a5f' : '#e2e8f0';
+    document.getElementById('top20-tab-chart').style.color        = isChart ? '#fff' : '#475569';
+    document.getElementById('top20-tab-compare').style.background = isChart ? '#e2e8f0' : '#1e3a5f';
+    document.getElementById('top20-tab-compare').style.color      = isChart ? '#475569' : '#fff';
+    if (isChart) renderTop20View();
+    else renderTop20Compare();
+  }
+
   function renderTop20View() {
     const agg = {};
     (TC_TOP_DATA || []).forEach(([branch, month, code, name, total, n_count]) => {
-      if (top20Branch !== 'all' && branch !== top20Branch) return;
+      if (!top20Branches.has('all') && !top20Branches.has(branch)) return;
       if (!top20MonthMatch(month)) return;
       if (!agg[code]) agg[code] = { code, name, total: 0, n_count: 0 };
       agg[code].total   += total;
       agg[code].n_count += n_count;
     });
 
-    const top20 = Object.values(agg)
-      .sort((a, b) => b.n_count - a.n_count)
-      .slice(0, 20);
-
-    const labels  = top20.map(d => `[${d.code}] ${d.name || d.code}`);
-    const values  = top20.map(d => d.n_count);
+    const top10  = Object.values(agg).sort((a, b) => b.n_count - a.n_count).slice(0, 10);
+    const labels = top10.map(d => `[${d.code}] ${d.name || d.code}`);
+    const values = top10.map(d => d.n_count);
 
     const ctx = document.getElementById('tc-top20-chart').getContext('2d');
     if (top20ChartInst) top20ChartInst.destroy();
@@ -4175,30 +4258,28 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
         maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => ` 미실시 ${ctx.parsed.x}건`
-            }
-          }
+          tooltip: { callbacks: { label: ctx => ` 미실시 ${ctx.parsed.x}건` } }
         },
         scales: {
-          x: {
-            ticks: { color: '#94a3b8' },
-            grid:  { color: 'rgba(255,255,255,0.06)' }
-          },
-          y: {
-            ticks: { color: '#e2e8f0', font: { size: 11 } },
-            grid:  { display: false }
-          }
+          x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+          y: { ticks: { color: '#e2e8f0', font: { size: 11 } }, grid: { display: false } }
         }
       }
     });
   }
 
-  function setTop20Branch(b) {
-    top20Branch = b;
-    document.querySelectorAll('[id^="top20-fbranch-"]').forEach(el => el.classList.remove('active'));
-    document.getElementById('top20-fbranch-' + b).classList.add('active');
+  function toggleTop20Branch(b) {
+    if (b === 'all') {
+      top20Branches = new Set(['all']);
+    } else {
+      top20Branches.delete('all');
+      top20Branches.has(b) ? top20Branches.delete(b) : top20Branches.add(b);
+      if (top20Branches.size === 0) top20Branches.add('all');
+    }
+    document.querySelectorAll('[id^="top20-fbranch-"]').forEach(el => {
+      const val = el.id.replace('top20-fbranch-','');
+      el.classList.toggle('active', val === 'all' ? top20Branches.has('all') : top20Branches.has(val));
+    });
     renderTop20View();
   }
 
@@ -4239,6 +4320,139 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
       el.classList.toggle('active', val === 'all' ? top20Quarters.has('all') : top20Quarters.has(val));
     });
     renderTop20View();
+  }
+
+  // ─── 비교 탭 ──────────────────────────────────────────────
+  function setCmpMode(mode) {
+    cmpMode = mode;
+    document.getElementById('cmp-mode-branch').classList.toggle('active', mode === 'branch');
+    document.getElementById('cmp-mode-month').classList.toggle('active',  mode === 'month');
+    document.getElementById('cmp-branch-filter').style.display = mode === 'branch' ? '' : 'none';
+    document.getElementById('cmp-month-filter').style.display  = mode === 'month'  ? '' : 'none';
+    document.getElementById('cmp-chart-title').textContent =
+      mode === 'branch' ? '지점별 미실시 상위 10 비교' : '월별 미실시 상위 10 비교';
+    renderTop20Compare();
+  }
+
+  function toggleCmpMonth(mm) {
+    if (mm === 'all') {
+      cmpMonths = new Set(['all']);
+    } else {
+      cmpMonths.delete('all');
+      cmpMonths.has(mm) ? cmpMonths.delete(mm) : cmpMonths.add(mm);
+      if (cmpMonths.size === 0) cmpMonths.add('all');
+    }
+    document.querySelectorAll('[id^="cmp-fmonth-"]').forEach(el => {
+      const val = el.id.replace('cmp-fmonth-','');
+      el.classList.toggle('active', val === 'all' ? cmpMonths.has('all') : cmpMonths.has(val));
+    });
+    renderTop20Compare();
+  }
+
+  function toggleCmpBranch(b) {
+    if (b === 'all') {
+      cmpBranches = new Set(['all']);
+    } else {
+      cmpBranches.delete('all');
+      cmpBranches.has(b) ? cmpBranches.delete(b) : cmpBranches.add(b);
+      if (cmpBranches.size === 0) cmpBranches.add('all');
+    }
+    document.querySelectorAll('[id^="cmp-fbranch-"]').forEach(el => {
+      const val = el.id.replace('cmp-fbranch-','');
+      el.classList.toggle('active', val === 'all' ? cmpBranches.has('all') : cmpBranches.has(val));
+    });
+    renderTop20Compare();
+  }
+
+  function renderTop20Compare() {
+    const data = TC_TOP_DATA || [];
+    let labels, datasets;
+
+    if (cmpMode === 'branch') {
+      // 데이터셋: 지점별, 기간(cmpMonths) 필터
+      const targetBranches = cmpBranches.has('all') ? BRANCH_LIST : [...cmpBranches];
+      const totals = {};
+      data.forEach(([branch, month, code, name, total, n_count]) => {
+        const mm = month.slice(-2);
+        if (!cmpMonths.has('all') && !cmpMonths.has(mm)) return;
+        if (!totals[code]) totals[code] = { code, name, n: 0 };
+        totals[code].n += n_count;
+      });
+      const top10 = Object.values(totals).sort((a,b) => b.n - a.n).slice(0, 10);
+      labels = top10.map(d => `[${d.code}] ${d.name || d.code}`);
+      datasets = targetBranches.map(branch => {
+        const agg = {};
+        data.forEach(([b, month, code, name, total, n_count]) => {
+          if (b !== branch) return;
+          const mm = month.slice(-2);
+          if (!cmpMonths.has('all') && !cmpMonths.has(mm)) return;
+          agg[code] = (agg[code] || 0) + n_count;
+        });
+        return {
+          label: branch,
+          data: top10.map(d => agg[d.code] || 0),
+          backgroundColor: BRANCH_COLORS[branch] || 'rgba(100,100,200,0.8)',
+          borderRadius: 3,
+        };
+      });
+
+    } else {
+      // 데이터셋: 월별, 지점(cmpBranches) 필터
+      const targetBranches = cmpBranches.has('all') ? BRANCH_LIST : [...cmpBranches];
+      const monthSet = new Set();
+      data.forEach(([branch, month]) => {
+        if (targetBranches.includes(branch)) monthSet.add(month.slice(-2));
+      });
+      const allMonths = [...monthSet].sort();
+      const totals = {};
+      data.forEach(([branch, month, code, name, total, n_count]) => {
+        if (!targetBranches.includes(branch)) return;
+        if (!totals[code]) totals[code] = { code, name, n: 0 };
+        totals[code].n += n_count;
+      });
+      const top10 = Object.values(totals).sort((a,b) => b.n - a.n).slice(0, 10);
+      labels = top10.map(d => `[${d.code}] ${d.name || d.code}`);
+      const MONTH_COLORS = [
+        'rgba(99,102,241,0.8)','rgba(20,184,166,0.8)','rgba(251,191,36,0.8)',
+        'rgba(239,68,68,0.8)','rgba(139,92,246,0.8)','rgba(59,130,246,0.8)',
+        'rgba(16,185,129,0.8)','rgba(245,158,11,0.8)','rgba(236,72,153,0.8)',
+        'rgba(14,165,233,0.8)','rgba(168,85,247,0.8)','rgba(34,197,94,0.8)',
+      ];
+      datasets = allMonths.map((mm, i) => {
+        const agg = {};
+        data.forEach(([branch, month, code, name, total, n_count]) => {
+          if (!targetBranches.includes(branch)) return;
+          if (month.slice(-2) !== mm) return;
+          agg[code] = (agg[code] || 0) + n_count;
+        });
+        return {
+          label: mm + '월',
+          data: top10.map(d => agg[d.code] || 0),
+          backgroundColor: MONTH_COLORS[i % MONTH_COLORS.length],
+          borderRadius: 3,
+        };
+      });
+    }
+
+    const ctx = document.getElementById('tc-compare-chart').getContext('2d');
+    if (top20CompareChartInst) top20CompareChartInst.destroy();
+    top20CompareChartInst = new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, labels: { color: '#94a3b8', boxWidth: 12, font: { size: 11 } } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.x}건` } }
+        },
+        scales: {
+          x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+          y: { ticks: { color: '#e2e8f0', font: { size: 11 } }, grid: { display: false } }
+        }
+      }
+    });
   }
   // ===================== /미실시 상위 20 =====================
 
