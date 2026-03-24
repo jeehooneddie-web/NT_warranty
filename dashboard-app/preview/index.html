@@ -4156,10 +4156,8 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
       .sort((a, b) => b.n_count - a.n_count)
       .slice(0, 20);
 
-    // 순위 역순 (Chart.js 가로막대는 아래→위 순서라 역정렬)
-    const items   = top20.slice().reverse();
-    const labels  = items.map((d, i) => `${top20.length - i}위  ${d.name || d.code}`);
-    const values  = items.map(d => d.n_count);
+    const labels  = top20.map(d => d.name || d.code);
+    const values  = top20.map(d => d.n_count);
 
     const ctx = document.getElementById('tc-top20-chart').getContext('2d');
     if (top20ChartInst) top20ChartInst.destroy();
