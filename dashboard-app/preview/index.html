@@ -5209,60 +5209,72 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     document.getElementById('qr-capture-btn').style.display = 'block';
     document.getElementById('qr-stop-btn').style.display = 'block';
     document.getElementById('qr-scan-line').style.display = 'block';
-    document.getElementById('qr-cam-msg').textContent = 'QR을 화면에 맞추고 🔍 스캔을 누르세요';
+
+    if ('BarcodeDetector' in window) {
+      // video 엘리먼트 직접 전달 — canvas 변환 없이 네이티브 디코딩
+      const detector = new BarcodeDetector({ formats: ['qr_code','data_matrix','code_128'] });
+      document.getElementById('qr-cam-msg').textContent = 'QR을 화면에 맞추세요 (자동 인식 중)';
+      const loop = async () => {
+        if (!qrScanning) return;
+        try {
+          const codes = await detector.detect(video);
+          if (codes.length > 0 && qrScanning) {
+            qrScanning = false;
+            if (navigator.vibrate) navigator.vibrate(80);
+            document.getElementById('qr-scan-line').style.display = 'none';
+            handleQRResult(codes[0].rawValue);
+            return;
+          }
+        } catch(e) {}
+        setTimeout(loop, 150);
+      };
+      loop();
+    } else if (window.ZXing) {
+      // ZXing: stream 직접 전달
+      document.getElementById('qr-cam-msg').textContent = 'QR을 화면에 맞추세요 (자동 인식 중)';
+      zxingReader = new ZXing.BrowserMultiFormatReader();
+      zxingReader.decodeFromStream(qrStream, video, (result, err) => {
+        if (result && qrScanning) {
+          qrScanning = false;
+          if (navigator.vibrate) navigator.vibrate(80);
+          document.getElementById('qr-scan-line').style.display = 'none';
+          handleQRResult(result.getText());
+        }
+      });
+    } else {
+      document.getElementById('qr-cam-msg').textContent = 'QR을 화면에 맞추고 🔍 스캔을 누르세요';
+    }
   }
 
   async function captureQRFrame() {
+    // 자동인식 안 될 때 수동 캡처 백업
     const video = document.getElementById('qr-video');
-    const canvas = document.getElementById('qr-canvas');
     if (!video.srcObject || !video.videoWidth) {
       showQRToast('카메라 준비 중입니다', '#d97706'); return;
     }
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0);
     document.getElementById('qr-cam-msg').textContent = '분석 중...';
-
-    // 1순위: BarcodeDetector
     if ('BarcodeDetector' in window) {
       try {
-        const det = new BarcodeDetector({ formats: ['qr_code','data_matrix','code_128','aztec'] });
-        const codes = await det.detect(canvas);
+        const detector = new BarcodeDetector({ formats: ['qr_code','data_matrix','code_128'] });
+        const codes = await detector.detect(video);
         if (codes.length > 0) {
-          if (navigator.vibrate) navigator.vibrate(80);
           qrScanning = false;
+          if (navigator.vibrate) navigator.vibrate(80);
           document.getElementById('qr-scan-line').style.display = 'none';
           handleQRResult(codes[0].rawValue);
           return;
         }
-      } catch(e) { console.warn('BarcodeDetector err:', e); }
+      } catch(e) {}
     }
-
-    // 2순위: ZXing
-    if (window.ZXing) {
-      try {
-        const reader = new ZXing.BrowserMultiFormatReader();
-        const result = await reader.decodeFromCanvas(canvas);
-        if (result) {
-          if (navigator.vibrate) navigator.vibrate(80);
-          qrScanning = false;
-          document.getElementById('qr-scan-line').style.display = 'none';
-          handleQRResult(result.getText());
-          return;
-        }
-      } catch(e) { console.warn('ZXing err:', e); }
-    }
-
     showQRToast('인식 실패 — QR을 더 가까이 대고 다시 누르세요', '#dc2626');
-    document.getElementById('qr-cam-msg').textContent = 'QR을 화면에 맞추고 🔍 스캔을 누르세요';
+    document.getElementById('qr-cam-msg').textContent = 'QR을 화면에 맞추세요 (자동 인식 중)';
   }
 
   function stopQRCamera() {
+    qrScanning = false;
     if (qrAnimFrame) { cancelAnimationFrame(qrAnimFrame); qrAnimFrame = null; }
     if (zxingReader) { try { zxingReader.reset(); } catch(e){} zxingReader = null; }
     if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
-    qrScanning = false;
     const video = document.getElementById('qr-video');
     video.srcObject = null;
     document.getElementById('qr-start-btn').style.display = 'block';
