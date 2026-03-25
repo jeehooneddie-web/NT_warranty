@@ -17,8 +17,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <!-- SortableJS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-  <!-- jsQR CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <!-- ZXing (QR + DataMatrix 지원) -->
+  <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 
 
   <!-- 브랜드 색상 설정 -->
@@ -5154,6 +5154,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   let qrAnimFrame = null;
   let qrParsed = null;
   let qrScanning = false;
+  let zxingReader = null;
 
   function initQRScanner() {
     const saved = localStorage.getItem('qr_webhook_url') || '';
@@ -5161,6 +5162,17 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     updateWebhookStatus(saved);
     renderQRScanList();
     lucide.createIcons();
+    // ZXing 초기화 (QR + DataMatrix 모두 지원)
+    if (window.ZXing) {
+      const hints = new Map();
+      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+        ZXing.BarcodeFormat.QR_CODE,
+        ZXing.BarcodeFormat.DATA_MATRIX,
+        ZXing.BarcodeFormat.CODE_128,
+      ]);
+      hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+      zxingReader = new ZXing.BrowserMultiFormatReader(hints);
+    }
   }
 
   function saveWebhookUrl() {
@@ -5226,25 +5238,32 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   let qrLastScan = 0;
   function scanQRFrame(ts) {
     if (!qrScanning) return;
-    if (ts - qrLastScan < 150) { qrAnimFrame = requestAnimationFrame(scanQRFrame); return; }
+    if (ts - qrLastScan < 200) { qrAnimFrame = requestAnimationFrame(scanQRFrame); return; }
     qrLastScan = ts;
     const video = document.getElementById('qr-video');
     const canvas = document.getElementById('qr-canvas');
     if (video.readyState !== video.HAVE_ENOUGH_DATA) { qrAnimFrame = requestAnimationFrame(scanQRFrame); return; }
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw || !vh) { qrAnimFrame = requestAnimationFrame(scanQRFrame); return; }
-    // 전체 프레임 스캔 (크롭 없음 — 좌표 계산 오차 제거)
+
     canvas.width = vw;
     canvas.height = vh;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, vw, vh);
-    const img = ctx.getImageData(0, 0, vw, vh);
-    const code = jsQR(img.data, vw, vh, { inversionAttempts: 'attemptBoth' });
-    if (code) {
-      if (navigator.vibrate) navigator.vibrate(80);
-      document.getElementById('qr-scan-line').style.display = 'none';
-      handleQRResult(code.data);
-      return;
+
+    if (zxingReader) {
+      // ZXing으로 디코딩 (QR + DataMatrix 지원)
+      try {
+        const luminance = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
+        const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminance));
+        const result = zxingReader.decodeBitmap(bitmap);
+        if (result && result.getText()) {
+          if (navigator.vibrate) navigator.vibrate(80);
+          document.getElementById('qr-scan-line').style.display = 'none';
+          handleQRResult(result.getText());
+          return;
+        }
+      } catch(e) { /* 미인식 시 계속 */ }
     }
     qrAnimFrame = requestAnimationFrame(scanQRFrame);
   }
