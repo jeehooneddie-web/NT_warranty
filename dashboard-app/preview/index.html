@@ -5160,6 +5160,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
         <div>
           <div style="color:#f1f5f9; font-size:13px; font-weight:700; font-family:monospace;">${r.claimNo}</div>
           <div style="color:#64748b; font-size:11px; margin-top:2px;">${r.defectCode} · ${r.vin7}</div>
+          ${r.reason ? `<div style="color:#fbbf24; font-size:10px; margin-top:3px;">⚠ ${r.reason}</div>` : ''}
         </div>
         <span style="font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; background:${s.bg}; color:${s.color};">${s.label}</span>
       </div>`;
@@ -5174,17 +5175,33 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
       const res = await fetch(QR_WEBHOOK_DEFAULT, { method: 'GET' });
       const scans = await res.json();
 
-      // 매칭 키: 클레임번호 | 디펙트코드 | 차대번호 뒤 7자리
-      const scanKey  = s => `${s['클레임번호']}|${s['디펙트코드']}|${String(s['차대번호']).slice(-7)}`;
-      const claimKey = c => `${c.claimNo}|${c.defectCode}|${c.vin7}`;
+      // WC 제거 정규화
+      const norm = v => String(v).replace(/^WC/i, '').trim();
+
+      // 매칭 키: 클레임번호(WC제거) | 디펙트코드 | 차대번호 뒤 7자리
+      const scanKey  = s => `${norm(s['클레임번호'])}|${s['디펙트코드']}|${String(s['차대번호']).slice(-7)}`;
+      const claimKey = c => `${norm(c.claimNo)}|${c.defectCode}|${c.vin7}`;
       const scanKeys  = new Set(scans.map(scanKey));
       const claimKeys = new Set(QR_COMPARE_CLAIMS.map(claimKey));
 
       cmpData.ok      = QR_COMPARE_CLAIMS.filter(c =>  scanKeys.has(claimKey(c)));
       cmpData.missing = QR_COMPARE_CLAIMS.filter(c => !scanKeys.has(claimKey(c)));
-      cmpData.extra   = scans
+
+      const claimNoSet    = new Set(QR_COMPARE_CLAIMS.map(c => norm(c.claimNo)));
+      const claimNoDefSet = new Set(QR_COMPARE_CLAIMS.map(c => `${norm(c.claimNo)}|${c.defectCode}`));
+
+      cmpData.extra = scans
         .filter(s => !claimKeys.has(scanKey(s)))
-        .map(s => ({ claimNo: s['클레임번호'], defectCode: s['디펙트코드'], vin7: String(s['차대번호']).slice(-7) }));
+        .map(s => {
+          const sNo  = norm(s['클레임번호']);
+          const sDef = s['디펙트코드'];
+          const sVin = String(s['차대번호']).slice(-7);
+          let reason = '';
+          if (!claimNoSet.has(sNo))                  reason = '클레임번호 없음';
+          else if (!claimNoDefSet.has(`${sNo}|${sDef}`)) reason = '디펙트코드 불일치';
+          else                                           reason = '차대번호 불일치';
+          return { claimNo: sNo, defectCode: sDef, vin7: sVin, reason };
+        });
 
       document.getElementById('cmp-scanned').textContent = cmpData.ok.length;
       document.getElementById('cmp-missing').textContent = cmpData.missing.length;
