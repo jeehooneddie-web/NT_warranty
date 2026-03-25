@@ -5191,6 +5191,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
       (decodedText) => {
+        showQRToast('[DBG] cb fired, scanning=' + qrScanning, '#059669');
         if (!qrScanning) return;
         qrScanning = false;
         if (navigator.vibrate) navigator.vibrate(80);
@@ -5242,9 +5243,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   }
 
   function handleQRResult(text) {
-    // [DEBUG] 원문 표시
-    const dbg = document.getElementById('qr-debug-raw');
-    if (dbg) dbg.textContent = '[raw] ' + text;
+    showQRToast('[DBG] called: ' + text.substring(0,30), '#7c3aed');
     const f = text.split(',');
     if (f.length < 12) {
       showQRToast('필드 부족(' + f.length + ') — 다시 시도해주세요', '#dc2626');
