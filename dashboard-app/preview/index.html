@@ -5162,17 +5162,6 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     updateWebhookStatus(saved);
     renderQRScanList();
     lucide.createIcons();
-    // ZXing 초기화 (QR + DataMatrix 모두 지원)
-    if (window.ZXing) {
-      const hints = new Map();
-      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-        ZXing.BarcodeFormat.QR_CODE,
-        ZXing.BarcodeFormat.DATA_MATRIX,
-        ZXing.BarcodeFormat.CODE_128,
-      ]);
-      hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-      zxingReader = new ZXing.BrowserMultiFormatReader(hints);
-    }
   }
 
   function saveWebhookUrl() {
@@ -5203,29 +5192,30 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   }
 
   function startQRCamera() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert('이 브라우저는 카메라를 지원하지 않습니다.');
-      return;
-    }
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-      .then(stream => {
-        qrStream = stream;
-        const video = document.getElementById('qr-video');
-        video.srcObject = stream;
-        video.play();
-        document.getElementById('qr-start-btn').style.display = 'none';
-        document.getElementById('qr-stop-btn').style.display = 'block';
-        document.getElementById('qr-cam-msg').textContent = 'QR 코드를 가이드 안에 맞춰주세요';
-        document.getElementById('qr-scan-line').style.display = 'block';
-        qrScanning = true;
-        requestAnimationFrame(scanQRFrame);
-      })
-      .catch(err => alert('카메라 접근 실패: ' + err.message));
+    if (!window.ZXing) { alert('스캐너 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.'); return; }
+    const video = document.getElementById('qr-video');
+    zxingReader = new ZXing.BrowserMultiFormatReader();
+    zxingReader.decodeFromConstraints(
+      { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } },
+      video,
+      (result, err) => {
+        if (result) {
+          if (navigator.vibrate) navigator.vibrate(80);
+          document.getElementById('qr-scan-line').style.display = 'none';
+          handleQRResult(result.getText());
+        }
+      }
+    ).catch(err => alert('카메라 접근 실패: ' + err.message));
+
+    document.getElementById('qr-start-btn').style.display = 'none';
+    document.getElementById('qr-stop-btn').style.display = 'block';
+    document.getElementById('qr-scan-line').style.display = 'block';
+    document.getElementById('qr-cam-msg').textContent = 'QR 코드를 가이드 안에 맞춰주세요';
+    qrScanning = true;
   }
 
   function stopQRCamera() {
-    if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
-    if (qrAnimFrame) { cancelAnimationFrame(qrAnimFrame); qrAnimFrame = null; }
+    if (zxingReader) { zxingReader.reset(); zxingReader = null; }
     qrScanning = false;
     const video = document.getElementById('qr-video');
     video.srcObject = null;
@@ -5233,39 +5223,6 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     document.getElementById('qr-stop-btn').style.display = 'none';
     document.getElementById('qr-scan-line').style.display = 'none';
     document.getElementById('qr-cam-msg').textContent = '카메라 시작 버튼을 눌러주세요';
-  }
-
-  let qrLastScan = 0;
-  function scanQRFrame(ts) {
-    if (!qrScanning) return;
-    if (ts - qrLastScan < 200) { qrAnimFrame = requestAnimationFrame(scanQRFrame); return; }
-    qrLastScan = ts;
-    const video = document.getElementById('qr-video');
-    const canvas = document.getElementById('qr-canvas');
-    if (video.readyState !== video.HAVE_ENOUGH_DATA) { qrAnimFrame = requestAnimationFrame(scanQRFrame); return; }
-    const vw = video.videoWidth, vh = video.videoHeight;
-    if (!vw || !vh) { qrAnimFrame = requestAnimationFrame(scanQRFrame); return; }
-
-    canvas.width = vw;
-    canvas.height = vh;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, vw, vh);
-
-    if (zxingReader) {
-      // ZXing으로 디코딩 (QR + DataMatrix 지원)
-      try {
-        const luminance = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
-        const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminance));
-        const result = zxingReader.decodeBitmap(bitmap);
-        if (result && result.getText()) {
-          if (navigator.vibrate) navigator.vibrate(80);
-          document.getElementById('qr-scan-line').style.display = 'none';
-          handleQRResult(result.getText());
-          return;
-        }
-      } catch(e) { /* 미인식 시 계속 */ }
-    }
-    qrAnimFrame = requestAnimationFrame(scanQRFrame);
   }
 
   function handleQRResult(text) {
@@ -5314,9 +5271,8 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     qrParsed = null;
     document.getElementById('qr-result-box').style.display = 'none';
     document.getElementById('qr-scan-line').style.display = 'block';
-    qrScanning = true;
-    qrAnimFrame = requestAnimationFrame(scanQRFrame);
     document.getElementById('qr-cam-msg').textContent = 'QR 코드를 가이드 안에 맞춰주세요';
+    qrScanning = true;
   }
 
   function submitQRScan() {
@@ -5345,7 +5301,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     document.getElementById('qr-result-box').style.display = 'none';
     qrParsed = null;
     qrScanning = true;
-    qrAnimFrame = requestAnimationFrame(scanQRFrame);
+    document.getElementById('qr-scan-line').style.display = 'block';
     document.getElementById('qr-cam-msg').textContent = '저장 완료! 다음 QR을 스캔해주세요';
   }
 
