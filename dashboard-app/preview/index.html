@@ -5193,11 +5193,24 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
         if (!qrScanning) return;
         qrScanning = false;
         if (navigator.vibrate) navigator.vibrate(80);
-        html5QrScanner.stop().catch(()=>{});
-        document.getElementById('qr-start-btn').style.display = 'block';
-        document.getElementById('qr-stop-btn').style.display = 'none';
-        document.getElementById('qr-cam-msg').textContent = '✓ QR 인식 완료';
-        handleQRResult(decodedText);
+        const showResult = () => {
+          document.getElementById('qr-reader').innerHTML = '';
+          document.getElementById('qr-start-btn').style.display = 'block';
+          document.getElementById('qr-stop-btn').style.display = 'none';
+          document.getElementById('qr-cam-msg').textContent = '✓ QR 인식 완료';
+          handleQRResult(decodedText);
+        };
+        if (html5QrScanner) {
+          html5QrScanner.stop().then(() => {
+            html5QrScanner = null;
+            showResult();
+          }).catch(() => {
+            html5QrScanner = null;
+            showResult();
+          });
+        } else {
+          showResult();
+        }
       },
       () => {} // 미인식 프레임 무시
     ).catch(err => {
@@ -5272,7 +5285,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     document.getElementById('qr-part-badge').textContent  = `Part ${qrParsed.partIndex} / ${qrParsed.totalParts}`;
     const resultBox = document.getElementById('qr-result-box');
     resultBox.style.display = 'block';
-    resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     document.getElementById('qr-cam-msg').textContent = '✓ QR 인식 완료';
     showQRToast('✓ QR 인식! 저장 버튼을 눌러주세요', '#1d4ed8');
   }
