@@ -5330,10 +5330,20 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     }
     document.getElementById('qr-result-box').style.display = 'none';
     qrParsed = null;
-    document.getElementById('qr-start-btn').style.display = 'block';
-    document.getElementById('qr-stop-btn').style.display = 'none';
-    document.getElementById('qr-cam-msg').textContent = '저장 완료! 다음 QR을 스캔하려면 카메라를 시작하세요';
-    showQRToast('✓ 저장 완료!', '#059669');
+    showQRToast('✓ 저장 완료! 다음 QR을 스캔하세요', '#059669');
+    // 저장 후 카메라 자동 재시작
+    document.getElementById('qr-reader').style.display = 'block';
+    if (html5QrScanner) {
+      try {
+        html5QrScanner.resume();
+        document.getElementById('qr-start-btn').style.display = 'none';
+        document.getElementById('qr-stop-btn').style.display = 'block';
+        document.getElementById('qr-cam-msg').textContent = 'QR을 화면 안에 맞춰주세요';
+        return;
+      } catch(e) {}
+    }
+    // resume 실패 시 startQRCamera 호출
+    startQRCamera();
   }
 
   function renderQRScanList() {
