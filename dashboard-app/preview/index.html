@@ -5191,32 +5191,72 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     } catch(e) { alert('연결 실패: ' + e.message); }
   }
 
-  function startQRCamera() {
-    if (!window.ZXing) { alert('스캐너 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.'); return; }
+  async function startQRCamera() {
     const video = document.getElementById('qr-video');
-    zxingReader = new ZXing.BrowserMultiFormatReader();
-    zxingReader.decodeFromConstraints(
-      { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } },
-      video,
-      (result, err) => {
-        if (result && qrScanning) {
-          qrScanning = false; // 중복 호출 방지
-          if (navigator.vibrate) navigator.vibrate(80);
-          document.getElementById('qr-scan-line').style.display = 'none';
-          handleQRResult(result.getText());
-        }
-      }
-    ).catch(err => alert('카메라 접근 실패: ' + err.message));
+    try {
+      qrStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      video.srcObject = qrStream;
+      await video.play();
+    } catch(err) {
+      alert('카메라 접근 실패: ' + err.message);
+      return;
+    }
 
     document.getElementById('qr-start-btn').style.display = 'none';
     document.getElementById('qr-stop-btn').style.display = 'block';
     document.getElementById('qr-scan-line').style.display = 'block';
-    document.getElementById('qr-cam-msg').textContent = 'QR 코드를 가이드 안에 맞춰주세요';
+    document.getElementById('qr-cam-msg').textContent = '스캔 중...';
+    document.getElementById('qr-guide-box').style.outline = '2px solid rgba(245,158,11,0.5)';
     qrScanning = true;
+
+    if ('BarcodeDetector' in window) {
+      // 크롬 안드로이드 네이티브 API (가장 빠름)
+      document.getElementById('qr-cam-msg').textContent = '📷 스캔 중... (네이티브)';
+      const detector = new BarcodeDetector({ formats: ['qr_code', 'data_matrix', 'code_128'] });
+      const nativeScan = async () => {
+        if (!qrScanning) return;
+        try {
+          const codes = await detector.detect(video);
+          if (codes.length > 0 && qrScanning) {
+            qrScanning = false;
+            if (navigator.vibrate) navigator.vibrate(80);
+            document.getElementById('qr-scan-line').style.display = 'none';
+            handleQRResult(codes[0].rawValue);
+            return;
+          }
+        } catch(e) {}
+        qrAnimFrame = requestAnimationFrame(nativeScan);
+      };
+      qrAnimFrame = requestAnimationFrame(nativeScan);
+
+    } else if (window.ZXing) {
+      // ZXing 폴백
+      document.getElementById('qr-cam-msg').textContent = '📷 스캔 중... (ZXing)';
+      zxingReader = new ZXing.BrowserMultiFormatReader();
+      zxingReader.decodeFromConstraints(
+        { video: { facingMode: 'environment' } },
+        video,
+        (result, err) => {
+          if (result && qrScanning) {
+            qrScanning = false;
+            if (navigator.vibrate) navigator.vibrate(80);
+            document.getElementById('qr-scan-line').style.display = 'none';
+            handleQRResult(result.getText());
+          }
+        }
+      ).catch(e => console.warn('ZXing error:', e));
+
+    } else {
+      document.getElementById('qr-cam-msg').textContent = '⚠️ 스캐너 라이브러리 로딩 실패';
+    }
   }
 
   function stopQRCamera() {
+    if (qrAnimFrame) { cancelAnimationFrame(qrAnimFrame); qrAnimFrame = null; }
     if (zxingReader) { zxingReader.reset(); zxingReader = null; }
+    if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
     qrScanning = false;
     const video = document.getElementById('qr-video');
     video.srcObject = null;
@@ -5277,9 +5317,11 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     document.getElementById('qr-r-repair').textContent    = qrParsed.repairDate;
     document.getElementById('qr-r-mileage').textContent   = parseInt(qrParsed.mileage||0).toLocaleString() + ' km';
     document.getElementById('qr-part-badge').textContent  = `Part ${qrParsed.partIndex} / ${qrParsed.totalParts}`;
-    document.getElementById('qr-result-box').style.display = 'block';
+    const resultBox = document.getElementById('qr-result-box');
+    resultBox.style.display = 'block';
+    resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
     document.getElementById('qr-cam-msg').textContent = '✓ QR 인식 완료';
-    showQRToast('✓ QR 인식 완료 — 저장 버튼을 눌러주세요', '#1d4ed8');
+    showQRToast('✓ QR 인식! 저장 버튼을 눌러주세요', '#1d4ed8');
   }
 
   function resetQRResult() {
