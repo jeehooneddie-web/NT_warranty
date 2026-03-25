@@ -17,8 +17,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <!-- SortableJS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-  <!-- ZXing (QR + DataMatrix 지원) -->
-  <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+  <!-- html5-qrcode (모바일 QR 전용 검증 라이브러리) -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 
   <!-- 브랜드 색상 설정 -->
@@ -1464,29 +1464,14 @@
             <span id="qr-webhook-status" style="font-size:11px; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,0.1); color:#94a3b8;">미연동</span>
           </div>
 
-          <!-- 카메라 영역 -->
-          <div style="position:relative; background:#000; width:100%; aspect-ratio:1/1; max-height:380px; overflow:hidden;">
-            <video id="qr-video" style="width:100%; height:100%; object-fit:cover;" playsinline autoplay muted></video>
-            <canvas id="qr-canvas" style="display:none;"></canvas>
-            <!-- 스캔 가이드 박스 -->
-            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
-              <div id="qr-guide-box" style="width:220px; height:220px; position:relative; overflow:hidden;">
-                <span style="position:absolute; top:-2px; left:-2px; width:24px; height:24px; border-top:3px solid #f59e0b; border-left:3px solid #f59e0b; border-radius:4px 0 0 0;"></span>
-                <span style="position:absolute; top:-2px; right:-2px; width:24px; height:24px; border-top:3px solid #f59e0b; border-right:3px solid #f59e0b; border-radius:0 4px 0 0;"></span>
-                <span style="position:absolute; bottom:-2px; left:-2px; width:24px; height:24px; border-bottom:3px solid #f59e0b; border-left:3px solid #f59e0b; border-radius:0 0 0 4px;"></span>
-                <span style="position:absolute; bottom:-2px; right:-2px; width:24px; height:24px; border-bottom:3px solid #f59e0b; border-right:3px solid #f59e0b; border-radius:0 0 4px 0;"></span>
-                <!-- 스캔 라인 -->
-                <div id="qr-scan-line" style="display:none; position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,#f59e0b,transparent); animation:qrScanLine 1.5s linear infinite;"></div>
-              </div>
-            </div>
-            <div id="qr-cam-msg" style="position:absolute; bottom:12px; left:0; right:0; text-align:center; color:rgba(255,255,255,0.8); font-size:13px; text-shadow:0 1px 3px rgba(0,0,0,0.8);">카메라 시작 버튼을 눌러주세요</div>
-          </div>
+          <!-- html5-qrcode 렌더링 영역 -->
+          <div id="qr-reader" style="width:100%; background:#000;"></div>
+          <div id="qr-cam-msg" style="text-align:center; color:rgba(255,255,255,0.8); font-size:13px; padding:8px 16px; background:#0f172a;">카메라 시작 버튼을 눌러주세요</div>
 
           <!-- 카메라 버튼 -->
           <div style="display:flex; gap:10px; padding:12px 16px;">
             <button id="qr-start-btn" onclick="startQRCamera()" style="flex:1; padding:14px; border-radius:12px; background:#1d4ed8; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer;">📷 카메라 시작</button>
-            <button id="qr-capture-btn" onclick="captureQRFrame()" style="flex:1; padding:14px; border-radius:12px; background:#f59e0b; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer; display:none;">🔍 스캔</button>
-            <button id="qr-stop-btn" onclick="stopQRCamera()" style="padding:14px 18px; border-radius:12px; background:#374151; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer; display:none;">⏹</button>
+            <button id="qr-stop-btn" onclick="stopQRCamera()" style="padding:14px 18px; border-radius:12px; background:#374151; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer; display:none;">⏹ 중지</button>
           </div>
 
           <!-- 스캔 결과 -->
@@ -5192,95 +5177,45 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     } catch(e) { alert('연결 실패: ' + e.message); }
   }
 
-  async function startQRCamera() {
-    const video = document.getElementById('qr-video');
-    try {
-      qrStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
-      video.srcObject = qrStream;
-      await video.play();
-    } catch(err) {
-      alert('카메라 접근 실패: ' + err.message);
-      return;
-    }
-    qrScanning = true;
+  let html5QrScanner = null;
+
+  function startQRCamera() {
     document.getElementById('qr-start-btn').style.display = 'none';
-    document.getElementById('qr-capture-btn').style.display = 'block';
     document.getElementById('qr-stop-btn').style.display = 'block';
-    document.getElementById('qr-scan-line').style.display = 'block';
+    document.getElementById('qr-cam-msg').textContent = 'QR을 화면 안에 맞춰주세요';
+    qrScanning = true;
 
-    if ('BarcodeDetector' in window) {
-      // video 엘리먼트 직접 전달 — canvas 변환 없이 네이티브 디코딩
-      const detector = new BarcodeDetector({ formats: ['qr_code','data_matrix','code_128'] });
-      document.getElementById('qr-cam-msg').textContent = 'QR을 화면에 맞추세요 (자동 인식 중)';
-      const loop = async () => {
+    html5QrScanner = new Html5Qrcode('qr-reader');
+    html5QrScanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+      (decodedText) => {
         if (!qrScanning) return;
-        try {
-          const codes = await detector.detect(video);
-          if (codes.length > 0 && qrScanning) {
-            qrScanning = false;
-            if (navigator.vibrate) navigator.vibrate(80);
-            document.getElementById('qr-scan-line').style.display = 'none';
-            handleQRResult(codes[0].rawValue);
-            return;
-          }
-        } catch(e) {}
-        setTimeout(loop, 150);
-      };
-      loop();
-    } else if (window.ZXing) {
-      // ZXing: stream 직접 전달
-      document.getElementById('qr-cam-msg').textContent = 'QR을 화면에 맞추세요 (자동 인식 중)';
-      zxingReader = new ZXing.BrowserMultiFormatReader();
-      zxingReader.decodeFromStream(qrStream, video, (result, err) => {
-        if (result && qrScanning) {
-          qrScanning = false;
-          if (navigator.vibrate) navigator.vibrate(80);
-          document.getElementById('qr-scan-line').style.display = 'none';
-          handleQRResult(result.getText());
-        }
-      });
-    } else {
-      document.getElementById('qr-cam-msg').textContent = 'QR을 화면에 맞추고 🔍 스캔을 누르세요';
-    }
-  }
-
-  async function captureQRFrame() {
-    // 자동인식 안 될 때 수동 캡처 백업
-    const video = document.getElementById('qr-video');
-    if (!video.srcObject || !video.videoWidth) {
-      showQRToast('카메라 준비 중입니다', '#d97706'); return;
-    }
-    document.getElementById('qr-cam-msg').textContent = '분석 중...';
-    if ('BarcodeDetector' in window) {
-      try {
-        const detector = new BarcodeDetector({ formats: ['qr_code','data_matrix','code_128'] });
-        const codes = await detector.detect(video);
-        if (codes.length > 0) {
-          qrScanning = false;
-          if (navigator.vibrate) navigator.vibrate(80);
-          document.getElementById('qr-scan-line').style.display = 'none';
-          handleQRResult(codes[0].rawValue);
-          return;
-        }
-      } catch(e) {}
-    }
-    showQRToast('인식 실패 — QR을 더 가까이 대고 다시 누르세요', '#dc2626');
-    document.getElementById('qr-cam-msg').textContent = 'QR을 화면에 맞추세요 (자동 인식 중)';
+        qrScanning = false;
+        if (navigator.vibrate) navigator.vibrate(80);
+        html5QrScanner.stop().catch(()=>{});
+        document.getElementById('qr-start-btn').style.display = 'block';
+        document.getElementById('qr-stop-btn').style.display = 'none';
+        document.getElementById('qr-cam-msg').textContent = '✓ QR 인식 완료';
+        handleQRResult(decodedText);
+      },
+      () => {} // 미인식 프레임 무시
+    ).catch(err => {
+      alert('카메라 접근 실패: ' + err);
+      document.getElementById('qr-start-btn').style.display = 'block';
+      document.getElementById('qr-stop-btn').style.display = 'none';
+    });
   }
 
   function stopQRCamera() {
     qrScanning = false;
-    if (qrAnimFrame) { cancelAnimationFrame(qrAnimFrame); qrAnimFrame = null; }
-    if (zxingReader) { try { zxingReader.reset(); } catch(e){} zxingReader = null; }
-    if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
-    const video = document.getElementById('qr-video');
-    video.srcObject = null;
+    if (html5QrScanner) {
+      html5QrScanner.stop().catch(()=>{});
+      html5QrScanner = null;
+    }
+    document.getElementById('qr-reader').innerHTML = '';
     document.getElementById('qr-start-btn').style.display = 'block';
-    document.getElementById('qr-capture-btn').style.display = 'none';
     document.getElementById('qr-stop-btn').style.display = 'none';
-    document.getElementById('qr-scan-line').style.display = 'none';
     document.getElementById('qr-cam-msg').textContent = '카메라 시작 버튼을 눌러주세요';
   }
 
@@ -5345,9 +5280,9 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   function resetQRResult() {
     qrParsed = null;
     document.getElementById('qr-result-box').style.display = 'none';
-    document.getElementById('qr-scan-line').style.display = 'block';
-    document.getElementById('qr-cam-msg').textContent = 'QR 코드를 가이드 안에 맞춰주세요';
-    qrScanning = true;
+    document.getElementById('qr-cam-msg').textContent = '카메라 시작 버튼을 눌러주세요';
+    document.getElementById('qr-start-btn').style.display = 'block';
+    document.getElementById('qr-stop-btn').style.display = 'none';
   }
 
   function submitQRScan() {
@@ -5375,9 +5310,9 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     }
     document.getElementById('qr-result-box').style.display = 'none';
     qrParsed = null;
-    qrScanning = true;
-    document.getElementById('qr-scan-line').style.display = 'block';
-    document.getElementById('qr-cam-msg').textContent = '저장 완료! 다음 QR을 스캔해주세요';
+    document.getElementById('qr-start-btn').style.display = 'block';
+    document.getElementById('qr-stop-btn').style.display = 'none';
+    document.getElementById('qr-cam-msg').textContent = '저장 완료! 다음 QR을 스캔하려면 카메라를 시작하세요';
     showQRToast('✓ 저장 완료!', '#059669');
   }
 
