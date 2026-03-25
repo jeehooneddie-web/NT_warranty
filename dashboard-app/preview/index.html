@@ -1476,7 +1476,6 @@
 
           <!-- 스캔 결과 -->
           <div id="qr-result-box" style="display:none; margin:0 16px 12px; background:#1e293b; border-radius:16px; padding:16px; border:1px solid #334155;">
-            <div id="qr-debug-raw" style="color:#f87171; font-size:10px; word-break:break-all; margin-bottom:8px;"></div>
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
               <span style="color:#94a3b8; font-size:12px; font-weight:600;">스캔 결과</span>
               <span id="qr-part-badge" style="font-size:12px; padding:3px 10px; border-radius:20px; background:#92400e; color:#fde68a; font-weight:600;"></span>
@@ -5184,30 +5183,23 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     document.getElementById('qr-start-btn').style.display = 'none';
     document.getElementById('qr-stop-btn').style.display = 'block';
     document.getElementById('qr-cam-msg').textContent = 'QR을 화면 안에 맞춰주세요';
-    qrScanning = true;
 
-    html5QrScanner = new Html5Qrcode('qr-reader');
+    if (!html5QrScanner) {
+      html5QrScanner = new Html5Qrcode('qr-reader');
+    }
     html5QrScanner.start(
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
       (decodedText) => {
-        showQRToast('[DBG] cb fired, scanning=' + qrScanning, '#059669');
-        if (!qrScanning) return;
-        qrScanning = false;
+        // pause()로 즉시 추가 콜백 차단
+        try { html5QrScanner.pause(true); } catch(e) {}
         if (navigator.vibrate) navigator.vibrate(80);
-        // 결과를 먼저 표시 (stop() 비동기와 무관하게)
         document.getElementById('qr-start-btn').style.display = 'block';
         document.getElementById('qr-stop-btn').style.display = 'none';
         document.getElementById('qr-cam-msg').textContent = '✓ QR 인식 완료';
         handleQRResult(decodedText);
-        // 카메라 정지는 뒤에서 비동기 처리
-        if (html5QrScanner) {
-          const s = html5QrScanner;
-          html5QrScanner = null;
-          setTimeout(() => { s.stop().catch(()=>{}); }, 200);
-        }
       },
-      () => {} // 미인식 프레임 무시
+      () => {}
     ).catch(err => {
       alert('카메라 접근 실패: ' + err);
       document.getElementById('qr-start-btn').style.display = 'block';
@@ -5216,12 +5208,15 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   }
 
   function stopQRCamera() {
-    qrScanning = false;
     if (html5QrScanner) {
-      html5QrScanner.stop().catch(()=>{});
-      html5QrScanner = null;
+      html5QrScanner.stop().then(() => {
+        html5QrScanner = null;
+        document.getElementById('qr-reader').innerHTML = '';
+      }).catch(() => {
+        html5QrScanner = null;
+        document.getElementById('qr-reader').innerHTML = '';
+      });
     }
-    document.getElementById('qr-reader').innerHTML = '';
     document.getElementById('qr-start-btn').style.display = 'block';
     document.getElementById('qr-stop-btn').style.display = 'none';
     document.getElementById('qr-cam-msg').textContent = '카메라 시작 버튼을 눌러주세요';
@@ -5243,7 +5238,6 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   }
 
   function handleQRResult(text) {
-    showQRToast('[DBG] called: ' + text.substring(0,30), '#7c3aed');
     const f = text.split(',');
     if (f.length < 12) {
       showQRToast('필드 부족(' + f.length + ') — 다시 시도해주세요', '#dc2626');
@@ -5289,6 +5283,16 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   function resetQRResult() {
     qrParsed = null;
     document.getElementById('qr-result-box').style.display = 'none';
+    // 카메라가 pause 상태이면 resume하여 바로 재스캔
+    if (html5QrScanner) {
+      try {
+        html5QrScanner.resume();
+        document.getElementById('qr-start-btn').style.display = 'none';
+        document.getElementById('qr-stop-btn').style.display = 'block';
+        document.getElementById('qr-cam-msg').textContent = 'QR을 화면 안에 맞춰주세요';
+        return;
+      } catch(e) {}
+    }
     document.getElementById('qr-cam-msg').textContent = '카메라 시작 버튼을 눌러주세요';
     document.getElementById('qr-start-btn').style.display = 'block';
     document.getElementById('qr-stop-btn').style.display = 'none';
