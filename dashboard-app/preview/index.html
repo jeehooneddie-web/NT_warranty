@@ -282,7 +282,7 @@
   <!-- ===================
        사이드바 (260px 고정)
        =================== -->
-  <aside class="w-[260px] flex-shrink-0 flex flex-col overflow-y-auto" style="background:#1e3a5f;">
+  <aside id="main-sidebar" class="w-[260px] flex-shrink-0 flex flex-col overflow-y-auto" style="background:#1e3a5f;">
 
     <!-- 로고 영역 -->
     <div class="sidebar-logo px-5 py-6 border-b border-white/10">
@@ -5008,9 +5008,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
 
   function enterAsQR() {
     document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app-layout').classList.remove('hidden');
-    document.getElementById('sidebar').style.display = 'none';
-    document.getElementById('main-content').style.marginLeft = '0';
+    document.getElementById('main-sidebar').style.display = 'none';
     showView('view-qr-scanner');
   }
 
@@ -5020,6 +5018,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     document.getElementById('login-email').value = '';
     document.getElementById('login-pw').value = '';
     document.getElementById('login-error').classList.add('hidden');
+    document.getElementById('main-sidebar').style.display = '';
     document.getElementById('login-screen').style.display = 'flex';
   }
 
