@@ -5226,47 +5226,20 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   let qrLastScan = 0;
   function scanQRFrame(ts) {
     if (!qrScanning) return;
-    // 100ms 간격으로만 처리 (배터리 절약 + 안정성)
-    if (ts - qrLastScan < 100) { qrAnimFrame = requestAnimationFrame(scanQRFrame); return; }
+    if (ts - qrLastScan < 150) { qrAnimFrame = requestAnimationFrame(scanQRFrame); return; }
     qrLastScan = ts;
     const video = document.getElementById('qr-video');
     const canvas = document.getElementById('qr-canvas');
     if (video.readyState !== video.HAVE_ENOUGH_DATA) { qrAnimFrame = requestAnimationFrame(scanQRFrame); return; }
-
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw || !vh) { qrAnimFrame = requestAnimationFrame(scanQRFrame); return; }
-
-    // object-fit:cover 정사각형 컨테이너 기준으로 가이드박스 크롭 정확히 계산
-    const container = video.parentElement;
-    const S = container.clientWidth || container.offsetWidth || 375; // 컨테이너 CSS 크기
-    const guideCSS = 220; // 가이드 박스 CSS 크기
-
-    let cropX, cropY, cropSize;
-    if (vw >= vh) {
-      // 가로 영상: 높이 기준으로 scale, 좌우 크롭
-      const scale = vh / S;
-      cropX = Math.floor((vw - vh) / 2 + ((S - guideCSS) / 2) * scale);
-      cropY = Math.floor(((S - guideCSS) / 2) * scale);
-      cropSize = Math.floor(guideCSS * scale);
-    } else {
-      // 세로 영상: 너비 기준으로 scale, 상하 크롭
-      const scale = vw / S;
-      cropX = Math.floor(((S - guideCSS) / 2) * scale);
-      cropY = Math.floor((vh - vw) / 2 + ((S - guideCSS) / 2) * scale);
-      cropSize = Math.floor(guideCSS * scale);
-    }
-
-    // 범위 보정
-    cropX = Math.max(0, Math.min(cropX, vw - cropSize));
-    cropY = Math.max(0, Math.min(cropY, vh - cropSize));
-    cropSize = Math.max(1, cropSize);
-
-    canvas.width = cropSize;
-    canvas.height = cropSize;
+    // 전체 프레임 스캔 (크롭 없음 — 좌표 계산 오차 제거)
+    canvas.width = vw;
+    canvas.height = vh;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize);
-    const img = ctx.getImageData(0, 0, cropSize, cropSize);
-    const code = jsQR(img.data, cropSize, cropSize, { inversionAttempts: 'attemptBoth' });
+    ctx.drawImage(video, 0, 0, vw, vh);
+    const img = ctx.getImageData(0, 0, vw, vh);
+    const code = jsQR(img.data, vw, vh, { inversionAttempts: 'attemptBoth' });
     if (code) {
       if (navigator.vibrate) navigator.vibrate(80);
       document.getElementById('qr-scan-line').style.display = 'none';
