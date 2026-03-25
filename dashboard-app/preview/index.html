@@ -265,6 +265,10 @@
         class="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors">
         번역기 바로 사용하기
       </button>
+      <button onclick="enterAsQRCompareTest()"
+        class="flex-1 py-2.5 bg-amber-500 text-white rounded-lg text-sm font-semibold hover:bg-amber-600 transition-colors">
+        🔍 고품 비교 테스트
+      </button>
     </div>
     <p class="text-center text-xs text-slate-400 mt-3">일반 사용자는 보증번역기만 이용 가능합니다</p>
   </div>
@@ -1539,6 +1543,63 @@
 
         </div>
       </div><!-- /view-qr-scanner -->
+
+      <!-- =============================================
+           뷰: 고품 비교 테스트 (비로그인 접근 가능)
+           ============================================= -->
+      <div id="view-qr-compare-test" class="view hidden" style="background:#0f172a; min-height:100vh; width:100%;">
+        <div style="max-width:600px; margin:0 auto; padding:0; display:flex; flex-direction:column; min-height:100vh;">
+          <!-- 헤더 -->
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px 10px; background:#1e3a5f;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <button onclick="document.getElementById('login-screen').style.display='flex'; document.getElementById('view-qr-compare-test').classList.add('hidden');" style="background:rgba(255,255,255,0.15); border:none; border-radius:8px; padding:6px 10px; color:#fff; font-size:13px; cursor:pointer;">← 뒤로</button>
+              <span style="color:#fff; font-weight:700; font-size:15px;">🔍 고품 비교 테스트</span>
+            </div>
+            <span style="font-size:11px; color:#94a3b8; background:rgba(255,255,255,0.1); padding:4px 10px; border-radius:20px;">샘플 데이터</span>
+          </div>
+
+          <!-- 설명 -->
+          <div style="margin:12px 16px; padding:12px; background:#1e293b; border-radius:12px; border:1px solid #334155;">
+            <div style="color:#94a3b8; font-size:12px; line-height:1.6;">
+              <b style="color:#f1f5f9;">비교 기준:</b> 클레임번호 + 디펙트코드<br>
+              CLAIM_DATA(청구이력) vs QR 스캔 목록 대조
+            </div>
+          </div>
+
+          <!-- 버튼 -->
+          <div style="display:flex; gap:8px; padding:0 16px 12px;">
+            <button onclick="runQRCompareTest()" style="flex:1; padding:12px; border-radius:10px; background:#1d4ed8; color:#fff; font-size:14px; font-weight:700; border:none; cursor:pointer;">▶ 비교 실행</button>
+            <button onclick="loadRealScans()" style="flex:1; padding:12px; border-radius:10px; background:#059669; color:#fff; font-size:14px; font-weight:700; border:none; cursor:pointer;">📋 실제 스캔 불러오기</button>
+          </div>
+
+          <!-- 스캔 데이터 현황 -->
+          <div style="margin:0 16px 12px; display:flex; gap:8px;">
+            <div id="qrct-stat-claim" style="flex:1; background:#1e293b; border-radius:10px; padding:10px; text-align:center; border:1px solid #334155;">
+              <div style="color:#64748b; font-size:11px; margin-bottom:4px;">청구 이력</div>
+              <div id="qrct-claim-count" style="color:#f1f5f9; font-size:20px; font-weight:700;">-</div>
+            </div>
+            <div style="flex:1; background:#1e293b; border-radius:10px; padding:10px; text-align:center; border:1px solid #334155;">
+              <div style="color:#64748b; font-size:11px; margin-bottom:4px;">QR 스캔</div>
+              <div id="qrct-scan-count" style="color:#f1f5f9; font-size:20px; font-weight:700;">-</div>
+            </div>
+            <div style="flex:1; background:#1e293b; border-radius:10px; padding:10px; text-align:center; border:1px solid #334155;">
+              <div style="color:#64748b; font-size:11px; margin-bottom:4px;">미수거</div>
+              <div id="qrct-missing-count" style="color:#f87171; font-size:20px; font-weight:700;">-</div>
+            </div>
+            <div style="flex:1; background:#1e293b; border-radius:10px; padding:10px; text-align:center; border:1px solid #334155;">
+              <div style="color:#64748b; font-size:11px; margin-bottom:4px;">불일치</div>
+              <div id="qrct-extra-count" style="color:#fbbf24; font-size:20px; font-weight:700;">-</div>
+            </div>
+          </div>
+
+          <!-- 결과 테이블 -->
+          <div style="flex:1; padding:0 16px 24px;">
+            <div id="qrct-result" style="display:flex; flex-direction:column; gap:6px;">
+              <div style="color:#475569; font-size:13px; text-align:center; padding:32px 0;">비교 실행 버튼을 눌러주세요</div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /view-qr-compare-test -->
 
       <!-- =============================================
            뷰: TOP DEFECT
@@ -5131,7 +5192,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   const QR_DEALER_MAP = {'26999':'전주','40699':'군산','41967':'목포','41968':'서산','44835':'평택'};
   const QR_SCAN_KEY = 'qr_scans_today';
   let qrParsed = null;
-  const QR_WEBHOOK_DEFAULT = 'https://script.google.com/macros/s/AKfycby3A2QdsWdGoSH7KpKwVEimLhWWjwvYWEcWluI_lsN0Efdk20Of0-BwaX4Fh8_qclPp/exec';
+  const QR_WEBHOOK_DEFAULT = 'https://script.google.com/macros/s/AKfycbwizdp1sccTrQ4_ck1QgsS0DsaH-a7hO5BVrYVGNsH2oyr3ZNjdHI9JNWRKifEBrFdA/exec';
 
   function initQRScanner() {
     const saved = localStorage.getItem('qr_webhook_url') || QR_WEBHOOK_DEFAULT;
