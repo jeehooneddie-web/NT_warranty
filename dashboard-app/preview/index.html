@@ -5199,7 +5199,8 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
       { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } },
       video,
       (result, err) => {
-        if (result) {
+        if (result && qrScanning) {
+          qrScanning = false; // 중복 호출 방지
           if (navigator.vibrate) navigator.vibrate(80);
           document.getElementById('qr-scan-line').style.display = 'none';
           handleQRResult(result.getText());
@@ -5225,13 +5226,26 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     document.getElementById('qr-cam-msg').textContent = '카메라 시작 버튼을 눌러주세요';
   }
 
+  function showQRToast(msg, color) {
+    let toast = document.getElementById('qr-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'qr-toast';
+      toast.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:700;color:#fff;transition:opacity 0.4s;';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.background = color || '#059669';
+    toast.style.opacity = '1';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+  }
+
   function handleQRResult(text) {
-    qrScanning = false;
     const f = text.split(',');
     if (f.length < 12) {
-      document.getElementById('qr-cam-msg').textContent = '알 수 없는 QR 형식입니다. 다시 시도해주세요.';
+      showQRToast('알 수 없는 형식 — 다시 시도해주세요', '#dc2626');
       qrScanning = true;
-      qrAnimFrame = requestAnimationFrame(scanQRFrame);
       return;
     }
     qrParsed = {
@@ -5265,6 +5279,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     document.getElementById('qr-part-badge').textContent  = `Part ${qrParsed.partIndex} / ${qrParsed.totalParts}`;
     document.getElementById('qr-result-box').style.display = 'block';
     document.getElementById('qr-cam-msg').textContent = '✓ QR 인식 완료';
+    showQRToast('✓ QR 인식 완료 — 저장 버튼을 눌러주세요', '#1d4ed8');
   }
 
   function resetQRResult() {
@@ -5303,6 +5318,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     qrScanning = true;
     document.getElementById('qr-scan-line').style.display = 'block';
     document.getElementById('qr-cam-msg').textContent = '저장 완료! 다음 QR을 스캔해주세요';
+    showQRToast('✓ 저장 완료!', '#059669');
   }
 
   function renderQRScanList() {
