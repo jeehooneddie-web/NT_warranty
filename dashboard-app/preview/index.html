@@ -270,6 +270,12 @@
         📷 고품 QR 스캔
       </button>
     </div>
+    <div class="flex gap-2 mt-2">
+      <button onclick="enterAsQRCompare()"
+        class="flex-1 py-2.5 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors">
+        🔍 고품 수거 비교 [TEST]
+      </button>
+    </div>
     <p class="text-center text-xs text-slate-400 mt-3">일반 사용자는 보증번역기만 이용 가능합니다</p>
   </div>
 </div>
@@ -1543,6 +1549,62 @@
 
         </div>
       </div><!-- /view-qr-scanner -->
+
+      <!-- =============================================
+           뷰: 고품 수거 비교 (TEST)
+           ============================================= -->
+      <div id="view-qr-compare" class="view hidden" style="background:#0f172a; min-height:100vh; width:100%;">
+        <div style="max-width:600px; margin:0 auto; display:flex; flex-direction:column; min-height:100vh;">
+          <!-- 헤더 -->
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px 10px; background:#1e3a5f;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <button onclick="sessionStorage.getItem('nm_role') ? showView('view-notices') : doLogout()" style="background:rgba(255,255,255,0.15); border:none; border-radius:8px; padding:6px 10px; color:#fff; font-size:13px; cursor:pointer;">← 뒤로</button>
+              <span style="color:#fff; font-weight:700; font-size:15px;">🔍 고품 수거 비교</span>
+            </div>
+            <span style="font-size:11px; color:#fbbf24; background:rgba(255,255,255,0.1); padding:4px 10px; border-radius:20px;">전주 2026-03-24</span>
+          </div>
+
+          <!-- 통계 카드 -->
+          <div style="display:flex; gap:8px; padding:12px 16px 8px;">
+            <div style="flex:1; background:#1e293b; border-radius:10px; padding:10px; text-align:center; border:1px solid #334155;">
+              <div style="color:#64748b; font-size:10px; margin-bottom:4px;">청구이력</div>
+              <div id="cmp-total" style="color:#f1f5f9; font-size:20px; font-weight:700;">35</div>
+            </div>
+            <div style="flex:1; background:#1e293b; border-radius:10px; padding:10px; text-align:center; border:1px solid #334155;">
+              <div style="color:#64748b; font-size:10px; margin-bottom:4px;">스캔완료</div>
+              <div id="cmp-scanned" style="color:#34d399; font-size:20px; font-weight:700;">-</div>
+            </div>
+            <div style="flex:1; background:#1e293b; border-radius:10px; padding:10px; text-align:center; border:1px solid #334155;">
+              <div style="color:#64748b; font-size:10px; margin-bottom:4px;">미수거</div>
+              <div id="cmp-missing" style="color:#f87171; font-size:20px; font-weight:700;">-</div>
+            </div>
+            <div style="flex:1; background:#1e293b; border-radius:10px; padding:10px; text-align:center; border:1px solid #334155;">
+              <div style="color:#64748b; font-size:10px; margin-bottom:4px;">불일치</div>
+              <div id="cmp-extra" style="color:#fbbf24; font-size:20px; font-weight:700;">-</div>
+            </div>
+          </div>
+
+          <!-- 새로고침 버튼 -->
+          <div style="padding:0 16px 10px;">
+            <button onclick="runQRCompare()" style="width:100%; padding:12px; border-radius:10px; background:#1d4ed8; color:#fff; font-size:14px; font-weight:700; border:none; cursor:pointer;">🔄 Sheets에서 스캔 데이터 불러오기</button>
+          </div>
+
+          <!-- 결과 탭 -->
+          <div style="display:flex; gap:0; padding:0 16px 8px;">
+            <button id="cmp-tab-all"     onclick="setCmpTab('all')"     style="flex:1; padding:8px; font-size:12px; font-weight:600; border:1px solid #334155; background:#1d4ed8; color:#fff; border-radius:8px 0 0 8px; cursor:pointer;">전체</button>
+            <button id="cmp-tab-missing" onclick="setCmpTab('missing')" style="flex:1; padding:8px; font-size:12px; font-weight:600; border:1px solid #334155; background:#1e293b; color:#f87171; border-radius:0; cursor:pointer;">미수거</button>
+            <button id="cmp-tab-ok"      onclick="setCmpTab('ok')"      style="flex:1; padding:8px; font-size:12px; font-weight:600; border:1px solid #334155; background:#1e293b; color:#34d399; border-radius:0; cursor:pointer;">완료</button>
+            <button id="cmp-tab-extra"   onclick="setCmpTab('extra')"   style="flex:1; padding:8px; font-size:12px; font-weight:600; border:1px solid #334155; background:#1e293b; color:#fbbf24; border-radius:0 8px 8px 0; cursor:pointer;">불일치</button>
+          </div>
+
+          <!-- 결과 목록 -->
+          <div style="flex:1; padding:0 16px 24px; overflow-y:auto;">
+            <div id="cmp-result" style="display:flex; flex-direction:column; gap:6px;">
+              <div style="color:#475569; font-size:13px; text-align:center; padding:32px 0;">위 버튼을 눌러 비교를 실행하세요</div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /view-qr-compare -->
 
       <!-- =============================================
            뷰: TOP DEFECT
@@ -5012,6 +5074,127 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     showView('view-qr-scanner');
   }
 
+  function enterAsQRCompare() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-sidebar').style.display = 'none';
+    showView('view-qr-compare');
+  }
+
+  /* ── 고품 수거 비교 ── */
+  // 기준 데이터: 전주 2026-03-24 청구이력 (BSI/TC/RECALL/LOCAL TC 제외, 부품금액 있는 건)
+  const QR_COMPARE_CLAIMS = [
+    {claimNo:'WC248610', defectCode:'6312356700'},
+    {claimNo:'WC248611', defectCode:'3112073900'},
+    {claimNo:'WC248614', defectCode:'12560600'},
+    {claimNo:'WC248618', defectCode:'3234013200'},
+    {claimNo:'WC248622', defectCode:'12550600'},
+    {claimNo:'WC248625', defectCode:'12560600'},
+    {claimNo:'WC248626', defectCode:'3234013200'},
+    {claimNo:'WC248627', defectCode:'12560600'},
+    {claimNo:'WC248628', defectCode:'12670600'},
+    {claimNo:'WC248629', defectCode:'3160054800'},
+    {claimNo:'WC248630', defectCode:'8761610000'},
+    {claimNo:'WC248632', defectCode:'1362291500'},
+    {claimNo:'WC248633', defectCode:'3112074800'},
+    {claimNo:'WC248634', defectCode:'8761610000'},
+    {claimNo:'WC248637', defectCode:'1372014800'},
+    {claimNo:'WC248638', defectCode:'3112074800'},
+    {claimNo:'WC248639', defectCode:'4163005200'},
+    {claimNo:'WC248640', defectCode:'12550600'},
+    {claimNo:'WC248641', defectCode:'12560600'},
+    {claimNo:'WC248642', defectCode:'3112073900'},
+    {claimNo:'WC248644', defectCode:'8761610000'},
+    {claimNo:'WC248648', defectCode:'8761610000'},
+    {claimNo:'WC248650', defectCode:'12550600'},
+    {claimNo:'WC248652', defectCode:'1372014800'},
+    {claimNo:'WC248653', defectCode:'12380600'},
+    {claimNo:'WC248654', defectCode:'8761610000'},
+    {claimNo:'WC248655', defectCode:'12560600'},
+    {claimNo:'WC248656', defectCode:'5124233900'},
+    {claimNo:'WC248659', defectCode:'3234013200'},
+    {claimNo:'WC248664', defectCode:'3112073900'},
+    {claimNo:'WC248665', defectCode:'12560600'},
+    {claimNo:'WC248667', defectCode:'12560600'},
+    {claimNo:'WC248668', defectCode:'12560600'},
+    {claimNo:'WC248669', defectCode:'12570600'},
+    {claimNo:'WC248670', defectCode:'12560600'},
+  ];
+
+  let cmpTab = 'all';
+  let cmpData = { ok: [], missing: [], extra: [] };
+
+  function setCmpTab(tab) {
+    cmpTab = tab;
+    ['all','missing','ok','extra'].forEach(t => {
+      const btn = document.getElementById('cmp-tab-' + t);
+      btn.style.background = t === tab ? '#1d4ed8' : '#1e293b';
+      btn.style.color = t === tab ? '#fff' : (t==='missing'?'#f87171':t==='ok'?'#34d399':t==='extra'?'#fbbf24':'#94a3b8');
+    });
+    renderCmpResult();
+  }
+
+  function renderCmpResult() {
+    const el = document.getElementById('cmp-result');
+    let items = [];
+    if (cmpTab === 'all') {
+      items = [
+        ...cmpData.ok.map(r => ({...r, status:'ok'})),
+        ...cmpData.missing.map(r => ({...r, status:'missing'})),
+        ...cmpData.extra.map(r => ({...r, status:'extra'})),
+      ];
+    } else {
+      items = cmpData[cmpTab].map(r => ({...r, status: cmpTab}));
+    }
+    if (!items.length) {
+      el.innerHTML = '<div style="color:#475569; font-size:13px; text-align:center; padding:24px 0;">해당 항목 없음</div>';
+      return;
+    }
+    const statusInfo = {
+      ok:      { label:'수거완료', color:'#34d399', bg:'#052e16' },
+      missing: { label:'미수거',   color:'#f87171', bg:'#2d0a0a' },
+      extra:   { label:'불일치',   color:'#fbbf24', bg:'#1c1407' },
+    };
+    el.innerHTML = items.map(r => {
+      const s = statusInfo[r.status];
+      return `<div style="background:#1e293b; border-radius:10px; padding:10px 14px; border-left:3px solid ${s.color}; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="color:#f1f5f9; font-size:13px; font-weight:700; font-family:monospace;">${r.claimNo}</div>
+          <div style="color:#64748b; font-size:11px; margin-top:2px;">${r.defectCode}</div>
+        </div>
+        <span style="font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; background:${s.bg}; color:${s.color};">${s.label}</span>
+      </div>`;
+    }).join('');
+  }
+
+  async function runQRCompare() {
+    const btn = document.querySelector('#view-qr-compare button');
+    btn.textContent = '⏳ 불러오는 중...';
+    btn.disabled = true;
+    try {
+      const res = await fetch(QR_WEBHOOK_DEFAULT, { method: 'GET' });
+      const scans = await res.json();
+
+      // 스캔 키 Set: claimNo + defectCode
+      const scanKeys = new Set(scans.map(s => `${s['클레임번호']}|${s['디펙트코드']}`));
+      const claimKeys = new Set(QR_COMPARE_CLAIMS.map(c => `${c.claimNo}|${c.defectCode}`));
+
+      cmpData.ok      = QR_COMPARE_CLAIMS.filter(c => scanKeys.has(`${c.claimNo}|${c.defectCode}`));
+      cmpData.missing = QR_COMPARE_CLAIMS.filter(c => !scanKeys.has(`${c.claimNo}|${c.defectCode}`));
+      cmpData.extra   = scans
+        .filter(s => !claimKeys.has(`${s['클레임번호']}|${s['디펙트코드']}`))
+        .map(s => ({ claimNo: s['클레임번호'], defectCode: s['디펙트코드'] }));
+
+      document.getElementById('cmp-scanned').textContent = cmpData.ok.length;
+      document.getElementById('cmp-missing').textContent = cmpData.missing.length;
+      document.getElementById('cmp-extra').textContent   = cmpData.extra.length;
+      renderCmpResult();
+    } catch(e) {
+      alert('데이터 불러오기 실패: ' + e.message);
+    } finally {
+      btn.textContent = '🔄 Sheets에서 스캔 데이터 불러오기';
+      btn.disabled = false;
+    }
+  }
 
   function doLogout() {
     sessionStorage.removeItem('nm_role');
