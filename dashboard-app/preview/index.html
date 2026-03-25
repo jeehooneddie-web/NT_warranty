@@ -201,6 +201,10 @@
 
     /* 테이블 호버 */
     tbody tr:hover { background: #f8fafc; }
+  @keyframes qrScanLine {
+    0%   { top: 0; }
+    100% { top: 100%; }
+  }
   </style>
 </head>
 <body class="font-sans antialiased">
@@ -1460,11 +1464,13 @@
             <canvas id="qr-canvas" style="display:none;"></canvas>
             <!-- 스캔 가이드 박스 -->
             <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
-              <div style="width:220px; height:220px; position:relative;">
+              <div id="qr-guide-box" style="width:220px; height:220px; position:relative; overflow:hidden;">
                 <span style="position:absolute; top:-2px; left:-2px; width:24px; height:24px; border-top:3px solid #f59e0b; border-left:3px solid #f59e0b; border-radius:4px 0 0 0;"></span>
                 <span style="position:absolute; top:-2px; right:-2px; width:24px; height:24px; border-top:3px solid #f59e0b; border-right:3px solid #f59e0b; border-radius:0 4px 0 0;"></span>
                 <span style="position:absolute; bottom:-2px; left:-2px; width:24px; height:24px; border-bottom:3px solid #f59e0b; border-left:3px solid #f59e0b; border-radius:0 0 0 4px;"></span>
                 <span style="position:absolute; bottom:-2px; right:-2px; width:24px; height:24px; border-bottom:3px solid #f59e0b; border-right:3px solid #f59e0b; border-radius:0 0 4px 0;"></span>
+                <!-- 스캔 라인 -->
+                <div id="qr-scan-line" style="display:none; position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,#f59e0b,transparent); animation:qrScanLine 1.5s linear infinite;"></div>
               </div>
             </div>
             <div id="qr-cam-msg" style="position:absolute; bottom:12px; left:0; right:0; text-align:center; color:rgba(255,255,255,0.8); font-size:13px; text-shadow:0 1px 3px rgba(0,0,0,0.8);">카메라 시작 버튼을 눌러주세요</div>
@@ -5181,6 +5187,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
         document.getElementById('qr-start-btn').style.display = 'none';
         document.getElementById('qr-stop-btn').style.display = 'block';
         document.getElementById('qr-cam-msg').textContent = 'QR 코드를 가이드 안에 맞춰주세요';
+        document.getElementById('qr-scan-line').style.display = 'block';
         qrScanning = true;
         requestAnimationFrame(scanQRFrame);
       })
@@ -5195,6 +5202,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     video.srcObject = null;
     document.getElementById('qr-start-btn').style.display = 'block';
     document.getElementById('qr-stop-btn').style.display = 'none';
+    document.getElementById('qr-scan-line').style.display = 'none';
     document.getElementById('qr-cam-msg').textContent = '카메라 시작 버튼을 눌러주세요';
   }
 
@@ -5203,13 +5211,21 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     const video = document.getElementById('qr-video');
     const canvas = document.getElementById('qr-canvas');
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      const vw = video.videoWidth, vh = video.videoHeight;
+      // 가이드 박스(220px) 비율에 맞춰 영상 중앙 크롭
+      const boxRatio = 220 / Math.min(video.clientWidth, video.clientHeight || video.clientWidth);
+      const cropSize = Math.floor(Math.min(vw, vh) * boxRatio * 1.1);
+      const cx = Math.floor((vw - cropSize) / 2);
+      const cy = Math.floor((vh - cropSize) / 2);
+      canvas.width = cropSize;
+      canvas.height = cropSize;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+      ctx.drawImage(video, cx, cy, cropSize, cropSize, 0, 0, cropSize, cropSize);
+      const img = ctx.getImageData(0, 0, cropSize, cropSize);
+      const code = jsQR(img.data, cropSize, cropSize, { inversionAttempts: 'attemptBoth' });
       if (code) {
+        if (navigator.vibrate) navigator.vibrate(60);
+        document.getElementById('qr-scan-line').style.display = 'none';
         handleQRResult(code.data);
         return;
       }
@@ -5262,6 +5278,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   function resetQRResult() {
     qrParsed = null;
     document.getElementById('qr-result-box').style.display = 'none';
+    document.getElementById('qr-scan-line').style.display = 'block';
     qrScanning = true;
     qrAnimFrame = requestAnimationFrame(scanQRFrame);
     document.getElementById('qr-cam-msg').textContent = 'QR 코드를 가이드 안에 맞춰주세요';
