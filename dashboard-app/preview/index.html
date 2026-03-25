@@ -5148,9 +5148,10 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   let qrAnimFrame = null;
   let qrParsed = null;
   let zxingReader = null;
+  const QR_WEBHOOK_DEFAULT = 'https://script.google.com/macros/s/AKfycby3A2QdsWdGoSH7KpKwVEimLhWWjwvYWEcWluI_lsN0Efdk20Of0-BwaX4Fh8_qclPp/exec';
 
   function initQRScanner() {
-    const saved = localStorage.getItem('qr_webhook_url') || '';
+    const saved = localStorage.getItem('qr_webhook_url') || QR_WEBHOOK_DEFAULT;
     document.getElementById('qr-webhook-url').value = saved;
     updateWebhookStatus(saved);
     renderQRScanList();
@@ -5319,7 +5320,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     localStorage.setItem(QR_SCAN_KEY, JSON.stringify(existing));
     renderQRScanList();
     // Google Sheets 전송
-    const webhookUrl = localStorage.getItem('qr_webhook_url') || '';
+    const webhookUrl = localStorage.getItem('qr_webhook_url') || QR_WEBHOOK_DEFAULT;
     if (webhookUrl) {
       fetch(webhookUrl, {
         method: 'POST',
