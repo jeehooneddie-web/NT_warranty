@@ -5002,16 +5002,6 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
     applyRole('user');
   }
 
-  function enterAsQR() {
-    // QR 전용 진입: 로그인 없이 QR 스캐너만 접근
-    document.getElementById('login-screen').style.display = 'none';
-    // QR 메뉴만 표시 (admin-only 숨김 유지)
-    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-    // QR nav 항목만 강제 표시
-    const qrNav = document.querySelector('[data-view="view-qr-scanner"]');
-    if (qrNav) qrNav.style.display = '';
-    showView('view-qr-scanner');
-  }
 
   function doLogout() {
     sessionStorage.removeItem('nm_role');
@@ -5140,10 +5130,7 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   /* ── 고품 QR 스캐너 ── */
   const QR_DEALER_MAP = {'26999':'전주','40699':'군산','41967':'목포','41968':'서산','44835':'평택'};
   const QR_SCAN_KEY = 'qr_scans_today';
-  let qrStream = null;
-  let qrAnimFrame = null;
   let qrParsed = null;
-  let zxingReader = null;
   const QR_WEBHOOK_DEFAULT = 'https://script.google.com/macros/s/AKfycby3A2QdsWdGoSH7KpKwVEimLhWWjwvYWEcWluI_lsN0Efdk20Of0-BwaX4Fh8_qclPp/exec';
 
   function initQRScanner() {
@@ -5182,7 +5169,6 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   }
 
   let html5QrScanner = null;
-
   function startQRCamera() {
     document.getElementById('qr-start-btn').style.display = 'none';
     document.getElementById('qr-stop-btn').style.display = 'block';
