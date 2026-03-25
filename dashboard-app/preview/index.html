@@ -5191,13 +5191,16 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
       (decodedText) => {
-        // pause()로 즉시 추가 콜백 차단
         try { html5QrScanner.pause(true); } catch(e) {}
         if (navigator.vibrate) navigator.vibrate(80);
         document.getElementById('qr-start-btn').style.display = 'block';
         document.getElementById('qr-stop-btn').style.display = 'none';
         document.getElementById('qr-cam-msg').textContent = '✓ QR 인식 완료';
-        handleQRResult(decodedText);
+        try {
+          handleQRResult(decodedText);
+        } catch(e) {
+          alert('handleQRResult 오류: ' + e.message + '\ntext=' + decodedText);
+        }
       },
       () => {}
     ).catch(err => {
@@ -5238,10 +5241,10 @@ const WHOLESALE_DATA={"보증마감":{"AG Goodwill":{"25-01":{"charge":{"amount"
   }
 
   function handleQRResult(text) {
+    alert('[QR] text=' + text);  // DEBUG
     const f = text.split(',');
     if (f.length < 12) {
-      showQRToast('필드 부족(' + f.length + ') — 다시 시도해주세요', '#dc2626');
-      qrScanning = true;
+      alert('필드 부족: ' + f.length + '개\n' + text);
       return;
     }
     qrParsed = {
