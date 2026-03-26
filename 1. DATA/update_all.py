@@ -376,12 +376,12 @@ try:
     df_cl = pd.read_excel(RAW_TMP, sheet_name='Claim 상세_전체', header=1, engine='openpyxl')
     cc = df_cl.columns.tolist()
     cc_claim=cc[7]; cc_defect=cc[12]; cc_vin=cc[18]
-    cc_branch=cc[5]; cc_repair=cc[26]
-    df_cl['_rep'] = pd.to_datetime(df_cl[cc_repair], errors='coerce')
+    cc_branch=cc[5]; cc_cdate=cc[13]  # N열: 클레임생성일자
+    df_cl['_cdate'] = pd.to_datetime(df_cl[cc_cdate], errors='coerce')
     df_cl_2026 = df_cl[
         df_cl[cc_claim].notna() &
         df_cl[cc_claim].astype(str).str.startswith('WC') &
-        (df_cl['_rep'].dt.year >= 2026)
+        (df_cl['_cdate'].dt.year >= 2026)
     ].copy()
     qr_seen = {}
     qr_claim_rows = []
@@ -394,10 +394,10 @@ try:
         vin7 = vin[-7:] if len(vin) >= 7 else vin
         branch = str(r[cc_branch]).replace('AS_','').strip()
         try:
-            rep_str = pd.to_datetime(r[cc_repair]).strftime('%Y-%m-%d') if pd.notna(r[cc_repair]) else ''
+            cdate_str = pd.to_datetime(r[cc_cdate]).strftime('%Y-%m-%d') if pd.notna(r[cc_cdate]) else ''
         except Exception:
-            rep_str = ''
-        qr_claim_rows.append([cn, str(defect).strip(), vin7, branch, rep_str])
+            cdate_str = ''
+        qr_claim_rows.append([cn, str(defect).strip(), vin7, branch, cdate_str])
     ok(f'QR_CLAIM_DATA: {len(qr_claim_rows):,}건 (2026년)')
 except Exception as _e:
     qr_claim_rows = []
