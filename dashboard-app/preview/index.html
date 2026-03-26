@@ -5735,13 +5735,12 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
     // 2. Google Sheets에서 스캔 데이터 fetch (JSONP)
     let scans = [];
     try {
-      const webhookUrl = localStorage.getItem('qr_webhook_url') || QR_WEBHOOK_DEFAULT;
       const raw = await new Promise((resolve, reject) => {
         const cb = '_qmcb' + Date.now();
         const s = document.createElement('script');
         window[cb] = d => { delete window[cb]; s.remove(); resolve(d); };
         s.onerror = () => reject(new Error('JSONP 로드 실패'));
-        s.src = webhookUrl + '?callback=' + cb;
+        s.src = QR_WEBHOOK_DEFAULT + '?callback=' + cb;
         setTimeout(() => reject(new Error('timeout')), 15000);
         document.head.appendChild(s);
       });
