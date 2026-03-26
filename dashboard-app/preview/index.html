@@ -5740,11 +5740,10 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
       const raw = await res.json();
       // Sheets 반환: [[헤더행...], [데이터행...], ...]  or 데이터만
       const rows = Array.isArray(raw[0]) ? raw.slice(1) : raw;
-      // 필드: 0=스캔시간, 1=지점, 2=클레임번호(no WC), 3=차대번호, 4=부품번호, 5=부품명, 6=디펙트코드, 7=수리일, 8=주행거리, 9=Part순서
+      // 필드: 0=스캔시간, 1=딜러번호, 2=지점, 3=클레임번호, 4=차대번호, 5=모델,
+      //       6=디펙트코드, 7=주행거리, 8=등록일, 9=수리일, 10=부품번호, 11=부품명, 12=Part순서
       scans = rows.filter(r => {
-        const repDate = String(r[7] || '').slice(0,10);
-        const b = String(r[1] || '');
-        if (repDate < from || repDate > to) return false;
+        const b = String(r[2] || '');
         if (branch && b !== branch) return false;
         return true;
       });
@@ -5756,7 +5755,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
     // 3. 스캔 딕셔너리 (클레임번호 기준, 중복허용 → Set)
     const scanSet = new Set();
     for (const s of scans) {
-      const no = normNo(s[2]);
+      const no = normNo(s[3]);   // r[3] = 클레임번호
       if (no) scanSet.add(no);
     }
 
