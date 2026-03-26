@@ -377,11 +377,13 @@ try:
     cc = df_cl.columns.tolist()
     cc_claim=cc[7]; cc_defect=cc[12]; cc_vin=cc[18]
     cc_branch=cc[5]; cc_cdate=cc[13]  # N열: 클레임생성일자
+    cc_status=cc[1]  # B열: 청구/취소
     df_cl['_cdate'] = pd.to_datetime(df_cl[cc_cdate], errors='coerce')
     df_cl_2026 = df_cl[
         df_cl[cc_claim].notna() &
         df_cl[cc_claim].astype(str).str.startswith('WC') &
-        (df_cl['_cdate'].dt.year >= 2026)
+        (df_cl['_cdate'].dt.year >= 2026) &
+        df_cl[cc_status].astype(str).str.contains('청구', na=False)
     ].copy()
     qr_seen = {}
     qr_claim_rows = []
