@@ -5786,11 +5786,18 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
     }
 
     // 4. 매칭 결과 생성
+    const _jsType = d => {
+      const s = String(d || '').trim();
+      if (s.toUpperCase().startsWith('LA')) return 'LOCAL TC';
+      try { if (parseFloat(s.replace(/,/g,'')) < 1e8) return 'TC/RECALL'; } catch(e) {}
+      return 'Warranty';
+    };
     _qmResults = claims.map(r => {
       const no       = r[0];
       const matched  = no in scanMap;
       const scanDate = matched ? scanMap[no] : '';
-      return { no, defect: r[1], vin7: r[2], branch: r[3], date: r[4], type: r[5] || '', matched, scanDate };
+      const type     = r[5] || _jsType(r[1]); // r[5] 없으면 defect코드로 계산
+      return { no, defect: r[1], vin7: r[2], branch: r[3], date: r[4], type, matched, scanDate };
     });
 
     // 5. 통계 업데이트
@@ -5846,8 +5853,14 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
 
   function renderQMTable() {
     const tbody = document.getElementById('qm-table-body');
-    const rows  = _qmResults.filter(r => {
-      if (_qmTypes.size > 0 && !_qmTypes.has(r.type)) return false;
+
+    // KPI: 타입 필터 기준 (탭과 무관하게 항상 업데이트)
+    const typeFiltered = _qmTypes.size > 0 ? _qmResults.filter(r => _qmTypes.has(r.type)) : _qmResults;
+    document.getElementById('qm-stat-total').textContent     = typeFiltered.length;
+    document.getElementById('qm-stat-matched').textContent   = typeFiltered.filter(r => r.matched).length;
+    document.getElementById('qm-stat-unmatched').textContent = typeFiltered.filter(r => !r.matched).length;
+
+    const rows  = typeFiltered.filter(r => {
       if (_qmTab === 'matched')   return r.matched;
       if (_qmTab === 'unmatched') return !r.matched;
       return true;
@@ -5857,12 +5870,6 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
       tbody.innerHTML = '<tr><td colspan="8" style="padding:48px; text-align:center; color:#94a3b8; font-size:13px;">결과 없음</td></tr>';
       return;
     }
-
-    // KPI 업데이트 (타입 필터 적용)
-    const typeFiltered = _qmTypes.size > 0 ? _qmResults.filter(r => _qmTypes.has(r.type)) : _qmResults;
-    document.getElementById('qm-stat-total').textContent     = typeFiltered.length;
-    document.getElementById('qm-stat-matched').textContent   = typeFiltered.filter(r => r.matched).length;
-    document.getElementById('qm-stat-unmatched').textContent = typeFiltered.filter(r => !r.matched).length;
 
     tbody.innerHTML = rows.map(r => `
       <tr class="hover:bg-slate-50" style="${r.matched ? '' : 'background:#fff8f8;'}">
