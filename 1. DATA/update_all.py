@@ -18,6 +18,8 @@ DEFECT_SRC   = f'{ONEDRIVE}/디펙트코드 리스트.xlsx'
 DEFECT_TMP   = f'{DATA_DIR}/defect_list_tmp.xlsx'
 TC_SRC       = f'{ONEDRIVE}/RecallTcRptRawData.xlsx'
 TC_TMP       = f'{DATA_DIR}/tc_raw_tmp.xlsx'
+EXCLUDE_SRC  = f'{ONEDRIVE}/RECALL TC 작업불가 리스트.xlsx'
+EXCLUDE_TMP  = f'{DATA_DIR}/tc_exclude_tmp.xlsx'
 
 def step(msg): print(f'\n[▶] {msg}')
 def ok(msg):   print(f'    ✓ {msg}')
@@ -29,6 +31,7 @@ for src, dst, name in [
     (RAW_SRC,    RAW_TMP,    'RAW 클레임'),
     (DEFECT_SRC, DEFECT_TMP, '디펙트코드 리스트'),
     (TC_SRC,     TC_TMP,     'TC 미실시 RAW'),
+    (EXCLUDE_SRC, EXCLUDE_TMP, '작업불가 리스트'),
 ]:
     try:
         shutil.copy2(src, dst)
@@ -62,7 +65,7 @@ def _compute_type(k_val, m_val):
     k = str(k_val).strip() if pd.notna(k_val) else ''
     m = str(m_val).strip() if pd.notna(m_val) else ''
     if 'goodwill' in k.lower(): return 'Goodwill'
-    if k == 'Warranty plus': return 'WP'
+    if k.lower() == 'warranty plus': return 'WP'
     if 'LA' in m: return 'LOCAL TC'
     try:
         m_num = float(m.replace(',',''))
@@ -197,6 +200,22 @@ ok(f'일별 집계: {len(daily_raw):,}행 (당월 {_cur_month})')
 
 # ── 7. TC 미실시율 집계 ────────────────────────────────────
 step('TC 미실시율 집계 중...')
+
+# 작업불가 리스트 읽기
+exclude_df = pd.read_excel(EXCLUDE_TMP, sheet_name=0, header=None, engine='openpyxl')
+exclude_codes = set(
+    str(v).strip() for v in exclude_df.iloc[:, 0].dropna()
+    if str(v).strip() and str(v).strip() != 'nan'
+)
+exclude_list_raw = []
+for _, row in exclude_df.iterrows():
+    code   = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ''
+    branch = str(row.iloc[1]).strip() if len(row) > 1 and pd.notna(row.iloc[1]) else ''
+    reason = str(row.iloc[2]).strip() if len(row) > 2 and pd.notna(row.iloc[2]) else ''
+    if code and code != 'nan':
+        exclude_list_raw.append({'code': code, 'branch': branch, 'reason': reason})
+ok(f'작업불가 코드: {len(exclude_codes)}개')
+
 tc_df = pd.read_excel(TC_TMP, header=0, engine='openpyxl')
 tc_cols = tc_df.columns.tolist()
 tc_campaign = tc_cols[1]; tc_car = tc_cols[4]; tc_dealer = tc_cols[6]
@@ -204,8 +223,21 @@ tc_ro = tc_cols[11]; tc_result = tc_cols[9]; tc_date = tc_cols[5]
 
 tc_dedup = tc_df.drop_duplicates(subset=[tc_campaign, tc_car, tc_dealer, tc_ro])
 tc_clean = tc_dedup[tc_dedup[tc_ro].notna() & (tc_dedup[tc_ro].astype(str).str.strip() != '')].copy()
+
+# 작업불가 캠페인코드 제외
+before = len(tc_clean)
+tc_clean = tc_clean[~tc_clean[tc_campaign].astype(str).str.strip().isin(exclude_codes)].copy()
+ok(f'작업불가 제외: {before - len(tc_clean):,}행 제거 → 잔여 {len(tc_clean):,}행')
+
+# 발행일자(D열) 기준 방문일 대비 5년 이내만 포함
+tc_issue = tc_cols[3]
+tc_clean['_visit'] = pd.to_datetime(tc_clean[tc_date], errors='coerce')
+tc_clean['_issue'] = pd.to_datetime(tc_clean[tc_issue], errors='coerce')
+before = len(tc_clean)
+tc_clean = tc_clean[(tc_clean['_visit'] - tc_clean['_issue']).dt.days / 365.25 <= 5].copy()
+ok(f'5년 초과 제외: {before - len(tc_clean):,}행 제거 → 잔여 {len(tc_clean):,}행')
 tc_clean['branch'] = tc_clean[tc_dealer].astype(str).str.replace('AS_', '', regex=False)
-tc_clean['month']  = pd.to_datetime(tc_clean[tc_date], errors='coerce').dt.strftime('%y-%m')
+tc_clean['month']  = tc_clean['_visit'].dt.strftime('%y-%m')
 tc_clean['is_N']   = tc_clean[tc_result].astype(str).str.strip() == 'N'
 
 tc_agg = tc_clean.groupby(['branch', 'month']).agg(
@@ -219,6 +251,17 @@ for _, r in tc_agg.iterrows():
     }
 ok(f'TC 집계 완료: {len(tc_clean)}행 → {sum(len(v) for v in tc_data.values())}개월치')
 
+# TC_TOP_DATA: 캠페인별 미실시 집계 (지점/월/캠페인코드/캠페인명)
+tc_name = tc_cols[2]
+tc_top_agg = tc_clean.groupby(['branch', 'month', tc_campaign, tc_name]).agg(
+    total=('is_N', 'count'), n_count=('is_N', 'sum')
+).reset_index()
+tc_top_data = [
+    [r['branch'], r['month'], str(r[tc_campaign]), str(r[tc_name]), int(r['total']), int(r['n_count'])]
+    for _, r in tc_top_agg.iterrows()
+]
+ok(f'TC TOP 집계: {len(tc_top_data)}행')
+
 # ── 8. CLAIM_DATA 집계 (불승인/보완요청/보완완료, Task=1) ─
 step('CLAIM_DATA 집계 중...')
 df_claim_all = df[df[cols[6]].isin(['불승인', '보완요청', '보완완료'])].copy()
@@ -227,6 +270,24 @@ df_claim_all[cols[22]] = pd.to_numeric(df_claim_all[cols[22]], errors='coerce').
 # 클레임번호별 전체 금액 합산 (Task 무관)
 claim_amount_total = df_claim_all.groupby(cols[7])[cols[22]].sum().to_dict()
 
+# 클레임현황 시트에서 Credit 수신일자 추출 (승인여부='승인대기' 행 기준)
+credit_map = {}
+try:
+    df_kh2 = pd.read_excel(RAW_TMP, sheet_name='클레임현황', header=0, engine='openpyxl')
+    kc2 = df_kh2.columns.tolist()
+    kh2_no     = kc2[2]   # 클레임번호
+    kh2_credit = kc2[13]  # Credit 수신일자
+    kh2_appr   = kc2[22]  # 승인여부
+    df_reject_rows = df_kh2[df_kh2[kh2_appr] == '승인대기']
+    for _, row in df_reject_rows.iterrows():
+        cno = str(row[kh2_no])
+        cdt = row[kh2_credit]
+        if pd.notna(cdt) and str(cdt) not in ('nan', 'NaT'):
+            credit_map[cno] = str(cdt)[:10]
+    ok(f'Credit 수신일자 매핑: {len(credit_map)}건')
+except Exception as e:
+    ok(f'Credit 수신일자 로드 실패 (무시): {e}')
+
 # Task=1 행만 표시 (금액은 클레임번호 단위 합산값으로 대체)
 df_claim = df_claim_all[df_claim_all[cols[8]] == 1].copy()
 claim_raw = []
@@ -234,16 +295,17 @@ for _, r in df_claim.iterrows():
     date_val = str(r[cols[13]])[:10] if pd.notna(r[cols[13]]) and str(r[cols[13]]) not in ('nan','NaT') else ''
     claim_no = str(r[cols[7]])
     claim_raw.append([
-        claim_no,                                             # H: 클레임번호
-        str(r[cols[5]]).replace('AS_',''),                    # F: 지점
-        str(r[cols[6]]),                                      # G: 클레임상태
-        str(r[cols[10]]),                                     # K: 워런티Stage
-        str(r[cols[11]]),                                     # L: Claim Type
-        str(r[cols[12]]),                                     # M: Defect Code
-        date_val,                                             # N: 날짜
-        int(claim_amount_total.get(claim_no, 0)),             # W: 클레임금액 (전체합산)
-        str(r[cols[23]]),                                     # X: 담당확인자
-        str(r[cols[18]]) if pd.notna(r[cols[18]]) else '',   # S: 차대번호
+        claim_no,                                             # [0] H: 클레임번호
+        str(r[cols[5]]).replace('AS_',''),                    # [1] F: 지점
+        str(r[cols[6]]),                                      # [2] G: 클레임상태
+        str(r[cols[10]]),                                     # [3] K: 워런티Stage
+        str(r[cols[11]]),                                     # [4] L: Claim Type
+        str(r[cols[12]]),                                     # [5] M: Defect Code
+        date_val,                                             # [6] N: 날짜
+        int(claim_amount_total.get(claim_no, 0)),             # [7] W: 클레임금액 (전체합산)
+        str(r[cols[23]]),                                     # [8] X: 담당확인자
+        str(r[cols[18]]) if pd.notna(r[cols[18]]) else '',   # [9] S: 차대번호
+        credit_map.get(claim_no, ''),                         # [10] Credit 수신일자
     ])
 ok(f'CLAIM_DATA: {len(claim_raw):,}행 (불승인/보완요청/보완완료, Task=1)')
 
@@ -308,6 +370,40 @@ try:
 except Exception as _e:
     ok(f'클레임현황 시트 없음 또는 오류 → WHOLESALE_DATA 빈값 ({_e})')
 
+# ── 8-0. QR_CLAIM_DATA 집계 (Claim 상세_전체, 2026년 수리일 기준) ──
+step('QR_CLAIM_DATA 집계 중...')
+try:
+    df_cl = pd.read_excel(RAW_TMP, sheet_name='Claim 상세_전체', header=1, engine='openpyxl')
+    cc = df_cl.columns.tolist()
+    # H=클레임번호(7), M=DefectCode(12), S=차대번호(18), F=지점(5), AA=수리일(26)
+    cc_claim=cc[7]; cc_defect=cc[12]; cc_vin=cc[18]
+    cc_branch=cc[5]; cc_repair=cc[26]
+    df_cl['_rep'] = pd.to_datetime(df_cl[cc_repair], errors='coerce')
+    df_cl_2026 = df_cl[
+        df_cl[cc_claim].notna() &
+        df_cl[cc_claim].astype(str).str.startswith('WC') &
+        (df_cl['_rep'].dt.year >= 2026)
+    ].copy()
+    qr_seen = {}
+    qr_claim_rows = []
+    for _, r in df_cl_2026.iterrows():
+        cn = str(r[cc_claim]).strip()[2:]   # WC 제거
+        defect = r[cc_defect]
+        if cn in qr_seen or pd.isna(defect): continue
+        qr_seen[cn] = True
+        vin = str(r[cc_vin]).strip() if pd.notna(r[cc_vin]) else ''
+        vin7 = vin[-7:] if len(vin) >= 7 else vin
+        branch = str(r[cc_branch]).replace('AS_','').strip()
+        try:
+            rep_str = pd.to_datetime(r[cc_repair]).strftime('%Y-%m-%d') if pd.notna(r[cc_repair]) else ''
+        except Exception:
+            rep_str = ''
+        qr_claim_rows.append([cn, str(defect).strip(), vin7, branch, rep_str])
+    ok(f'QR_CLAIM_DATA: {len(qr_claim_rows):,}건 (2026년)')
+except Exception as _e:
+    qr_claim_rows = []
+    ok(f'QR_CLAIM_DATA 생성 실패 (무시): {_e}')
+
 # ── 8-1. JS 문자열 생성 ───────────────────────────────────
 step('JS 데이터 문자열 생성 중...')
 desc_js     = 'const DEFECT_DESC='    + json.dumps(matched_desc, ensure_ascii=False, separators=(',',':')) + ';'
@@ -316,8 +412,10 @@ um_js       = 'const DEFECT_UNMATCHED=' + json.dumps(unmatched,  ensure_ascii=Fa
 person_js   = 'const PERSON_DATA='    + json.dumps(person_raw,   ensure_ascii=False, separators=(',',':')) + ';'
 daily_js    = 'const PERSON_DAILY='   + json.dumps(daily_raw,    ensure_ascii=False, separators=(',',':')) + ';'
 tc_js       = 'const TC_DATA='        + json.dumps(tc_data,      ensure_ascii=False, separators=(',',':')) + ';'
+tc_top_js   = 'const TC_TOP_DATA='   + json.dumps(tc_top_data,  ensure_ascii=False, separators=(',',':')) + ';'
 claim_js      = 'const CLAIM_DATA='      + json.dumps(claim_raw,      ensure_ascii=False, separators=(',',':')) + ';'
 wholesale_js  = 'const WHOLESALE_DATA=' + json.dumps(wholesale_data, ensure_ascii=False, separators=(',',':')) + ';'
+qr_claim_js   = 'const QR_CLAIM_DATA='  + json.dumps(qr_claim_rows,  ensure_ascii=False, separators=(',',':')) + ';'
 ok('완료')
 
 # ── 7. HTML embed ─────────────────────────────────────────
@@ -332,8 +430,10 @@ html = re.sub(r'const DEFECT_UNMATCHED=\[.*?\];',    um_js,      html, flags=re.
 html = re.sub(r'const PERSON_DATA=\[.*?\];',         person_js,  html, flags=re.DOTALL)
 html = re.sub(r'const PERSON_DAILY=\[.*?\];',        daily_js,   html, flags=re.DOTALL)
 html = re.sub(r'const TC_DATA=\{.*?\};',             tc_js,      html, flags=re.DOTALL)
+html = re.sub(r'const TC_TOP_DATA=\[.*?\];',         tc_top_js,  html, flags=re.DOTALL)
 html = re.sub(r'const CLAIM_DATA=\[.*?\];',          claim_js,      html, flags=re.DOTALL)
 html = re.sub(r'const WHOLESALE_DATA=\{.*?\};',     wholesale_js,  html, flags=re.DOTALL)
+html = re.sub(r'const QR_CLAIM_DATA=\[.*?\];',      qr_claim_js,   html, flags=re.DOTALL)
 
 with open(HTML_PATH, 'w', encoding='utf-8') as f:
     f.write(html)
