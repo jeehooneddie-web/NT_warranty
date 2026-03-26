@@ -5475,7 +5475,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
   const QR_DEALER_MAP = {'26999':'전주','40699':'군산','41967':'목포','41968':'서산','44835':'평택'};
   const QR_SCAN_KEY = 'qr_scans_today';
   let qrParsed = null;
-  const QR_WEBHOOK_DEFAULT = 'https://script.google.com/macros/s/AKfycbwZbFejzxFtou0iIMcMsfiMWnfFd_xSC6QPYr3Iy-E_5huOBYV_LIbkGNDUqj2UJ_Lr/exec';
+  const QR_WEBHOOK_DEFAULT = 'https://script.google.com/macros/s/AKfycbwzfBDwkRuq4Az3hPvdxofYuH7L1I7njyqRQNzLJ--9Zd6CII06rF1GgaQWqZZcT7kO/exec';
 
   function initQRScanner() {
     const saved = localStorage.getItem('qr_webhook_url') || QR_WEBHOOK_DEFAULT;
@@ -5732,13 +5732,20 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
       return true;
     });
 
-    // 2. Google Sheets에서 스캔 데이터 fetch
+    // 2. Google Sheets에서 스캔 데이터 fetch (JSONP)
     let scans = [];
     try {
       const webhookUrl = localStorage.getItem('qr_webhook_url') || QR_WEBHOOK_DEFAULT;
-      const res = await fetch(webhookUrl, { method: 'GET', credentials: 'omit', redirect: 'follow' });
-      const raw = await res.json();
-      // Sheets 반환: [[헤더행...], [데이터행...], ...]  or 데이터만
+      const raw = await new Promise((resolve, reject) => {
+        const cb = '_qmcb' + Date.now();
+        const s = document.createElement('script');
+        window[cb] = d => { delete window[cb]; s.remove(); resolve(d); };
+        s.onerror = () => reject(new Error('JSONP 로드 실패'));
+        s.src = webhookUrl + '?callback=' + cb;
+        setTimeout(() => reject(new Error('timeout')), 15000);
+        document.head.appendChild(s);
+      });
+      // Sheets 반환: [[헤더행...], [데이터행...], ...]
       const rows = Array.isArray(raw[0]) ? raw.slice(1) : raw;
       // 필드: 0=스캔시간, 1=딜러번호, 2=지점, 3=클레임번호, 4=차대번호, 5=모델,
       //       6=디펙트코드, 7=주행거리, 8=등록일, 9=수리일, 10=부품번호, 11=부품명, 12=Part순서
