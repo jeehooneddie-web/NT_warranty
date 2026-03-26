@@ -370,40 +370,6 @@ try:
 except Exception as _e:
     ok(f'클레임현황 시트 없음 또는 오류 → WHOLESALE_DATA 빈값 ({_e})')
 
-# ── 8-0. QR_CLAIM_DATA 집계 (Claim 상세_전체, 2026년 수리일 기준) ──
-step('QR_CLAIM_DATA 집계 중...')
-try:
-    df_cl = pd.read_excel(RAW_TMP, sheet_name='Claim 상세_전체', header=1, engine='openpyxl')
-    cc = df_cl.columns.tolist()
-    # H=클레임번호(7), M=DefectCode(12), S=차대번호(18), F=지점(5), AA=수리일(26)
-    cc_claim=cc[7]; cc_defect=cc[12]; cc_vin=cc[18]
-    cc_branch=cc[5]; cc_repair=cc[26]
-    df_cl['_rep'] = pd.to_datetime(df_cl[cc_repair], errors='coerce')
-    df_cl_2026 = df_cl[
-        df_cl[cc_claim].notna() &
-        df_cl[cc_claim].astype(str).str.startswith('WC') &
-        (df_cl['_rep'].dt.year >= 2026)
-    ].copy()
-    qr_seen = {}
-    qr_claim_rows = []
-    for _, r in df_cl_2026.iterrows():
-        cn = str(r[cc_claim]).strip()[2:]   # WC 제거
-        defect = r[cc_defect]
-        if cn in qr_seen or pd.isna(defect): continue
-        qr_seen[cn] = True
-        vin = str(r[cc_vin]).strip() if pd.notna(r[cc_vin]) else ''
-        vin7 = vin[-7:] if len(vin) >= 7 else vin
-        branch = str(r[cc_branch]).replace('AS_','').strip()
-        try:
-            rep_str = pd.to_datetime(r[cc_repair]).strftime('%Y-%m-%d') if pd.notna(r[cc_repair]) else ''
-        except Exception:
-            rep_str = ''
-        qr_claim_rows.append([cn, str(defect).strip(), vin7, branch, rep_str])
-    ok(f'QR_CLAIM_DATA: {len(qr_claim_rows):,}건 (2026년)')
-except Exception as _e:
-    qr_claim_rows = []
-    ok(f'QR_CLAIM_DATA 생성 실패 (무시): {_e}')
-
 # ── 8-1. JS 문자열 생성 ───────────────────────────────────
 step('JS 데이터 문자열 생성 중...')
 desc_js     = 'const DEFECT_DESC='    + json.dumps(matched_desc, ensure_ascii=False, separators=(',',':')) + ';'
@@ -415,7 +381,6 @@ tc_js       = 'const TC_DATA='        + json.dumps(tc_data,      ensure_ascii=Fa
 tc_top_js   = 'const TC_TOP_DATA='   + json.dumps(tc_top_data,  ensure_ascii=False, separators=(',',':')) + ';'
 claim_js      = 'const CLAIM_DATA='      + json.dumps(claim_raw,      ensure_ascii=False, separators=(',',':')) + ';'
 wholesale_js  = 'const WHOLESALE_DATA=' + json.dumps(wholesale_data, ensure_ascii=False, separators=(',',':')) + ';'
-qr_claim_js   = 'const QR_CLAIM_DATA='  + json.dumps(qr_claim_rows,  ensure_ascii=False, separators=(',',':')) + ';'
 ok('완료')
 
 # ── 7. HTML embed ─────────────────────────────────────────
@@ -433,7 +398,6 @@ html = re.sub(r'const TC_DATA=\{.*?\};',             tc_js,      html, flags=re.
 html = re.sub(r'const TC_TOP_DATA=\[.*?\];',         tc_top_js,  html, flags=re.DOTALL)
 html = re.sub(r'const CLAIM_DATA=\[.*?\];',          claim_js,      html, flags=re.DOTALL)
 html = re.sub(r'const WHOLESALE_DATA=\{.*?\};',     wholesale_js,  html, flags=re.DOTALL)
-html = re.sub(r'const QR_CLAIM_DATA=\[.*?\];',      qr_claim_js,   html, flags=re.DOTALL)
 
 with open(HTML_PATH, 'w', encoding='utf-8') as f:
     f.write(html)
