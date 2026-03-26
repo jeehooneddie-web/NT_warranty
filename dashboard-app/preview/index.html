@@ -205,6 +205,35 @@
     0%   { top: 0; }
     100% { top: 100%; }
   }
+
+  /* ── QR 스캐너 반응형 ── */
+  .qr-page  { background:#0f172a; min-height:100vh; width:100%; }
+  .qr-header{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px 10px; background:#1e3a5f; }
+  .qr-body  { display:flex; flex-direction:column; }
+  .qr-left  { display:flex; flex-direction:column; }
+  .qr-right { flex:1; padding:0 16px 16px; display:flex; flex-direction:column; gap:12px; }
+
+  @media (min-width:768px) {
+    .qr-body {
+      flex-direction:row;
+      max-width:1280px;
+      margin:0 auto;
+      padding:24px;
+      gap:24px;
+      align-items:flex-start;
+      box-sizing:border-box;
+    }
+    .qr-left {
+      width:440px;
+      flex-shrink:0;
+      background:#111827;
+      border-radius:16px;
+      overflow:hidden;
+    }
+    .qr-right { padding:0; }
+    #qr-result-box { margin:0 !important; }
+    #qr-cam-msg { font-size:14px !important; }
+  }
   </style>
 </head>
 <body class="font-sans antialiased">
@@ -1459,97 +1488,103 @@
         </div>
       </div><!-- /view-warranty -->
 
-      <!-- 고품 QR 스캐너 (모바일 전용 레이아웃) -->
-      <div id="view-qr-scanner" class="view hidden" style="background:#0f172a; min-height:100vh; width:100%;">
-        <div style="max-width:480px; margin:0 auto; padding:0; display:flex; flex-direction:column; min-height:100vh;">
+      <!-- 고품 QR 스캐너 (반응형) -->
+      <div id="view-qr-scanner" class="view hidden qr-page">
 
-          <!-- 상단 헤더 -->
-          <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px 10px; background:#1e3a5f;">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <button onclick="sessionStorage.getItem('nm_role') ? showView('view-notices') : doLogout()" style="background:rgba(255,255,255,0.15); border:none; border-radius:8px; padding:6px 10px; color:#fff; font-size:13px; cursor:pointer;">← 메뉴</button>
-              <span style="color:#fff; font-weight:700; font-size:15px;">고품 QR 스캔</span>
-            </div>
-            <span id="qr-webhook-status" style="font-size:11px; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,0.1); color:#94a3b8;">미연동</span>
+        <!-- 헤더 (전체 너비) -->
+        <div class="qr-header">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button onclick="sessionStorage.getItem('nm_role') ? showView('view-notices') : doLogout()" style="background:rgba(255,255,255,0.15); border:none; border-radius:8px; padding:6px 10px; color:#fff; font-size:13px; cursor:pointer;">← 메뉴</button>
+            <span style="color:#fff; font-weight:700; font-size:15px;">고품 QR 스캔</span>
           </div>
-
-          <!-- html5-qrcode 렌더링 영역 -->
-          <div id="qr-reader" style="width:100%; background:#000;"></div>
-          <div id="qr-cam-msg" style="text-align:center; color:rgba(255,255,255,0.8); font-size:13px; padding:8px 16px; background:#0f172a;">카메라 시작 버튼을 눌러주세요</div>
-
-          <!-- 카메라 버튼 -->
-          <div style="display:flex; gap:10px; padding:12px 16px;">
-            <button id="qr-start-btn" onclick="startQRCamera()" style="flex:1; padding:14px; border-radius:12px; background:#1d4ed8; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer;">📷 카메라 시작</button>
-            <button id="qr-stop-btn" onclick="stopQRCamera()" style="padding:14px 18px; border-radius:12px; background:#374151; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer; display:none;">⏹ 중지</button>
-          </div>
-
-          <!-- 스캔 결과 -->
-          <div id="qr-result-box" style="display:none; margin:0 16px 12px; background:#1e293b; border-radius:16px; padding:16px; border:1px solid #334155;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-              <span style="color:#94a3b8; font-size:12px; font-weight:600;">스캔 결과</span>
-              <span id="qr-part-badge" style="font-size:12px; padding:3px 10px; border-radius:20px; background:#92400e; color:#fde68a; font-weight:600;"></span>
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
-              <div style="background:#0f172a; border-radius:10px; padding:10px;">
-                <div style="color:#64748b; font-size:11px; margin-bottom:3px;">지점</div>
-                <div id="qr-r-branch" style="color:#f1f5f9; font-size:14px; font-weight:700;"></div>
-              </div>
-              <div style="background:#0f172a; border-radius:10px; padding:10px;">
-                <div style="color:#64748b; font-size:11px; margin-bottom:3px;">클레임번호</div>
-                <div id="qr-r-claim" style="color:#f1f5f9; font-size:13px; font-weight:700; font-family:monospace;"></div>
-              </div>
-              <div style="background:#0f172a; border-radius:10px; padding:10px;">
-                <div style="color:#64748b; font-size:11px; margin-bottom:3px;">부품번호</div>
-                <div id="qr-r-port" style="color:#fbbf24; font-size:12px; font-weight:700; font-family:monospace; word-break:break-all;"></div>
-              </div>
-              <div style="background:#0f172a; border-radius:10px; padding:10px;">
-                <div style="color:#64748b; font-size:11px; margin-bottom:3px;">부품명</div>
-                <div id="qr-r-partdesc" style="color:#f1f5f9; font-size:13px; font-weight:700;"></div>
-              </div>
-              <div style="background:#0f172a; border-radius:10px; padding:10px;">
-                <div style="color:#64748b; font-size:11px; margin-bottom:3px;">차대번호</div>
-                <div id="qr-r-chassis" style="color:#f1f5f9; font-size:12px; font-weight:600; font-family:monospace;"></div>
-              </div>
-              <div style="background:#0f172a; border-radius:10px; padding:10px;">
-                <div style="color:#64748b; font-size:11px; margin-bottom:3px;">수리일</div>
-                <div id="qr-r-repair" style="color:#f1f5f9; font-size:13px; font-weight:700;"></div>
-              </div>
-              <div style="background:#0f172a; border-radius:10px; padding:10px;">
-                <div style="color:#64748b; font-size:11px; margin-bottom:3px;">디펙트 코드</div>
-                <div id="qr-r-defect" style="color:#fbbf24; font-size:12px; font-weight:700; font-family:monospace;"></div>
-              </div>
-              <div style="background:#0f172a; border-radius:10px; padding:10px;">
-                <div style="color:#64748b; font-size:11px; margin-bottom:3px;">주행거리</div>
-                <div id="qr-r-mileage" style="color:#f1f5f9; font-size:13px; font-weight:700;"></div>
-              </div>
-            </div>
-            <div style="display:flex; gap:10px;">
-              <button onclick="submitQRScan()" style="flex:1; padding:14px; border-radius:12px; background:#059669; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer;">✓ 저장</button>
-              <button onclick="resetQRResult()" style="padding:14px 20px; border-radius:12px; background:#374151; color:#fff; font-size:14px; font-weight:600; border:none; cursor:pointer;">재스캔</button>
-            </div>
-          </div>
-
-          <!-- 오늘 스캔 목록 -->
-          <div style="flex:1; padding:0 16px 16px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-              <span style="color:#94a3b8; font-size:13px; font-weight:600;">오늘 스캔 목록 <span id="qr-scan-count" style="color:#64748b; font-weight:400;">(0건)</span></span>
-              <button onclick="clearTodayScans()" style="font-size:12px; color:#64748b; background:none; border:none; cursor:pointer;">초기화</button>
-            </div>
-            <div id="qr-scan-list" style="display:flex; flex-direction:column; gap:8px;">
-              <div style="color:#475569; font-size:13px; text-align:center; padding:24px 0;">스캔된 고품이 없습니다</div>
-            </div>
-          </div>
-
-          <!-- Google Sheets 연동 설정 -->
-          <details style="margin:0 16px 24px; background:#1e293b; border-radius:12px; border:1px solid #334155; padding:12px;">
-            <summary style="color:#94a3b8; font-size:13px; font-weight:600; cursor:pointer; list-style:none;">⚙️ Google Sheets 연동 설정</summary>
-            <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
-              <div style="color:#64748b; font-size:12px;">Apps Script 웹훅 URL을 입력하면 스캔 데이터가 Google Sheets에 자동 저장됩니다.</div>
-              <input id="qr-webhook-url" type="text" placeholder="https://script.google.com/macros/s/..." style="width:100%; font-size:12px; padding:10px 12px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#f1f5f9; box-sizing:border-box;" oninput="saveWebhookUrl()">
-              <button onclick="testWebhook()" style="align-self:flex-start; font-size:12px; padding:8px 16px; border-radius:8px; background:#1d4ed8; color:#fff; border:none; cursor:pointer;">연결 테스트</button>
-            </div>
-          </details>
-
+          <span id="qr-webhook-status" style="font-size:11px; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,0.1); color:#94a3b8;">미연동</span>
         </div>
+
+        <!-- 바디 (모바일: 1열 / 데스크탑: 2열) -->
+        <div class="qr-body">
+
+          <!-- 좌: 카메라 영역 -->
+          <div class="qr-left">
+            <div id="qr-reader" style="width:100%; background:#000;"></div>
+            <div id="qr-cam-msg" style="text-align:center; color:rgba(255,255,255,0.8); font-size:13px; padding:8px 16px; background:#0f172a;">카메라 시작 버튼을 눌러주세요</div>
+            <div style="display:flex; gap:10px; padding:12px 16px;">
+              <button id="qr-start-btn" onclick="startQRCamera()" style="flex:1; padding:14px; border-radius:12px; background:#1d4ed8; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer;">📷 카메라 시작</button>
+              <button id="qr-stop-btn" onclick="stopQRCamera()" style="padding:14px 18px; border-radius:12px; background:#374151; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer; display:none;">⏹ 중지</button>
+            </div>
+          </div>
+
+          <!-- 우: 결과 + 목록 + 설정 -->
+          <div class="qr-right">
+
+            <!-- 스캔 결과 -->
+            <div id="qr-result-box" style="display:none; background:#1e293b; border-radius:16px; padding:16px; border:1px solid #334155;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                <span style="color:#94a3b8; font-size:12px; font-weight:600;">스캔 결과</span>
+                <span id="qr-part-badge" style="font-size:12px; padding:3px 10px; border-radius:20px; background:#92400e; color:#fde68a; font-weight:600;"></span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+                <div style="background:#0f172a; border-radius:10px; padding:10px;">
+                  <div style="color:#64748b; font-size:11px; margin-bottom:3px;">지점</div>
+                  <div id="qr-r-branch" style="color:#f1f5f9; font-size:14px; font-weight:700;"></div>
+                </div>
+                <div style="background:#0f172a; border-radius:10px; padding:10px;">
+                  <div style="color:#64748b; font-size:11px; margin-bottom:3px;">클레임번호</div>
+                  <div id="qr-r-claim" style="color:#f1f5f9; font-size:13px; font-weight:700; font-family:monospace;"></div>
+                </div>
+                <div style="background:#0f172a; border-radius:10px; padding:10px;">
+                  <div style="color:#64748b; font-size:11px; margin-bottom:3px;">부품번호</div>
+                  <div id="qr-r-port" style="color:#fbbf24; font-size:12px; font-weight:700; font-family:monospace; word-break:break-all;"></div>
+                </div>
+                <div style="background:#0f172a; border-radius:10px; padding:10px;">
+                  <div style="color:#64748b; font-size:11px; margin-bottom:3px;">부품명</div>
+                  <div id="qr-r-partdesc" style="color:#f1f5f9; font-size:13px; font-weight:700;"></div>
+                </div>
+                <div style="background:#0f172a; border-radius:10px; padding:10px;">
+                  <div style="color:#64748b; font-size:11px; margin-bottom:3px;">차대번호</div>
+                  <div id="qr-r-chassis" style="color:#f1f5f9; font-size:12px; font-weight:600; font-family:monospace;"></div>
+                </div>
+                <div style="background:#0f172a; border-radius:10px; padding:10px;">
+                  <div style="color:#64748b; font-size:11px; margin-bottom:3px;">수리일</div>
+                  <div id="qr-r-repair" style="color:#f1f5f9; font-size:13px; font-weight:700;"></div>
+                </div>
+                <div style="background:#0f172a; border-radius:10px; padding:10px;">
+                  <div style="color:#64748b; font-size:11px; margin-bottom:3px;">디펙트 코드</div>
+                  <div id="qr-r-defect" style="color:#fbbf24; font-size:12px; font-weight:700; font-family:monospace;"></div>
+                </div>
+                <div style="background:#0f172a; border-radius:10px; padding:10px;">
+                  <div style="color:#64748b; font-size:11px; margin-bottom:3px;">주행거리</div>
+                  <div id="qr-r-mileage" style="color:#f1f5f9; font-size:13px; font-weight:700;"></div>
+                </div>
+              </div>
+              <div style="display:flex; gap:10px;">
+                <button onclick="submitQRScan()" style="flex:1; padding:14px; border-radius:12px; background:#059669; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer;">✓ 저장</button>
+                <button onclick="resetQRResult()" style="padding:14px 20px; border-radius:12px; background:#374151; color:#fff; font-size:14px; font-weight:600; border:none; cursor:pointer;">재스캔</button>
+              </div>
+            </div>
+
+            <!-- 오늘 스캔 목록 -->
+            <div style="flex:1;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                <span style="color:#94a3b8; font-size:13px; font-weight:600;">오늘 스캔 목록 <span id="qr-scan-count" style="color:#64748b; font-weight:400;">(0건)</span></span>
+                <button onclick="clearTodayScans()" style="font-size:12px; color:#64748b; background:none; border:none; cursor:pointer;">초기화</button>
+              </div>
+              <div id="qr-scan-list" style="display:flex; flex-direction:column; gap:8px;">
+                <div style="color:#475569; font-size:13px; text-align:center; padding:24px 0;">스캔된 고품이 없습니다</div>
+              </div>
+            </div>
+
+            <!-- Google Sheets 연동 설정 -->
+            <details style="background:#1e293b; border-radius:12px; border:1px solid #334155; padding:12px;">
+              <summary style="color:#94a3b8; font-size:13px; font-weight:600; cursor:pointer; list-style:none;">⚙️ Google Sheets 연동 설정</summary>
+              <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+                <div style="color:#64748b; font-size:12px;">Apps Script 웹훅 URL을 입력하면 스캔 데이터가 Google Sheets에 자동 저장됩니다.</div>
+                <input id="qr-webhook-url" type="text" placeholder="https://script.google.com/macros/s/..." style="width:100%; font-size:12px; padding:10px 12px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#f1f5f9; box-sizing:border-box;" oninput="saveWebhookUrl()">
+                <button onclick="testWebhook()" style="align-self:flex-start; font-size:12px; padding:8px 16px; border-radius:8px; background:#1d4ed8; color:#fff; border:none; cursor:pointer;">연결 테스트</button>
+              </div>
+            </details>
+
+          </div><!-- /qr-right -->
+        </div><!-- /qr-body -->
       </div><!-- /view-qr-scanner -->
 
       <!-- =============================================
