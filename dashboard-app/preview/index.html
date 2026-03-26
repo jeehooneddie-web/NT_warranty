@@ -1704,6 +1704,17 @@
           </div>
 
           <!-- 테이블 카드 -->
+          <!-- 타입 필터 -->
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+            <button id="qmt-all"      onclick="setQMType('')"         class="sales-pill active">전체</button>
+            <button id="qmt-warranty" onclick="setQMType('Warranty')" class="sales-pill">Warranty</button>
+            <button id="qmt-tc"       onclick="setQMType('TC/RECALL')"class="sales-pill">TC/RECALL</button>
+            <button id="qmt-goodwill" onclick="setQMType('Goodwill')" class="sales-pill">Goodwill</button>
+            <button id="qmt-wp"       onclick="setQMType('WP')"       class="sales-pill">WP</button>
+            <button id="qmt-bsi"      onclick="setQMType('BSI')"      class="sales-pill">BSI</button>
+            <button id="qmt-ltc"      onclick="setQMType('LOCAL TC')" class="sales-pill">LOCAL TC</button>
+          </div>
+
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <!-- 탭 -->
             <div style="display:flex; gap:0; border-bottom:1px solid #e2e8f0; padding:0 20px;">
@@ -5706,6 +5717,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
   /* ── 고품 반납 현황 ── */
   let _qmResults = [];
   let _qmTab     = 'all';
+  let _qmType    = '';
 
   function initQRMatch() {
     // 날짜 기본값: 오늘
@@ -5778,7 +5790,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
       const no       = r[0];
       const matched  = no in scanMap;
       const scanDate = matched ? scanMap[no] : '';
-      return { no, defect: r[1], vin7: r[2], branch: r[3], date: r[4], matched, scanDate };
+      return { no, defect: r[1], vin7: r[2], branch: r[3], date: r[4], type: r[5] || '', matched, scanDate };
     });
 
     // 5. 통계 업데이트
@@ -5789,8 +5801,20 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
     document.getElementById('qm-stat-matched').textContent   = matchedCnt;
     document.getElementById('qm-stat-unmatched').textContent = unmatchedCnt;
 
-    _qmTab = 'all';
+    _qmTab  = 'all';
+    _qmType = '';
+    document.querySelectorAll('[id^="qmt-"]').forEach(b => b.classList.remove('active'));
+    document.getElementById('qmt-all')?.classList.add('active');
     switchQMTab('all');
+  }
+
+  function setQMType(type) {
+    _qmType = type;
+    const typeMap = {'':'all','Warranty':'warranty','TC/RECALL':'tc','Goodwill':'goodwill','WP':'wp','BSI':'bsi','LOCAL TC':'ltc'};
+    Object.keys(typeMap).forEach(t => {
+      document.getElementById('qmt-' + typeMap[t])?.classList.toggle('active', t === type);
+    });
+    renderQMTable();
   }
 
   function switchQMTab(tab) {
@@ -5811,6 +5835,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
   function renderQMTable() {
     const tbody = document.getElementById('qm-table-body');
     const rows  = _qmResults.filter(r => {
+      if (_qmType && r.type !== _qmType) return false;
       if (_qmTab === 'matched')   return r.matched;
       if (_qmTab === 'unmatched') return !r.matched;
       return true;
@@ -5820,6 +5845,12 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
       tbody.innerHTML = '<tr><td colspan="8" style="padding:48px; text-align:center; color:#94a3b8; font-size:13px;">결과 없음</td></tr>';
       return;
     }
+
+    // KPI 업데이트 (타입 필터 적용)
+    const typeFiltered = _qmType ? _qmResults.filter(r => r.type === _qmType) : _qmResults;
+    document.getElementById('qm-stat-total').textContent     = typeFiltered.length;
+    document.getElementById('qm-stat-matched').textContent   = typeFiltered.filter(r => r.matched).length;
+    document.getElementById('qm-stat-unmatched').textContent = typeFiltered.filter(r => !r.matched).length;
 
     tbody.innerHTML = rows.map(r => `
       <tr class="hover:bg-slate-50" style="${r.matched ? '' : 'background:#fff8f8;'}">
