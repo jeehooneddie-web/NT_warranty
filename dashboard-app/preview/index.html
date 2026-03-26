@@ -299,11 +299,11 @@
         📷 고품 QR 스캔
       </button>
     </div>
-    <!-- 고품 수거 비교 버튼 (임시 숨김)
+    <!-- 고품 반납 현황 버튼 (임시 숨김)
     <div class="flex gap-2 mt-2">
       <button onclick="enterAsQRCompare()"
         class="flex-1 py-2.5 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors">
-        🔍 고품 수거 비교 [TEST]
+        🔍 고품 반납 현황 [TEST]
       </button>
     </div>
     -->
@@ -399,7 +399,7 @@
       </div>
       <div class="nav-item admin-only" data-view="view-qr-match" onclick="showView('view-qr-match')">
         <i data-lucide="git-compare-arrows"></i>
-        <span>고품 수거 비교</span>
+        <span>고품 반납 현황</span>
       </div>
     </nav>
 
@@ -1592,7 +1592,7 @@
       </div><!-- /view-qr-scanner -->
 
       <!-- =============================================
-           뷰: 고품 수거 비교 (TEST)
+           뷰: 고품 반납 현황 (TEST)
            ============================================= -->
       <div id="view-qr-compare" class="view hidden" style="background:#0f172a; min-height:100vh; width:100%;">
         <div style="max-width:600px; margin:0 auto; display:flex; flex-direction:column; min-height:100vh;">
@@ -1600,7 +1600,7 @@
           <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px 10px; background:#1e3a5f;">
             <div style="display:flex; align-items:center; gap:10px;">
               <button onclick="sessionStorage.getItem('nm_role') ? showView('view-notices') : doLogout()" style="background:rgba(255,255,255,0.15); border:none; border-radius:8px; padding:6px 10px; color:#fff; font-size:13px; cursor:pointer;">← 뒤로</button>
-              <span style="color:#fff; font-weight:700; font-size:15px;">🔍 고품 수거 비교</span>
+              <span style="color:#fff; font-weight:700; font-size:15px;">🔍 고품 반납 현황</span>
             </div>
             <span style="font-size:11px; color:#fbbf24; background:rgba(255,255,255,0.1); padding:4px 10px; border-radius:20px;">전주 2026-03-24</span>
           </div>
@@ -1648,7 +1648,7 @@
       </div><!-- /view-qr-compare -->
 
       <!-- =============================================
-           뷰: 고품 수거 비교
+           뷰: 고품 반납 현황
            ============================================= -->
       <div id="view-qr-match" class="view hidden">
         <div style="padding:24px; background:#f0f4f8; min-height:100vh;">
@@ -1656,7 +1656,7 @@
           <!-- 필터 카드 -->
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-5" style="border-top:3px solid #0891b2;">
             <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-              <h2 class="text-sm font-bold text-slate-700">고품 수거 비교</h2>
+              <h2 class="text-sm font-bold text-slate-700">고품 반납 현황</h2>
               <span id="qm-fetch-status" style="font-size:11px; color:#64748b;"></span>
             </div>
             <div class="px-5 py-4" style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end;">
@@ -2595,7 +2595,7 @@
       'view-tc-top20':         '미실시 상위 20',
       'view-claim':            'CLAIM 상태 확인',
       'view-qr-scanner':       '고품 QR 스캔',
-      'view-qr-match':         '고품 수거 비교',
+      'view-qr-match':         '고품 반납 현황',
       'view-wholesale':        '클레임 볼륨',
     };
     document.getElementById('page-title').textContent = titles[viewId] || '';
@@ -5214,7 +5214,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
     showView('view-qr-compare');
   }
 
-  /* ── 고품 수거 비교 ── */
+  /* ── 고품 반납 현황 ── */
   // 기준 데이터: 전주 2026-03-24 청구이력 (BSI/TC/RECALL/LOCAL TC 제외, 부품금액 있는 건)
   const QR_COMPARE_CLAIMS = [
     {claimNo:'WC248610', defectCode:'6312356700', vin7:'CE31331'},
@@ -5703,7 +5703,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
     renderQRScanList();
   }
 
-  /* ── 고품 수거 비교 ── */
+  /* ── 고품 반납 현황 ── */
   let _qmResults = [];
   let _qmTab     = 'all';
 
