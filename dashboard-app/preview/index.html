@@ -5736,7 +5736,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
     let scans = [];
     try {
       const webhookUrl = localStorage.getItem('qr_webhook_url') || QR_WEBHOOK_DEFAULT;
-      const res = await fetch(webhookUrl, { method: 'GET' });
+      const res = await fetch(webhookUrl, { method: 'GET', credentials: 'omit', redirect: 'follow' });
       const raw = await res.json();
       // Sheets 반환: [[헤더행...], [데이터행...], ...]  or 데이터만
       const rows = Array.isArray(raw[0]) ? raw.slice(1) : raw;
