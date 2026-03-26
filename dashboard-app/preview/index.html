@@ -1722,11 +1722,12 @@
                 <th style="padding:10px 14px; text-align:left; color:#475569; font-weight:600; white-space:nowrap;">지점</th>
                 <th style="padding:10px 14px; text-align:left; color:#475569; font-weight:600; white-space:nowrap;">클레임생성일</th>
                 <th style="padding:10px 14px; text-align:center; color:#475569; font-weight:600; white-space:nowrap;">스캔</th>
+                <th style="padding:10px 14px; text-align:left; color:#475569; font-weight:600; white-space:nowrap;">수거일자</th>
                 <th style="padding:10px 14px; text-align:left; color:#475569; font-weight:600; white-space:nowrap;">비고</th>
               </tr>
             </thead>
             <tbody id="qm-table-body">
-              <tr><td colspan="7" style="padding:40px; text-align:center; color:#94a3b8;">조회 버튼을 눌러 비교를 실행하세요</td></tr>
+              <tr><td colspan="8" style="padding:40px; text-align:center; color:#94a3b8;">조회 버튼을 눌러 비교를 실행하세요</td></tr>
             </tbody>
           </table>
         </div>
@@ -5763,18 +5764,19 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
       status.textContent = `Sheets 연결 실패: ${e.message}`;
     }
 
-    // 3. 스캔 딕셔너리 (클레임번호 기준, 중복허용 → Set)
-    const scanSet = new Set();
+    // 3. 스캔 딕셔너리 (클레임번호 → 최초 수거일자)
+    const scanMap = {};
     for (const s of scans) {
       const no = normNo(s[3]);   // r[3] = 클레임번호
-      if (no) scanSet.add(no);
+      if (no && !scanMap[no]) scanMap[no] = String(s[0] || '').slice(0, 10); // r[0] = 스캔시간
     }
 
     // 4. 매칭 결과 생성
     _qmResults = claims.map(r => {
-      const no      = r[0];
-      const matched = scanSet.has(no);
-      return { no, defect: r[1], vin7: r[2], branch: r[3], date: r[4], matched };
+      const no       = r[0];
+      const matched  = no in scanMap;
+      const scanDate = matched ? scanMap[no] : '';
+      return { no, defect: r[1], vin7: r[2], branch: r[3], date: r[4], matched, scanDate };
     });
 
     // 5. 통계 업데이트
@@ -5813,7 +5815,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
     });
 
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="padding:40px; text-align:center; color:#94a3b8;">결과 없음</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="padding:40px; text-align:center; color:#94a3b8;">결과 없음</td></tr>';
       return;
     }
 
@@ -5830,6 +5832,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
             : '<span style="background:#fee2e2; color:#991b1b; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600;">✗ 미수거</span>'
           }
         </td>
+        <td style="padding:10px 14px; color:#059669; font-size:12px; font-weight:600;">${r.scanDate}</td>
         <td style="padding:10px 14px; color:#94a3b8; font-size:12px;">${r.matched ? '' : '고품 미수거'}</td>
       </tr>
     `).join('');
