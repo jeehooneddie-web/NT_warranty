@@ -5476,6 +5476,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
   const QR_SCAN_KEY = 'qr_scans_today';
   let qrParsed = null;
   const QR_WEBHOOK_DEFAULT = 'https://script.google.com/macros/s/AKfycbwzfBDwkRuq4Az3hPvdxofYuH7L1I7njyqRQNzLJ--9Zd6CII06rF1GgaQWqZZcT7kO/exec';
+  const QR_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQougnJK4_kro-lAQlm0-RGIinvOBLEAq1WmwCz_LRo_dQtaqGtdACZpaiQ68yMokaAX34n2T9FPi4j/pub?output=csv';
 
   function initQRScanner() {
     const saved = localStorage.getItem('qr_webhook_url') || QR_WEBHOOK_DEFAULT;
@@ -5732,23 +5733,27 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02"],["2
       return true;
     });
 
-    // 2. Google Sheets에서 스캔 데이터 fetch (JSONP)
+    // 2. Google Sheets CSV에서 스캔 데이터 fetch
     let scans = [];
     try {
-      const raw = await new Promise((resolve, reject) => {
-        const cb = '_qmcb' + Date.now();
-        const s = document.createElement('script');
-        window[cb] = d => { delete window[cb]; s.remove(); resolve(d); };
-        s.onerror = () => reject(new Error('JSONP 로드 실패'));
-        s.src = QR_WEBHOOK_DEFAULT + '?callback=' + cb;
-        setTimeout(() => reject(new Error('timeout')), 15000);
-        document.head.appendChild(s);
+      const res = await fetch(QR_CSV_URL);
+      const text = await res.text();
+      // CSV 파싱 (quoted field 지원)
+      const parseCSV = t => t.trim().split('\n').map(line => {
+        const cols = []; let cur = ''; let inQ = false;
+        for (const c of line) {
+          if (c === '"') { inQ = !inQ; }
+          else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+          else { cur += c; }
+        }
+        cols.push(cur.trim());
+        return cols;
       });
-      // Sheets 반환: [[헤더행...], [데이터행...], ...]
-      const rows = Array.isArray(raw[0]) ? raw.slice(1) : raw;
+      const rows = parseCSV(text).slice(1); // 헤더 제외
       // 필드: 0=스캔시간, 1=딜러번호, 2=지점, 3=클레임번호, 4=차대번호, 5=모델,
       //       6=디펙트코드, 7=주행거리, 8=등록일, 9=수리일, 10=부품번호, 11=부품명, 12=Part순서
       scans = rows.filter(r => {
+        if (!r[3]) return false; // 클레임번호 없는 빈 행 제외
         const b = String(r[2] || '');
         if (branch && b !== branch) return false;
         return true;
