@@ -5842,6 +5842,8 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
 
     status.textContent = '스캔 데이터 불러오는 중...';
 
+    const normNo = v => String(v).replace(/^WC/i,'').trim();
+
     // 0. 수거미대상 목록 fetch
     _exemptSet.clear();
     if (QR_EXEMPT_URL) {
@@ -5850,14 +5852,13 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
         const et = await er.text();
         et.trim().split('\n').slice(1).forEach(line => {
           const cols = line.split(',');
-          const no = normNo ? normNo(cols[1] || '') : String(cols[1]||'').replace(/^WC/i,'').trim();
+          const no = normNo(cols[1] || '');
           if (no) _exemptSet.add(no);
         });
       } catch(e) { /* 미대상 fetch 실패 무시 */ }
     }
 
     // 1. Claim 상세 데이터 필터 (QR_CLAIM_DATA: [no, defect, vin7, branch, date])
-    const normNo = v => String(v).replace(/^WC/i,'').trim();
     const claims = QR_CLAIM_DATA.filter(r => {
       const d = r[4];
       const b = r[3];
