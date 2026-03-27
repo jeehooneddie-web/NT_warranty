@@ -238,7 +238,7 @@ tc_clean = tc_clean[(tc_clean['_visit'] - tc_clean['_issue']).dt.days / 365.25 <
 ok(f'5년 초과 제외: {before - len(tc_clean):,}행 제거 → 잔여 {len(tc_clean):,}행')
 tc_clean['branch'] = tc_clean[tc_dealer].astype(str).str.replace('AS_', '', regex=False)
 tc_clean['month']  = tc_clean['_visit'].dt.strftime('%y-%m')
-tc_clean['is_N']   = tc_clean[tc_result].astype(str).str.strip() == 'N'
+tc_clean['is_N']   = tc_clean[tc_result].astype(str).str.strip() == 'Y'  # Y=미실시
 
 tc_agg = tc_clean.groupby(['branch', 'month']).agg(
     total=('is_N', 'count'), n_count=('is_N', 'sum')
@@ -261,6 +261,18 @@ tc_top_data = [
     for _, r in tc_top_agg.iterrows()
 ]
 ok(f'TC TOP 집계: {len(tc_top_data)}행')
+
+# 당월 발행 TC (발행월 == 입고월)
+same_month_mask = tc_clean['_issue'].dt.to_period('M') == tc_clean['_visit'].dt.to_period('M')
+tc_same = tc_clean[same_month_mask].copy()
+tc_same_agg = tc_same.groupby(['branch', 'month', tc_campaign, tc_name]).agg(
+    total=('is_N', 'count'), n_count=('is_N', 'sum')
+).reset_index()
+tc_same_data = [
+    [r['branch'], r['month'], str(r[tc_campaign]), str(r[tc_name]), int(r['total']), int(r['n_count'])]
+    for _, r in tc_same_agg.iterrows()
+]
+ok(f'당월발행 TC: {len(tc_same_data)}건')
 
 # ── 8. CLAIM_DATA 집계 (불승인/보완요청/보완완료, Task=1) ─
 step('CLAIM_DATA 집계 중...')
@@ -378,6 +390,20 @@ try:
     cc_claim=cc[7]; cc_defect=cc[12]; cc_vin=cc[18]
     cc_branch=cc[5]; cc_cdate=cc[13]  # N열: 클레임생성일자
     cc_status=cc[1]  # B열: 청구/취소
+    cc_stage=cc[10]  # K열: 보증 Stage
+
+    def _qr_type(stage, defect):
+        s = str(stage).strip() if pd.notna(stage) else ''
+        d = str(defect).strip() if pd.notna(defect) else ''
+        if 'goodwill' in s.lower(): return 'Goodwill'
+        if 'warranty plus' in s.lower(): return 'WP'
+        if 'bsi' in s.lower(): return 'BSI'
+        if d.upper().startswith('LA'): return 'LOCAL TC'
+        try:
+            num = float(d.replace(',',''))
+            if num < 100_000_000: return 'TC/RECALL'
+        except Exception: pass
+        return 'Warranty'
     df_cl['_cdate'] = pd.to_datetime(df_cl[cc_cdate], errors='coerce')
     df_cl_2026 = df_cl[
         df_cl[cc_claim].notna() &
@@ -399,7 +425,8 @@ try:
             cdate_str = pd.to_datetime(r[cc_cdate]).strftime('%Y-%m-%d') if pd.notna(r[cc_cdate]) else ''
         except Exception:
             cdate_str = ''
-        qr_claim_rows.append([cn, str(defect).strip(), vin7, branch, cdate_str])
+        qr_type = _qr_type(r[cc_stage], defect)
+        qr_claim_rows.append([cn, str(defect).strip(), vin7, branch, cdate_str, qr_type])
     ok(f'QR_CLAIM_DATA: {len(qr_claim_rows):,}건 (2026년)')
 except Exception as _e:
     qr_claim_rows = []
@@ -414,6 +441,7 @@ person_js   = 'const PERSON_DATA='    + json.dumps(person_raw,   ensure_ascii=Fa
 daily_js    = 'const PERSON_DAILY='   + json.dumps(daily_raw,    ensure_ascii=False, separators=(',',':')) + ';'
 tc_js       = 'const TC_DATA='        + json.dumps(tc_data,      ensure_ascii=False, separators=(',',':')) + ';'
 tc_top_js   = 'const TC_TOP_DATA='   + json.dumps(tc_top_data,  ensure_ascii=False, separators=(',',':')) + ';'
+tc_same_js  = 'const TC_SAME_MONTH_DATA=' + json.dumps(tc_same_data, ensure_ascii=False, separators=(',',':')) + ';'
 claim_js      = 'const CLAIM_DATA='      + json.dumps(claim_raw,      ensure_ascii=False, separators=(',',':')) + ';'
 wholesale_js  = 'const WHOLESALE_DATA=' + json.dumps(wholesale_data, ensure_ascii=False, separators=(',',':')) + ';'
 qr_claim_js   = 'const QR_CLAIM_DATA='  + json.dumps(qr_claim_rows,  ensure_ascii=False, separators=(',',':')) + ';'
@@ -432,6 +460,7 @@ html = re.sub(r'const PERSON_DATA=\[.*?\];',         person_js,  html, flags=re.
 html = re.sub(r'const PERSON_DAILY=\[.*?\];',        daily_js,   html, flags=re.DOTALL)
 html = re.sub(r'const TC_DATA=\{.*?\};',             tc_js,      html, flags=re.DOTALL)
 html = re.sub(r'const TC_TOP_DATA=\[.*?\];',         tc_top_js,  html, flags=re.DOTALL)
+html = re.sub(r'const TC_SAME_MONTH_DATA=\[.*?\];', tc_same_js, html, flags=re.DOTALL)
 html = re.sub(r'const CLAIM_DATA=\[.*?\];',          claim_js,      html, flags=re.DOTALL)
 html = re.sub(r'const WHOLESALE_DATA=\{.*?\};',     wholesale_js,  html, flags=re.DOTALL)
 html = re.sub(r'const QR_CLAIM_DATA=\[.*?\];',      qr_claim_js,   html, flags=re.DOTALL)
