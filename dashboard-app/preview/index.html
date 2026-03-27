@@ -6056,7 +6056,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     try {
       await fetch(QR_WEBHOOK_DEFAULT, {
         method: 'POST', mode: 'no-cors',
-        headers: {'Content-Type':'application/json'},
+        headers: {'Content-Type':'text/plain'},
         body: JSON.stringify(payload)
       });
     } catch(e) { /* no-cors 정상 */ }
