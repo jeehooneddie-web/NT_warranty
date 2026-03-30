@@ -5237,7 +5237,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   }
 
   function renderMenuCfgTable() {
-    _menuCfg = loadMenuCfg();
+    if (!_menuCfg) _menuCfg = loadMenuCfg();
     const tbody = document.getElementById('menu-cfg-list');
     if (!tbody) return;
     tbody.innerHTML = _menuCfg.map((item, i) => `
