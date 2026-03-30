@@ -329,6 +329,11 @@
     </div>
     -->
     <p class="text-center text-xs text-slate-400 mt-3">일반 사용자는 보증번역기만 이용 가능합니다</p>
+    <!-- 임시 관리자 접속 -->
+    <div class="mt-4 pt-4 border-t border-slate-100">
+      <input id="tmp-pw" type="password" placeholder="임시 코드" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-center focus:outline-none" />
+      <button onclick="tmpLogin()" class="w-full mt-2 py-2 bg-amber-500 text-white rounded-lg text-sm font-semibold hover:bg-amber-600">임시 접속</button>
+    </div>
   </div>
 </div>
 
@@ -5473,6 +5478,15 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
 
   function enterAsUser() {
     applyRole('user', null);
+  }
+
+  function tmpLogin() {
+    const pw = document.getElementById('tmp-pw').value;
+    if (pw === 'nm2026') {
+      applyRole('admin', {email:'jhl@nationalmotors.co.kr', role:'admin', name:'관리자', avatar:'J', label:'관리자'});
+    } else {
+      alert('코드가 올바르지 않습니다.');
+    }
   }
 
   function enterAsQR() {
