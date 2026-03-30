@@ -263,7 +263,31 @@
       <div class="text-sm text-slate-500 mt-1">Warranty System</div>
     </div>
 
-    <!-- 관리자 로그인 폼 -->
+    <!-- 비밀번호 설정 폼 (초대 링크 클릭 시) -->
+    <div id="set-pw-form" class="hidden">
+      <div class="text-center mb-5">
+        <div class="text-base font-bold text-slate-800">비밀번호 설정</div>
+        <div class="text-xs text-slate-400 mt-1">초대된 계정의 비밀번호를 설정하세요.</div>
+      </div>
+      <div class="mb-4">
+        <label class="block text-xs font-semibold text-slate-500 mb-1.5">새 비밀번호</label>
+        <input id="set-pw-input" type="password" placeholder="비밀번호 입력 (6자 이상)"
+          class="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
+      </div>
+      <div class="mb-4">
+        <label class="block text-xs font-semibold text-slate-500 mb-1.5">비밀번호 확인</label>
+        <input id="set-pw-confirm" type="password" placeholder="비밀번호 재입력"
+          onkeydown="if(event.key==='Enter') confirmSetPassword()"
+          class="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
+      </div>
+      <p id="set-pw-error" class="hidden text-xs text-red-500 mb-3"></p>
+      <button onclick="confirmSetPassword()" id="set-pw-btn"
+        class="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
+        비밀번호 설정 완료
+      </button>
+    </div>
+
+    <!-- 로그인 폼 -->
     <div id="login-form">
       <div class="mb-4">
         <label class="block text-xs font-semibold text-slate-500 mb-1.5">이메일</label>
@@ -5598,8 +5622,20 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     document.getElementById('login-screen').style.display = 'flex';
   }
 
-  // 페이지 로드 시 Supabase 세션 복원
+  // 페이지 로드 시 Supabase 세션 복원 + 초대 링크 처리
   (async function() {
+    // 초대/비밀번호 재설정 링크 감지
+    const hash = window.location.hash;
+    if (hash.includes('type=invite') || hash.includes('type=recovery')) {
+      // Supabase SDK가 hash에서 토큰을 자동 처리
+      await _sb.auth.getSession(); // 토큰 교환 트리거
+      document.getElementById('set-pw-form').classList.remove('hidden');
+      document.getElementById('login-form').classList.add('hidden');
+      document.getElementById('login-screen').querySelector('.flex.items-center.gap-3')?.classList.add('hidden');
+      document.getElementById('login-screen').querySelector('.flex.gap-2')?.classList.add('hidden');
+      return;
+    }
+
     const { data: { session } } = await _sb.auth.getSession();
     if (session) {
       const email = session.user.email;
@@ -5617,6 +5653,40 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       }
     }
   })();
+
+  async function confirmSetPassword() {
+    const pw1  = document.getElementById('set-pw-input').value;
+    const pw2  = document.getElementById('set-pw-confirm').value;
+    const err  = document.getElementById('set-pw-error');
+    const btn  = document.getElementById('set-pw-btn');
+    err.classList.add('hidden');
+    if (pw1.length < 6) { err.textContent = '비밀번호는 6자 이상이어야 합니다.'; err.classList.remove('hidden'); return; }
+    if (pw1 !== pw2)    { err.textContent = '비밀번호가 일치하지 않습니다.';     err.classList.remove('hidden'); return; }
+    btn.textContent = '설정 중...'; btn.disabled = true;
+    const { error } = await _sb.auth.updateUser({ password: pw1 });
+    if (error) {
+      err.textContent = '오류: ' + error.message;
+      err.classList.remove('hidden');
+      btn.textContent = '비밀번호 설정 완료'; btn.disabled = false;
+      return;
+    }
+    // 설정 완료 → 역할 확인 후 로그인
+    const { data: { session } } = await _sb.auth.getSession();
+    if (session) {
+      const email = session.user.email;
+      const { data: roleData } = await _sb.from('user_roles').select('role,name').eq('email', email).single();
+      if (roleData) {
+        window.location.hash = '';
+        const account = { email, role: roleData.role, name: roleData.name || email, avatar: email[0].toUpperCase(), label: ROLE_LABEL[roleData.role] || '일반' };
+        applyRole(roleData.role, account);
+      } else {
+        await _sb.auth.signOut();
+        err.textContent = '접근 권한이 없습니다. 관리자에게 문의하세요.';
+        err.classList.remove('hidden');
+        btn.textContent = '비밀번호 설정 완료'; btn.disabled = false;
+      }
+    }
+  }
 
   /* -----------------------------------------------
      구성원 관리
