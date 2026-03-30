@@ -365,6 +365,11 @@
         <span>클레임 볼륨</span>
       </div>
 
+      <div class="nav-item admin-only" data-view="view-qr-match" onclick="showView('view-qr-match')">
+        <i data-lucide="git-compare-arrows"></i>
+        <span>고품 반납 현황</span>
+      </div>
+
       <!-- 구분선 (관리자) -->
       <div class="admin-only pt-3 pb-1 px-1">
         <span class="text-blue-400/60 text-xs uppercase tracking-wider font-medium">관리자</span>
@@ -380,7 +385,7 @@
         <span>데이터 업데이트</span>
       </div>
 
-      <!-- 구분선 (전체) -->
+      <!-- 구분선 (도구) -->
       <div class="pt-3 pb-1 px-1">
         <span class="text-blue-400/60 text-xs uppercase tracking-wider font-medium">도구</span>
       </div>
@@ -396,10 +401,6 @@
       <div class="nav-item admin-only" data-view="view-qr-scanner" onclick="showView('view-qr-scanner')">
         <i data-lucide="scan-qr-code"></i>
         <span>고품 QR 스캔</span>
-      </div>
-      <div class="nav-item admin-only" data-view="view-qr-match" onclick="showView('view-qr-match')">
-        <i data-lucide="git-compare-arrows"></i>
-        <span>고품 반납 현황</span>
       </div>
     </nav>
 
@@ -5184,21 +5185,25 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   /* -----------------------------------------------
      메뉴 설정 관리
      ----------------------------------------------- */
+  // 권한 레벨: admin(3) > member(2) > all(1)
+  const ROLE_LEVEL   = { admin: 3, member: 2, user: 1 };
+  const MINROLE_LEVEL = { admin: 3, member: 2, all: 1 };
+
   const DEFAULT_MENU_CFG = [
-    { key:'view-notices',     label:'공지사항',        adminOnly:false, hidden:false, fixed:false },
-    { key:'view-sales',       label:'보증 매출',       adminOnly:true,  hidden:false, fixed:false },
-    { key:'view-top-defect',  label:'TOP DEFECT',      adminOnly:true,  hidden:false, fixed:false },
-    { key:'view-person',      label:'개인별 청구',      adminOnly:true,  hidden:false, fixed:false },
-    { key:'view-tc',          label:'TC 미실시율',      adminOnly:true,  hidden:false, fixed:false },
-    { key:'view-tc-top20',    label:'미실시 상위 20',   adminOnly:true,  hidden:false, fixed:false },
-    { key:'view-claim',       label:'CLAIM 상태 확인', adminOnly:true,  hidden:false, fixed:false },
-    { key:'view-wholesale',   label:'클레임 볼륨',      adminOnly:true,  hidden:false, fixed:false },
-    { key:'view-admin-menus', label:'메뉴 관리',        adminOnly:true,  hidden:false, fixed:true  },
-    { key:'data-update',      label:'데이터 업데이트',  adminOnly:true,  hidden:false, fixed:true  },
-    { key:'view-translator',  label:'보증번역기',       adminOnly:false, hidden:false, fixed:false },
-    { key:'view-warranty',    label:'보증기간 조회',    adminOnly:false, hidden:false, fixed:false },
-    { key:'view-qr-scanner',  label:'고품 QR 스캔',    adminOnly:true,  hidden:false, fixed:false },
-    { key:'view-qr-match',    label:'고품 반납 현황',  adminOnly:true,  hidden:false, fixed:false },
+    { key:'view-notices',     label:'공지사항',        minRole:'all',    hidden:false, fixed:false },
+    { key:'view-sales',       label:'보증 매출',       minRole:'admin',  hidden:false, fixed:false },
+    { key:'view-top-defect',  label:'TOP DEFECT',      minRole:'admin',  hidden:false, fixed:false },
+    { key:'view-person',      label:'개인별 청구',      minRole:'admin',  hidden:false, fixed:false },
+    { key:'view-tc',          label:'TC 미실시율',      minRole:'admin',  hidden:false, fixed:false },
+    { key:'view-tc-top20',    label:'미실시 상위 20',   minRole:'admin',  hidden:false, fixed:false },
+    { key:'view-claim',       label:'CLAIM 상태 확인', minRole:'admin',  hidden:false, fixed:false },
+    { key:'view-wholesale',   label:'클레임 볼륨',      minRole:'admin',  hidden:false, fixed:false },
+    { key:'view-qr-match',    label:'고품 반납 현황',  minRole:'admin',  hidden:false, fixed:false },
+    { key:'view-admin-menus', label:'메뉴 관리',        minRole:'admin',  hidden:false, fixed:true  },
+    { key:'data-update',      label:'데이터 업데이트',  minRole:'admin',  hidden:false, fixed:true  },
+    { key:'view-translator',  label:'보증번역기',       minRole:'all',    hidden:false, fixed:false },
+    { key:'view-warranty',    label:'보증기간 조회',    minRole:'all',    hidden:false, fixed:false },
+    { key:'view-qr-scanner',  label:'고품 QR 스캔',    minRole:'all',    hidden:false, fixed:false },
   ];
 
   let _menuCfg = null;
@@ -5210,7 +5215,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
         const saved = JSON.parse(s);
         return DEFAULT_MENU_CFG.map(d => {
           const found = saved.find(f => f.key === d.key);
-          return found ? { ...d, adminOnly: d.fixed ? d.adminOnly : found.adminOnly, hidden: found.hidden } : { ...d };
+          return found ? { ...d, minRole: d.fixed ? d.minRole : found.minRole, hidden: found.hidden } : { ...d };
         });
       }
     } catch(e) {}
@@ -5218,21 +5223,26 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   }
 
   function saveMenuCfg(cfg) {
-    localStorage.setItem('nm_menu_cfg', JSON.stringify(cfg.map(c => ({ key:c.key, adminOnly:c.adminOnly, hidden:c.hidden }))));
+    localStorage.setItem('nm_menu_cfg', JSON.stringify(cfg.map(c => ({ key:c.key, minRole:c.minRole, hidden:c.hidden }))));
   }
 
-  function applyMenuCfg(cfg) {
+  function applyMenuCfg(cfg, role) {
+    const r = role || sessionStorage.getItem('nm_role') || 'user';
+    const userLevel = ROLE_LEVEL[r] || 1;
     cfg.forEach(item => {
       const el = document.querySelector(`[data-view="${item.key}"], [data-menu-key="${item.key}"]`);
       if (!el) return;
-      if (item.hidden) {
-        el.dataset.menuHidden = '1';
+      const required = MINROLE_LEVEL[item.minRole] || 1;
+      if (item.hidden || userLevel < required) {
         el.style.display = 'none';
       } else {
-        delete el.dataset.menuHidden;
-        if (item.adminOnly) el.classList.add('admin-only');
-        else el.classList.remove('admin-only');
+        el.style.display = '';
       }
+    });
+    // 관리자 전용 구분선/레이블은 기존 admin-only 방식 유지
+    const isAdmin = r === 'admin';
+    document.querySelectorAll('.admin-only:not([data-view]):not([data-menu-key])').forEach(el => {
+      el.style.display = isAdmin ? '' : 'none';
     });
   }
 
@@ -5240,31 +5250,46 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     if (!_menuCfg) _menuCfg = loadMenuCfg();
     const tbody = document.getElementById('menu-cfg-list');
     if (!tbody) return;
-    tbody.innerHTML = _menuCfg.map((item, i) => `
+    const roleInfo = {
+      admin:  { label:'관리자',  cls:'bg-blue-100 text-blue-700',   next:'member' },
+      member: { label:'구성원',  cls:'bg-purple-100 text-purple-700', next:'all'  },
+      all:    { label:'전체',    cls:'bg-emerald-100 text-emerald-700', next:'admin' },
+    };
+    tbody.innerHTML = _menuCfg.map((item, i) => {
+      const ri = roleInfo[item.minRole] || roleInfo.admin;
+      return `
       <tr class="${item.hidden ? 'opacity-40' : ''}">
         <td class="px-4 py-3 font-medium text-slate-800">${item.label}</td>
         <td class="px-4 py-3 text-center">
           ${item.fixed
             ? `<span class="px-2.5 py-1 bg-slate-100 text-slate-400 rounded text-xs">관리자 고정</span>`
-            : `<button onclick="toggleMenuProp(${i},'adminOnly')"
-                 class="px-3 py-1 rounded-full text-xs font-semibold ${item.adminOnly ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}">
-                 ${item.adminOnly ? '관리자 전용' : '전체 공개'}
+            : `<button onclick="toggleMinRole(${i})"
+                 class="px-3 py-1 rounded-full text-xs font-semibold ${ri.cls}">
+                 ${ri.label}
                </button>`
           }
         </td>
         <td class="px-4 py-3 text-center">
-          <button onclick="toggleMenuProp(${i},'hidden')"
+          <button onclick="toggleMenuHidden(${i})"
             class="px-3 py-1 rounded-full text-xs font-semibold ${item.hidden ? 'bg-slate-200 text-slate-500' : 'bg-emerald-100 text-emerald-700'}">
             ${item.hidden ? '숨김' : '표시'}
           </button>
         </td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
   }
 
-  function toggleMenuProp(idx, prop) {
+  function toggleMinRole(idx) {
     if (!_menuCfg) _menuCfg = loadMenuCfg();
-    _menuCfg[idx][prop] = !_menuCfg[idx][prop];
+    const order = ['admin', 'member', 'all'];
+    const cur = _menuCfg[idx].minRole;
+    _menuCfg[idx].minRole = order[(order.indexOf(cur) + 1) % 3];
+    renderMenuCfgTable();
+  }
+
+  function toggleMenuHidden(idx) {
+    if (!_menuCfg) _menuCfg = loadMenuCfg();
+    _menuCfg[idx].hidden = !_menuCfg[idx].hidden;
     renderMenuCfgTable();
   }
 
@@ -5272,12 +5297,6 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     if (!_menuCfg) _menuCfg = loadMenuCfg();
     saveMenuCfg(_menuCfg);
     applyMenuCfg(_menuCfg);
-    const role = sessionStorage.getItem('nm_role');
-    if (role) {
-      document.querySelectorAll('.admin-only').forEach(el => {
-        if (!el.dataset.menuHidden) el.style.display = (role === 'admin') ? '' : 'none';
-      });
-    }
     const btn = event.target;
     const orig = btn.textContent;
     btn.textContent = '저장 완료 ✓';
@@ -5291,12 +5310,6 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     _menuCfg = null;
     renderMenuCfgTable();
     applyMenuCfg(loadMenuCfg());
-    const role = sessionStorage.getItem('nm_role');
-    if (role) {
-      document.querySelectorAll('.admin-only').forEach(el => {
-        el.style.display = (role === 'admin') ? '' : 'none';
-      });
-    }
   }
 
   /* -----------------------------------------------
@@ -5308,12 +5321,8 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
 
   function applyRole(role, account) {
     const isAdmin = role === 'admin';
-    // 메뉴 설정 적용 (admin-only 클래스 업데이트) → 그 다음 표시/숨김 처리
-    applyMenuCfg(loadMenuCfg());
-    // 관리자 전용 메뉴 표시/숨김
-    document.querySelectorAll('.admin-only').forEach(el => {
-      el.style.display = isAdmin ? '' : 'none';
-    });
+    // 메뉴 설정 적용 (role 기반 표시/숨김)
+    applyMenuCfg(loadMenuCfg(), role);
     // 사이드바 프로필 업데이트
     if (account) {
       document.getElementById('sidebar-avatar').textContent = account.avatar;
@@ -5324,9 +5333,9 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       document.getElementById('sidebar-name').textContent   = '일반 사용자';
       document.getElementById('sidebar-role').textContent   = '번역기 전용';
     }
-    // 일반 사용자는 번역기 뷰, 관리자는 공지사항 뷰로 이동
-    if (!isAdmin) showView('view-translator');
-    else showView('view-notices');
+    // 역할별 초기 뷰
+    if (role === 'admin' || role === 'member') showView('view-notices');
+    else showView('view-translator');
     // 로그인 화면 숨기기
     document.getElementById('login-screen').style.display = 'none';
     sessionStorage.setItem('nm_role', role);
