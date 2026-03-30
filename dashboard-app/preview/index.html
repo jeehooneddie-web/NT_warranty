@@ -5423,6 +5423,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   }
 
   let _otpEmail = '';
+  let _accessToken = '';
 
   async function doLogin() {
     const email = document.getElementById('login-email').value.trim();
@@ -5489,6 +5490,8 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     const rd = Array.isArray(roleArr) && roleArr[0];
     if (!rd) { errEl.textContent = '등록되지 않은 사용자'; return; }
 
+    // 토큰 저장 (user_roles 쿼리에 사용)
+    _accessToken = resData.access_token;
     // 세션 저장 (비동기, 대기 안 함)
     _sb.auth.setSession({ access_token: resData.access_token, refresh_token: resData.refresh_token }).catch(()=>{});
 
@@ -5691,12 +5694,24 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   /* -----------------------------------------------
      구성원 관리
      ----------------------------------------------- */
+  function _urHeaders() {
+    return { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${_accessToken}`, 'Content-Type': 'application/json' };
+  }
+
   async function loadUserList() {
     const tbody = document.getElementById('user-list-body');
     if (!tbody) return;
-    const { data, error } = await _sb.from('user_roles').select('*').order('created_at');
-    if (error) {
-      tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-red-400 text-xs">${error.message}</td></tr>`;
+    let data;
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/user_roles?select=*&order=created_at`, { headers: _urHeaders() });
+      data = await r.json();
+    } catch(e) { data = { message: e.message }; }
+    if (!Array.isArray(data)) {
+      tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-red-400 text-xs">${data.message || '불러오기 실패'}</td></tr>`;
+      return;
+    }
+    if (data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-slate-400 text-xs">등록된 구성원이 없습니다.</td></tr>`;
       return;
     }
     const roleColor = { admin:'bg-blue-100 text-blue-700', member:'bg-purple-100 text-purple-700', user:'bg-slate-100 text-slate-600' };
@@ -5727,23 +5742,37 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     const role  = document.getElementById('new-user-role').value;
     const msg   = document.getElementById('user-mgmt-msg');
     if (!email) { alert('이메일을 입력하세요.'); return; }
-    const { error } = await _sb.from('user_roles').insert({ email, name: name || null, role });
-    if (error) { alert('오류: ' + error.message); return; }
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/user_roles`, {
+      method: 'POST',
+      headers: { ..._urHeaders(), 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ email, name: name || null, role })
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(()=>({}));
+      alert('오류: ' + (err.message || r.status)); return;
+    }
     document.getElementById('new-user-email').value = '';
     document.getElementById('new-user-name').value  = '';
-    msg.textContent = `${email} 등록 완료. 해당 이메일로 회원가입 후 로그인하면 접속 가능합니다.`;
+    msg.textContent = `${email} 등록 완료. 해당 이메일로 로그인하면 접속 가능합니다.`;
     msg.classList.remove('hidden');
     setTimeout(() => msg.classList.add('hidden'), 5000);
     loadUserList();
   }
 
   async function changeUserRole(email, role) {
-    await _sb.from('user_roles').update({ role }).eq('email', email);
+    await fetch(`${SUPABASE_URL}/rest/v1/user_roles?email=eq.${encodeURIComponent(email)}`, {
+      method: 'PATCH',
+      headers: { ..._urHeaders(), 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ role })
+    });
   }
 
   async function removeUserRole(email) {
     if (!confirm(`${email} 접근 권한을 삭제하시겠습니까?`)) return;
-    await _sb.from('user_roles').delete().eq('email', email);
+    await fetch(`${SUPABASE_URL}/rest/v1/user_roles?email=eq.${encodeURIComponent(email)}`, {
+      method: 'DELETE',
+      headers: _urHeaders()
+    });
     loadUserList();
   }
 
