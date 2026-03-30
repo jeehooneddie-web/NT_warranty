@@ -5429,10 +5429,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     if (!email) { errEl.textContent = '이메일을 입력하세요.'; errEl.classList.remove('hidden'); return; }
     btn.textContent = '발송 중...'; btn.disabled = true;
 
-    const { error } = await _sb.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false }
-    });
+    const { error } = await _sb.auth.signInWithOtp({ email });
 
     btn.textContent = '인증코드 발송'; btn.disabled = false;
     if (error) {
