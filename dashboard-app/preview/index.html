@@ -375,7 +375,7 @@
         <span>메뉴 관리</span>
       </div>
 
-      <div class="nav-item admin-only" onclick="openDataUpdateModal()">
+      <div class="nav-item admin-only" data-menu-key="data-update" onclick="openDataUpdateModal()">
         <i data-lucide="refresh-cw"></i>
         <span>데이터 업데이트</span>
       </div>
@@ -860,113 +860,23 @@
       <div id="view-admin-menus" class="view hidden">
         <div class="flex items-center justify-between mb-5">
           <h2 class="text-xl font-bold text-slate-800">메뉴 관리</h2>
+          <div class="flex gap-2">
+            <button onclick="resetMenuCfg()" class="px-3 py-1.5 text-xs text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50">초기화</button>
+            <button onclick="saveMenuCfgChanges()" class="px-4 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700">저장 & 적용</button>
+          </div>
         </div>
+        <p class="text-xs text-slate-400 mb-4">권한을 전체로 변경하면 게스트 사용자도 해당 메뉴를 볼 수 있습니다. 변경 후 반드시 저장하세요.</p>
 
         <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
               <tr class="text-xs text-slate-500 uppercase tracking-wider bg-slate-50">
-                <th class="px-4 py-3 text-left font-medium">순서</th>
                 <th class="px-4 py-3 text-left font-medium">메뉴명</th>
-                <th class="px-4 py-3 text-left font-medium">경로</th>
-                <th class="px-4 py-3 text-left font-medium">아이콘</th>
-                <th class="px-4 py-3 text-left font-medium">대상</th>
-                <th class="px-4 py-3 text-center font-medium">활성화</th>
-                <th class="px-4 py-3 text-center font-medium">작업</th>
+                <th class="px-4 py-3 text-center font-medium">권한</th>
+                <th class="px-4 py-3 text-center font-medium">표시</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100">
-              <tr>
-                <td class="px-4 py-3 text-slate-500">1</td>
-                <td class="px-4 py-3 font-medium text-slate-800">대시보드</td>
-                <td class="px-4 py-3 text-slate-500 font-mono text-xs">view-dashboard</td>
-                <td class="px-4 py-3 text-slate-500 font-mono text-xs">layout-dashboard</td>
-                <td class="px-4 py-3 text-slate-600">전체</td>
-                <td class="px-4 py-3 text-center"><span class="inline-block w-4 h-4 bg-emerald-500 rounded-full"></span></td>
-                <td class="px-4 py-3 text-center">
-                  <div class="flex items-center justify-center gap-2">
-                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-500">2</td>
-                <td class="px-4 py-3 font-medium text-slate-800">공지사항</td>
-                <td class="px-4 py-3 text-slate-500 font-mono text-xs">view-notices</td>
-                <td class="px-4 py-3 text-slate-500 font-mono text-xs">bell</td>
-                <td class="px-4 py-3 text-slate-600">전체</td>
-                <td class="px-4 py-3 text-center"><span class="inline-block w-4 h-4 bg-emerald-500 rounded-full"></span></td>
-                <td class="px-4 py-3 text-center">
-                  <div class="flex items-center justify-center gap-2">
-                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-500">3</td>
-                <td class="px-4 py-3 font-medium text-slate-800">문의하기</td>
-                <td class="px-4 py-3 text-slate-500 font-mono text-xs">view-inquiries</td>
-                <td class="px-4 py-3 text-slate-500 font-mono text-xs">message-square</td>
-                <td class="px-4 py-3 text-slate-600">전체</td>
-                <td class="px-4 py-3 text-center"><span class="inline-block w-4 h-4 bg-emerald-500 rounded-full"></span></td>
-                <td class="px-4 py-3 text-center">
-                  <div class="flex items-center justify-center gap-2">
-                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-500">4</td>
-                <td class="px-4 py-3 font-medium text-slate-800">문의 관리</td>
-                <td class="px-4 py-3 text-slate-500 font-mono text-xs">view-admin-inquiries</td>
-                <td class="px-4 py-3 text-slate-500 font-mono text-xs">message-square-dot</td>
-                <td class="px-4 py-3 text-slate-600">관리자</td>
-                <td class="px-4 py-3 text-center"><span class="inline-block w-4 h-4 bg-emerald-500 rounded-full"></span></td>
-                <td class="px-4 py-3 text-center">
-                  <div class="flex items-center justify-center gap-2">
-                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-500">5</td>
-                <td class="px-4 py-3 font-medium text-slate-800">공지 관리</td>
-                <td class="px-4 py-3 text-slate-500 font-mono text-xs">view-admin-notices</td>
-                <td class="px-4 py-3 text-slate-500 font-mono text-xs">megaphone</td>
-                <td class="px-4 py-3 text-slate-600">관리자</td>
-                <td class="px-4 py-3 text-center"><span class="inline-block w-4 h-4 bg-emerald-500 rounded-full"></span></td>
-                <td class="px-4 py-3 text-center">
-                  <div class="flex items-center justify-center gap-2">
-                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-500">6</td>
-                <td class="px-4 py-3 font-medium text-slate-800">메뉴 관리</td>
-                <td class="px-4 py-3 text-slate-500 font-mono text-xs">view-admin-menus</td>
-                <td class="px-4 py-3 text-slate-500 font-mono text-xs">settings</td>
-                <td class="px-4 py-3 text-slate-600">관리자</td>
-                <td class="px-4 py-3 text-center"><span class="inline-block w-4 h-4 bg-emerald-500 rounded-full"></span></td>
-                <td class="px-4 py-3 text-center">
-                  <div class="flex items-center justify-center gap-2">
-                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-500">7</td>
-                <td class="px-4 py-3 font-medium text-slate-800">보증번역기</td>
-                <td class="px-4 py-3 text-slate-500 font-mono text-xs">view-translator</td>
-                <td class="px-4 py-3 text-slate-500 font-mono text-xs">languages</td>
-                <td class="px-4 py-3 text-slate-600">전체</td>
-                <td class="px-4 py-3 text-center"><span class="inline-block w-4 h-4 bg-emerald-500 rounded-full"></span></td>
-                <td class="px-4 py-3 text-center">
-                  <div class="flex items-center justify-center gap-2">
-                    <button class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">수정</button>
-                  </div>
-                </td>
-              </tr>
+            <tbody id="menu-cfg-list" class="divide-y divide-slate-100">
             </tbody>
           </table>
         </div>
@@ -2687,6 +2597,7 @@
     if (viewId === 'view-qr-scanner') initQRScanner();
     if (viewId === 'view-qr-match')   initQRMatch();
     if (viewId === 'view-wholesale') renderWholesale();
+    if (viewId === 'view-admin-menus') renderMenuCfgTable();
     // 대시보드 드래그 초기화
     if (viewId === 'view-dashboard') setTimeout(initDashboard, 50);
 
@@ -5271,22 +5182,144 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   initDashboard();
 
   /* -----------------------------------------------
+     메뉴 설정 관리
+     ----------------------------------------------- */
+  const DEFAULT_MENU_CFG = [
+    { key:'view-notices',     label:'공지사항',        adminOnly:false, hidden:false, fixed:false },
+    { key:'view-sales',       label:'보증 매출',       adminOnly:true,  hidden:false, fixed:false },
+    { key:'view-top-defect',  label:'TOP DEFECT',      adminOnly:true,  hidden:false, fixed:false },
+    { key:'view-person',      label:'개인별 청구',      adminOnly:true,  hidden:false, fixed:false },
+    { key:'view-tc',          label:'TC 미실시율',      adminOnly:true,  hidden:false, fixed:false },
+    { key:'view-tc-top20',    label:'미실시 상위 20',   adminOnly:true,  hidden:false, fixed:false },
+    { key:'view-claim',       label:'CLAIM 상태 확인', adminOnly:true,  hidden:false, fixed:false },
+    { key:'view-wholesale',   label:'클레임 볼륨',      adminOnly:true,  hidden:false, fixed:false },
+    { key:'view-admin-menus', label:'메뉴 관리',        adminOnly:true,  hidden:false, fixed:true  },
+    { key:'data-update',      label:'데이터 업데이트',  adminOnly:true,  hidden:false, fixed:true  },
+    { key:'view-translator',  label:'보증번역기',       adminOnly:false, hidden:false, fixed:false },
+    { key:'view-warranty',    label:'보증기간 조회',    adminOnly:false, hidden:false, fixed:false },
+    { key:'view-qr-scanner',  label:'고품 QR 스캔',    adminOnly:true,  hidden:false, fixed:false },
+    { key:'view-qr-match',    label:'고품 반납 현황',  adminOnly:true,  hidden:false, fixed:false },
+  ];
+
+  let _menuCfg = null;
+
+  function loadMenuCfg() {
+    try {
+      const s = localStorage.getItem('nm_menu_cfg');
+      if (s) {
+        const saved = JSON.parse(s);
+        return DEFAULT_MENU_CFG.map(d => {
+          const found = saved.find(f => f.key === d.key);
+          return found ? { ...d, adminOnly: d.fixed ? d.adminOnly : found.adminOnly, hidden: found.hidden } : { ...d };
+        });
+      }
+    } catch(e) {}
+    return DEFAULT_MENU_CFG.map(d => ({ ...d }));
+  }
+
+  function saveMenuCfg(cfg) {
+    localStorage.setItem('nm_menu_cfg', JSON.stringify(cfg.map(c => ({ key:c.key, adminOnly:c.adminOnly, hidden:c.hidden }))));
+  }
+
+  function applyMenuCfg(cfg) {
+    cfg.forEach(item => {
+      const el = document.querySelector(`[data-view="${item.key}"], [data-menu-key="${item.key}"]`);
+      if (!el) return;
+      if (item.hidden) {
+        el.dataset.menuHidden = '1';
+        el.style.display = 'none';
+      } else {
+        delete el.dataset.menuHidden;
+        if (item.adminOnly) el.classList.add('admin-only');
+        else el.classList.remove('admin-only');
+      }
+    });
+  }
+
+  function renderMenuCfgTable() {
+    _menuCfg = loadMenuCfg();
+    const tbody = document.getElementById('menu-cfg-list');
+    if (!tbody) return;
+    tbody.innerHTML = _menuCfg.map((item, i) => `
+      <tr class="${item.hidden ? 'opacity-40' : ''}">
+        <td class="px-4 py-3 font-medium text-slate-800">${item.label}</td>
+        <td class="px-4 py-3 text-center">
+          ${item.fixed
+            ? `<span class="px-2.5 py-1 bg-slate-100 text-slate-400 rounded text-xs">관리자 고정</span>`
+            : `<button onclick="toggleMenuProp(${i},'adminOnly')"
+                 class="px-3 py-1 rounded-full text-xs font-semibold ${item.adminOnly ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}">
+                 ${item.adminOnly ? '관리자 전용' : '전체 공개'}
+               </button>`
+          }
+        </td>
+        <td class="px-4 py-3 text-center">
+          <button onclick="toggleMenuProp(${i},'hidden')"
+            class="px-3 py-1 rounded-full text-xs font-semibold ${item.hidden ? 'bg-slate-200 text-slate-500' : 'bg-emerald-100 text-emerald-700'}">
+            ${item.hidden ? '숨김' : '표시'}
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function toggleMenuProp(idx, prop) {
+    if (!_menuCfg) _menuCfg = loadMenuCfg();
+    _menuCfg[idx][prop] = !_menuCfg[idx][prop];
+    renderMenuCfgTable();
+  }
+
+  function saveMenuCfgChanges() {
+    if (!_menuCfg) _menuCfg = loadMenuCfg();
+    saveMenuCfg(_menuCfg);
+    applyMenuCfg(_menuCfg);
+    const role = sessionStorage.getItem('nm_role');
+    if (role) {
+      document.querySelectorAll('.admin-only').forEach(el => {
+        if (!el.dataset.menuHidden) el.style.display = (role === 'admin') ? '' : 'none';
+      });
+    }
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = '저장 완료 ✓';
+    btn.disabled = true;
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
+  }
+
+  function resetMenuCfg() {
+    if (!confirm('메뉴 설정을 기본값으로 초기화하시겠습니까?')) return;
+    localStorage.removeItem('nm_menu_cfg');
+    _menuCfg = null;
+    renderMenuCfgTable();
+    applyMenuCfg(loadMenuCfg());
+    const role = sessionStorage.getItem('nm_role');
+    if (role) {
+      document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = (role === 'admin') ? '' : 'none';
+      });
+    }
+  }
+
+  /* -----------------------------------------------
      인증 (로그인 / 로그아웃)
      ----------------------------------------------- */
-  const ADMIN_EMAIL = 'jhl@nationalmotors.co.kr';
-  const ADMIN_PW    = '1qaz2wsxQ!';
+  const ACCOUNTS = [
+    { email:'jhl@nationalmotors.co.kr', pw:'1qaz2wsxQ!', role:'admin', avatar:'J', name:'jhl@nationalmotors.co.kr', label:'관리자' },
+    { email:'yyc@sc.co.kr',             pw:'1234',        role:'admin', avatar:'Y', name:'yyc@sc.co.kr',             label:'관리자' },
+  ];
 
-  function applyRole(role) {
+  function applyRole(role, account) {
     const isAdmin = role === 'admin';
+    // 메뉴 설정 적용 (admin-only 클래스 업데이트) → 그 다음 표시/숨김 처리
+    applyMenuCfg(loadMenuCfg());
     // 관리자 전용 메뉴 표시/숨김
     document.querySelectorAll('.admin-only').forEach(el => {
       el.style.display = isAdmin ? '' : 'none';
     });
     // 사이드바 프로필 업데이트
-    if (isAdmin) {
-      document.getElementById('sidebar-avatar').textContent = 'J';
-      document.getElementById('sidebar-name').textContent   = 'jhl@nationalmotors.co.kr';
-      document.getElementById('sidebar-role').textContent   = '관리자';
+    if (account) {
+      document.getElementById('sidebar-avatar').textContent = account.avatar;
+      document.getElementById('sidebar-name').textContent   = account.name;
+      document.getElementById('sidebar-role').textContent   = account.label;
     } else {
       document.getElementById('sidebar-avatar').textContent = 'U';
       document.getElementById('sidebar-name').textContent   = '일반 사용자';
@@ -5301,17 +5334,18 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   }
 
   function doLogin() {
-    const email = document.getElementById('login-email').value.trim();
-    const pw    = document.getElementById('login-pw').value;
-    if (email === ADMIN_EMAIL && pw === ADMIN_PW) {
-      applyRole('admin');
+    const email   = document.getElementById('login-email').value.trim();
+    const pw      = document.getElementById('login-pw').value;
+    const matched = ACCOUNTS.find(a => a.email === email && a.pw === pw);
+    if (matched) {
+      applyRole(matched.role, matched);
     } else {
       document.getElementById('login-error').classList.remove('hidden');
     }
   }
 
   function enterAsUser() {
-    applyRole('user');
+    applyRole('user', null);
   }
 
   function enterAsQR() {
