@@ -5460,16 +5460,26 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     if (token.length < 4) { errEl.textContent = '코드를 입력하세요.'; errEl.classList.remove('hidden'); return; }
     btn.textContent = '확인 중...'; btn.disabled = true;
 
-    const { data: vData, error: vError } = await _sb.auth.verifyOtp({ email: _otpEmail, token, type: 'email' });
-    console.log('[verifyOtp]', { vData, vError });
+    // Supabase JS 우회 - 직접 fetch
+    let res, resData;
+    try {
+      res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+        body: JSON.stringify({ email: _otpEmail, token, type: 'email', redirect_to: window.location.href })
+      });
+      resData = await res.json();
+    } catch(e) { resData = { error: e.message }; }
+    console.log('[manual verify]', resData);
     btn.textContent = '로그인'; btn.disabled = false;
-    if (vError) {
-      errEl.textContent = '[디버그] verifyOtp 오류: ' + vError.message;
+    if (resData.error || !resData.access_token) {
+      errEl.textContent = '[디버그] ' + (resData.error_description || resData.error || '알 수 없는 오류');
       errEl.classList.remove('hidden');
       return;
     }
-    errEl.textContent = '[디버그] verifyOtp 성공 - 세션 처리 중...';
+    errEl.textContent = '[디버그] 성공! 세션 설정 중...';
     errEl.classList.remove('hidden');
+    await _sb.auth.setSession({ access_token: resData.access_token, refresh_token: resData.refresh_token });
     // onAuthStateChange가 SIGNED_IN 이벤트로 자동 처리
   }
 
