@@ -5458,13 +5458,16 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     if (token.length < 4) { errEl.textContent = '코드를 입력하세요.'; errEl.classList.remove('hidden'); return; }
     btn.textContent = '확인 중...'; btn.disabled = true;
 
-    const { error } = await _sb.auth.verifyOtp({ email: _otpEmail, token, type: 'email' });
+    const { data: otpData, error } = await _sb.auth.verifyOtp({ email: _otpEmail, token, type: 'email' });
+    console.log('[verifyOtp]', { otpData, error });
     btn.textContent = '로그인'; btn.disabled = false;
     if (error) {
-      errEl.textContent = '코드가 올바르지 않거나 만료되었습니다.';
+      errEl.textContent = '[디버그] ' + error.message;
       errEl.classList.remove('hidden');
       return;
     }
+    errEl.textContent = '[디버그] 성공 - 세션 대기 중...';
+    errEl.classList.remove('hidden');
     // onAuthStateChange가 SIGNED_IN 이벤트로 자동 처리
   }
 
