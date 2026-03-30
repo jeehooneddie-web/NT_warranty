@@ -5484,8 +5484,17 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     }
     errEl.textContent = '[디버그] 성공! 세션 설정 중...';
     errEl.classList.remove('hidden');
-    await _sb.auth.setSession({ access_token: resData.access_token, refresh_token: resData.refresh_token });
-    // onAuthStateChange가 SIGNED_IN 이벤트로 자동 처리
+    const { error: sessErr } = await _sb.auth.setSession({ access_token: resData.access_token, refresh_token: resData.refresh_token });
+    console.log('[setSession]', sessErr);
+    if (sessErr) {
+      errEl.textContent = '[디버그] setSession 오류: ' + sessErr.message;
+      return;
+    }
+    // setSession 성공 - 직접 _handleSession 호출
+    const { data: { session } } = await _sb.auth.getSession();
+    console.log('[getSession]', session);
+    if (session) await _handleSession(session);
+    else errEl.textContent = '[디버그] 세션 없음';
   }
 
   function resetLoginForm() {
