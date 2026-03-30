@@ -5482,19 +5482,26 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       errEl.classList.remove('hidden');
       return;
     }
-    errEl.textContent = '[디버그] 성공! 세션 설정 중...';
+    errEl.textContent = '[디버그] 역할 확인 중...';
     errEl.classList.remove('hidden');
-    const { error: sessErr } = await _sb.auth.setSession({ access_token: resData.access_token, refresh_token: resData.refresh_token });
-    console.log('[setSession]', sessErr);
-    if (sessErr) {
-      errEl.textContent = '[디버그] setSession 오류: ' + sessErr.message;
-      return;
-    }
-    // setSession 성공 - 직접 _handleSession 호출
-    const { data: { session } } = await _sb.auth.getSession();
-    console.log('[getSession]', session);
-    if (session) await _handleSession(session);
-    else errEl.textContent = '[디버그] 세션 없음';
+
+    // access_token으로 직접 user_roles 조회
+    let roleArr;
+    try {
+      const rRes = await fetch(`${SUPABASE_URL}/rest/v1/user_roles?email=eq.${encodeURIComponent(_otpEmail)}&select=role,name`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${resData.access_token}` }
+      });
+      roleArr = await rRes.json();
+    } catch(e) { roleArr = []; }
+    console.log('[roleArr]', roleArr);
+
+    const rd = Array.isArray(roleArr) && roleArr[0];
+    if (!rd) { errEl.textContent = '[디버그] 등록되지 않은 사용자'; return; }
+
+    // 세션 저장 (비동기, 대기 안 함)
+    _sb.auth.setSession({ access_token: resData.access_token, refresh_token: resData.refresh_token }).catch(()=>{});
+
+    applyRole(rd.role, { email: _otpEmail, role: rd.role, name: rd.name || _otpEmail, avatar: _otpEmail[0].toUpperCase(), label: ROLE_LABEL[rd.role] || '일반' });
   }
 
   function resetLoginForm() {
