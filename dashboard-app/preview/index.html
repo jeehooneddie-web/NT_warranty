@@ -5483,7 +5483,13 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   function tmpLogin() {
     const pw = document.getElementById('tmp-pw').value;
     if (pw === 'nm2026') {
-      applyRole('admin', {email:'jhl@nationalmotors.co.kr', role:'admin', name:'관리자', avatar:'J', label:'관리자'});
+      sessionStorage.setItem('nm_role', 'admin');
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('sidebar-avatar').textContent = 'J';
+      document.getElementById('sidebar-name').textContent = '관리자';
+      document.getElementById('sidebar-role').textContent = '관리자';
+      applyMenuCfg(loadMenuCfg(), 'admin');
+      showView('view-notices');
     } else {
       alert('코드가 올바르지 않습니다.');
     }
