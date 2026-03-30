@@ -263,7 +263,7 @@
       <div class="text-sm text-slate-500 mt-1">Warranty System</div>
     </div>
 
-    <!-- 로그인 폼 -->
+    <!-- 이메일 입력 -->
     <div id="login-form">
       <div class="mb-4">
         <label class="block text-xs font-semibold text-slate-500 mb-1.5">이메일</label>
@@ -271,19 +271,34 @@
           onkeydown="if(event.key==='Enter') doLogin()"
           class="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500" />
       </div>
-      <p id="login-error" class="hidden text-xs text-red-500 mb-3"></p>
+      <p id="login-error" class="hidden text-xs text-red-500 mb-2"></p>
       <button onclick="doLogin()" id="login-btn"
         class="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors mt-2">
-        인증 링크 발송
+        인증코드 발송
       </button>
     </div>
 
-    <!-- 발송 완료 상태 -->
-    <div id="login-sent" class="hidden text-center py-2">
-      <div class="text-4xl mb-3">📧</div>
-      <div class="text-sm font-semibold text-slate-700 mb-1">이메일을 확인하세요</div>
-      <div class="text-xs text-slate-400 mb-4">발송된 링크를 클릭하면 자동으로 로그인됩니다.</div>
-      <button onclick="resetLoginForm()" class="text-xs text-blue-500 hover:underline">다시 입력하기</button>
+    <!-- 인증코드 입력 -->
+    <div id="login-otp" class="hidden">
+      <div class="text-center mb-4">
+        <div class="text-2xl mb-2">📧</div>
+        <div class="text-sm font-semibold text-slate-700">인증코드를 입력하세요</div>
+        <div id="login-otp-email" class="text-xs text-slate-400 mt-1"></div>
+      </div>
+      <div class="mb-3">
+        <input id="login-otp-input" type="text" inputmode="numeric" maxlength="6"
+          placeholder="6자리 코드 입력"
+          onkeydown="if(event.key==='Enter') verifyOtp()"
+          class="w-full px-3 py-3 border border-slate-200 rounded-lg text-sm text-center text-xl tracking-widest font-bold focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500" />
+      </div>
+      <p id="otp-error" class="hidden text-xs text-red-500 mb-2"></p>
+      <button onclick="verifyOtp()" id="otp-btn"
+        class="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
+        로그인
+      </button>
+      <button onclick="resetLoginForm()" class="w-full mt-2 text-xs text-slate-400 hover:text-slate-600">
+        이메일 다시 입력
+      </button>
     </div>
 
     <!-- 구분선 -->
@@ -5404,6 +5419,8 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     sessionStorage.setItem('nm_role', role);
   }
 
+  let _otpEmail = '';
+
   async function doLogin() {
     const email = document.getElementById('login-email').value.trim();
     const errEl = document.getElementById('login-error');
@@ -5414,23 +5431,46 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
 
     const { error } = await _sb.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: 'https://jeehooneddie-web.github.io/NT_warranty/' }
+      options: { shouldCreateUser: false }
     });
 
-    btn.textContent = '인증 링크 발송'; btn.disabled = false;
+    btn.textContent = '인증코드 발송'; btn.disabled = false;
     if (error) {
-      errEl.textContent = error.message.includes('rate') ? '잠시 후 다시 시도하세요.' : '오류가 발생했습니다. 등록된 이메일인지 확인하세요.';
+      errEl.textContent = error.message.includes('rate') ? '잠시 후 다시 시도하세요.' : '등록되지 않은 이메일이거나 오류가 발생했습니다.';
       errEl.classList.remove('hidden');
       return;
     }
+    _otpEmail = email;
     document.getElementById('login-form').classList.add('hidden');
-    document.getElementById('login-sent').classList.remove('hidden');
+    document.getElementById('login-otp').classList.remove('hidden');
+    document.getElementById('login-otp-email').textContent = email + '로 발송된 6자리 코드를 입력하세요.';
+    setTimeout(() => document.getElementById('login-otp-input').focus(), 100);
+  }
+
+  async function verifyOtp() {
+    const token = document.getElementById('login-otp-input').value.trim();
+    const errEl = document.getElementById('otp-error');
+    const btn   = document.getElementById('otp-btn');
+    errEl.classList.add('hidden');
+    if (token.length !== 6) { errEl.textContent = '6자리 코드를 입력하세요.'; errEl.classList.remove('hidden'); return; }
+    btn.textContent = '확인 중...'; btn.disabled = true;
+
+    const { error } = await _sb.auth.verifyOtp({ email: _otpEmail, token, type: 'email' });
+    btn.textContent = '로그인'; btn.disabled = false;
+    if (error) {
+      errEl.textContent = '코드가 올바르지 않거나 만료되었습니다.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    // onAuthStateChange가 SIGNED_IN 이벤트로 자동 처리
   }
 
   function resetLoginForm() {
     document.getElementById('login-form').classList.remove('hidden');
-    document.getElementById('login-sent').classList.add('hidden');
+    document.getElementById('login-otp').classList.add('hidden');
     document.getElementById('login-email').value = '';
+    document.getElementById('login-otp-input').value = '';
+    _otpEmail = '';
   }
 
   function enterAsUser() {
