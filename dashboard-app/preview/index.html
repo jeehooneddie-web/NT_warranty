@@ -5395,7 +5395,9 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
      ----------------------------------------------- */
   const SUPABASE_URL = 'https://vbvghhtroitmroxmfepr.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZidmdoaHRyb2l0bXJveG1mZXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MTAxMjEsImV4cCI6MjA5MDM4NjEyMX0.2sq5uGj4j6Fm_IgztrucJv5bbXyk4ZXkWeZxnDMjhZg';
-  const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { flowType: 'implicit' }
+  });
 
   const ROLE_LABEL = { admin:'관리자', member:'구성원', user:'일반' };
 
