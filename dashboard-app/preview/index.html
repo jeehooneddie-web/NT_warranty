@@ -5434,7 +5434,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
 
     btn.textContent = '인증코드 발송'; btn.disabled = false;
     if (error) {
-      errEl.textContent = '[디버그] ' + error.message;
+      errEl.textContent = error.message.includes('rate') ? '잠시 후 다시 시도하세요.' : '등록되지 않은 이메일이거나 오류가 발생했습니다.';
       errEl.classList.remove('hidden');
       return;
     }
