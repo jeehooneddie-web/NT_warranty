@@ -5611,21 +5611,12 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     }
   }
 
-  // magic link 클릭 후 콜백 처리
+  // 세션 상태 변화 감지 (magic link 콜백 + 기존 세션 복원 통합)
   _sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN') {
-      const loginScreen = document.getElementById('login-screen');
-      if (loginScreen && loginScreen.style.display !== 'none') {
-        await _handleSession(session);
-      }
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+      await _handleSession(session);
     }
   });
-
-  // 페이지 로드 시 기존 세션 복원
-  (async function() {
-    const { data: { session } } = await _sb.auth.getSession();
-    if (session) await _handleSession(session);
-  })();
 
   /* -----------------------------------------------
      구성원 관리
