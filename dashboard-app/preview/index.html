@@ -5459,11 +5459,16 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     errEl.classList.add('hidden');
     if (token.length < 4) { errEl.textContent = '코드를 입력하세요.'; errEl.classList.remove('hidden'); return; }
     btn.textContent = '확인 중...'; btn.disabled = true;
+    console.log('[step1] verifyOtp 시작, email:', _otpEmail, 'token:', token);
+    errEl.textContent = '[디버그] fetch 시작...'; errEl.classList.remove('hidden');
 
     // Supabase JS 우회 - 직접 fetch
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 10000);
     let res, resData;
     try {
       res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
+        signal: ctrl.signal,
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
         body: JSON.stringify({ email: _otpEmail, token, type: 'email', redirect_to: window.location.href })
