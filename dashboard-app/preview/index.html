@@ -5322,10 +5322,15 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       alert('[메뉴 저장 오류] 로그인 토큰이 없습니다. 로그아웃 후 다시 로그인해주세요.');
       return;
     }
-    const rows = cfg.map(c => ({ key: c.key, min_role: c.minRole, hidden: c.hidden, updated_at: new Date().toISOString() }));
+    // 기존 전체 삭제 후 재삽입 (upsert 대신)
+    await fetch(`${SUPABASE_URL}/rest/v1/menu_settings?key=neq.`, {
+      method: 'DELETE',
+      headers: _urHeaders()
+    });
+    const rows = cfg.map(c => ({ key: c.key, min_role: c.minRole, hidden: c.hidden }));
     const res = await fetch(`${SUPABASE_URL}/rest/v1/menu_settings`, {
       method: 'POST',
-      headers: { ..._urHeaders(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      headers: { ..._urHeaders(), 'Prefer': 'return=minimal' },
       body: JSON.stringify(rows)
     });
     if (!res.ok) {
