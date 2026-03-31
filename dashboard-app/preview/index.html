@@ -75,13 +75,11 @@
 
     /* 스크롤바 스타일 */
     ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-    body.dark ::-webkit-scrollbar-track { background: #0f172a; }
-    body.dark ::-webkit-scrollbar-thumb { background: #334155; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 
     /* 카드 호버 */
-    .notice-card:hover { background: #f8fafc; }
+    .notice-card:hover { background: #1e293b; }
 
     /* Warranty Type 버튼 선택 상태 */
     .wty-btn { transition: background 0.15s, transform 0.1s; }
@@ -107,66 +105,60 @@
     .expand-btn { display:none; }
     .expand-btn.show { display:inline-flex; }
 
-    /* ── 전체 다크모드 ── */
-    body { transition: background 0.2s, color 0.2s; }
-
-    body.dark { background: #0f172a; color: #e2e8f0; }
+    /* ── 전체 다크모드 고정 ── */
+    body { background: #0f172a; color: #e2e8f0; }
 
     /* 상단 헤더 */
-    body.dark header { background: #1e293b !important; border-color: #334155 !important; }
-    body.dark header h1, body.dark header .text-slate-800 { color: #e2e8f0 !important; }
-    body.dark header .text-slate-500 { color: #94a3b8 !important; }
-    body.dark header button { color: #94a3b8 !important; }
-    body.dark header button:hover { background: #334155 !important; }
+    header { background: #1e293b !important; border-color: #334155 !important; }
+    header h1, header .text-slate-800 { color: #e2e8f0 !important; }
+    header .text-slate-500 { color: #94a3b8 !important; }
+    header button { color: #94a3b8 !important; }
+    header button:hover { background: #334155 !important; }
 
     /* 메인 배경 */
-    body.dark main { background: #0f172a !important; }
+    main { background: #0f172a !important; }
 
     /* 카드 / 패널 */
-    body.dark .bg-white  { background: #1e293b !important; }
-    body.dark .bg-slate-50 { background: #162032 !important; }
-    body.dark .bg-slate-100 { background: #1e293b !important; }
+    .bg-white   { background: #1e293b !important; }
+    .bg-slate-50  { background: #162032 !important; }
+    .bg-slate-100 { background: #1e293b !important; color: #94a3b8 !important; }
 
     /* 텍스트 */
-    body.dark .text-slate-800,
-    body.dark .text-slate-700 { color: #e2e8f0 !important; }
-    body.dark .text-slate-600,
-    body.dark .text-slate-500 { color: #94a3b8 !important; }
-    body.dark .text-slate-400 { color: #64748b !important; }
+    .text-slate-800,
+    .text-slate-700 { color: #e2e8f0 !important; }
+    .text-slate-600,
+    .text-slate-500 { color: #94a3b8 !important; }
+    .text-slate-400 { color: #64748b !important; }
 
     /* 테두리 */
-    body.dark .border-slate-200,
-    body.dark .border-slate-100 { border-color: #334155 !important; }
+    .border-slate-200,
+    .border-slate-100 { border-color: #334155 !important; }
 
     /* 입력 필드 */
-    body.dark textarea,
-    body.dark input[type="text"],
-    body.dark input[type="number"],
-    body.dark input[type="date"] { background: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important; }
-    body.dark textarea::placeholder { color: #475569 !important; }
+    textarea,
+    input[type="text"],
+    input[type="number"],
+    input[type="date"] { background: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important; }
+    textarea::placeholder { color: #475569 !important; }
 
     /* 그림자 */
-    body.dark .shadow-sm { box-shadow: 0 1px 4px rgba(0,0,0,0.4) !important; }
+    .shadow-sm { box-shadow: 0 1px 4px rgba(0,0,0,0.4) !important; }
 
     /* 테이블 */
-    body.dark tbody tr:hover { background: #1e293b !important; }
-    body.dark .divide-y > * { border-color: #334155 !important; }
+    tbody tr:hover { background: #1e293b !important; }
+    .divide-y > * { border-color: #334155 !important; }
 
     /* 뱃지 */
-    body.dark .badge-pending   { background: #451a03; color: #fcd34d; }
-    body.dark .badge-inprogress { background: #1e3a5f; color: #93c5fd; }
-    body.dark .badge-resolved  { background: #052e16; color: #86efac; }
+    .badge-pending    { background: #451a03; color: #fcd34d; }
+    .badge-inprogress { background: #1e3a5f; color: #93c5fd; }
+    .badge-resolved   { background: #052e16; color: #86efac; }
 
     /* 버튼류 */
-    body.dark .hover\:bg-slate-200:hover { background: #334155 !important; }
-    body.dark .bg-slate-100 { background: #1e293b !important; color: #94a3b8 !important; }
-
-    /* 공지 카드 호버 */
-    body.dark .notice-card:hover { background: #1e293b !important; }
+    .hover\:bg-slate-200:hover { background: #334155 !important; }
 
     /* 확장 모달 */
-    body.dark #expand-modal-inner { background: #1e293b !important; }
-    body.dark #expand-textarea    { background: #0f172a !important; color: #e2e8f0 !important; }
+    #expand-modal-inner { background: #1e293b !important; }
+    #expand-textarea    { background: #0f172a !important; color: #e2e8f0 !important; }
 
     /* 사이드바 접기 */
     aside { transition: width 0.25s ease; }
@@ -3093,22 +3085,8 @@
     document.getElementById('trans-result-container').classList.add('hidden');
   }
 
-  /* ── 테마 (Light / Dark 토글) ── */
-  function applyTheme(name) {
-    const isDark = name === 'dark';
-    document.body.classList.toggle('dark', isDark);
-    localStorage.setItem('nm_theme', name);
-    const emoji = isDark ? '☀️' : '🌙';
-    ['icon-theme-top', 'icon-sun'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = emoji;
-    });
-  }
-  function toggleTheme() {
-    const current = localStorage.getItem('nm_theme') || 'light';
-    applyTheme(current === 'light' ? 'dark' : 'light');
-  }
-  applyTheme(localStorage.getItem('nm_theme') || 'dark');
+  // 다크모드 고정
+  document.body.classList.add('dark');
 
   /* 점검내용 자동 높이 + 확장 버튼 표시 */
   const EXPAND_THRESHOLD = 120; // px - 이 높이 초과 시 확장 버튼 노출
@@ -3966,9 +3944,8 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     const COLORS = {'BSI':'#1d4ed8','Warranty':'#0891b2','TC/RECALL':'#059669','Goodwill':'#7c3aed','WP':'#d97706','LOCAL TC':'#dc2626'};
     const activeTypes = TYPES_ORDER.filter(tp => dActiveTypes.has(tp));
 
-    const isDark  = document.body.classList.contains('dark');
-    const gridCol = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
-    const tickCol = isDark ? '#cbd5e1' : '#334155';
+    const gridCol = 'rgba(255,255,255,0.08)';
+    const tickCol = '#cbd5e1';
 
     function makeLabels(codeList) {
       return codeList.map(code => {
@@ -4013,7 +3990,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
           c.save();
           c.textAlign = 'left';
           c.textBaseline = 'middle';
-          c.fillStyle = isDark ? '#ffffff' : '#334155';
+          c.fillStyle = '#ffffff';
           c.font = 'bold 10px Arial, sans-serif';
           totals.forEach((total, i) => {
             if (!total) return;
@@ -4078,7 +4055,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
             },
             y: {
               grid: { display: false },
-              ticks: { color: isDark ? '#ffffff' : '#334155', font: { size: 10 } }
+              ticks: { color: '#ffffff', font: { size: 10 } }
             }
           }
         }
@@ -4606,6 +4583,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
 
     const ctx = document.getElementById('tc-top20-chart').getContext('2d');
     if (top20ChartInst) top20ChartInst.destroy();
+    Chart.register(ChartDataLabels);
     top20ChartInst = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -4808,9 +4786,8 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   function renderPersonChart() {
     const visMo = pGetVisibleMonths();
     const visMoSet = new Set(visMo);
-    const isDark  = document.body.classList.contains('dark');
-    const gridCol = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
-    const tickCol = isDark ? '#cbd5e1' : '#334155';
+    const gridCol = 'rgba(255,255,255,0.08)';
+    const tickCol = '#cbd5e1';
     function getName(id) { return PERSON_NAMES[id] || id; }
 
     // 모든 고유 person 목록 (전체합계 제외)
