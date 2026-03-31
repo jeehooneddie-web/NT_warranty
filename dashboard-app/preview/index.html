@@ -171,6 +171,30 @@
     /* 사이드바 접기 */
     aside { transition: width 0.25s ease; }
     aside.sidebar-collapsed { width: 60px !important; }
+
+    /* 모바일 사이드바 (660px 미만) */
+    @media (max-width: 659px) {
+      #main-sidebar {
+        position: fixed !important;
+        left: -260px;
+        top: 0;
+        height: 100%;
+        z-index: 1000;
+        width: 260px !important;
+        transition: left 0.25s ease;
+      }
+      #main-sidebar.mobile-open { left: 0; }
+      #sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 999;
+      }
+      #sidebar-overlay.active { display: block; }
+      #hamburger-btn { display: flex !important; }
+    }
+    #hamburger-btn { display: none; }
     aside.sidebar-collapsed .sidebar-logo,
     aside.sidebar-collapsed .sidebar-profile,
     aside.sidebar-collapsed .nav-item span { display: none; }
@@ -209,7 +233,9 @@
   }
 
   /* ── QR 스캐너 반응형 ── */
-  .qr-page  { background:#0f172a; min-height:100vh; width:100%; }
+  /* QR 뷰: 항상 다크 유지 (카메라 인터페이스) */
+  .qr-page  { background:#0f172a; min-height:100%; width:100%; color:#f1f5f9; }
+  #view-qr-compare { color:#f1f5f9; }
   .qr-header{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px 10px; background:#1e3a5f; }
   .qr-body  { display:flex; flex-direction:column; }
   .qr-left  { display:flex; flex-direction:column; }
@@ -337,6 +363,9 @@
      ============================================= -->
 <div class="flex h-screen overflow-hidden bg-slate-50">
 
+  <!-- 모바일 사이드바 오버레이 -->
+  <div id="sidebar-overlay" onclick="closeMobileSidebar()"></div>
+
   <!-- ===================
        사이드바 (260px 고정)
        =================== -->
@@ -455,8 +484,15 @@
 
     <!-- 헤더 -->
     <header class="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0">
+      <!-- 햄버거 버튼 (모바일 전용) -->
+      <button id="hamburger-btn" onclick="toggleMobileSidebar()"
+        class="items-center justify-center w-9 h-9 rounded-lg hover:bg-slate-100 text-slate-600 mr-2 flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
       <!-- 현재 페이지 제목 (JS로 동적 변경) -->
-      <h1 id="page-title" class="text-lg font-semibold text-slate-800">대시보드</h1>
+      <h1 id="page-title" class="text-lg font-semibold text-slate-800 flex-1">대시보드</h1>
 
       <!-- 우측: 알림 + 아바타 -->
       <div class="flex items-center gap-3">
@@ -2626,6 +2662,8 @@
      뷰 전환 함수
      ----------------------------------------------- */
   function showView(viewId) {
+    // 모바일 사이드바 닫기
+    closeMobileSidebar();
     // 모든 .view 숨기기
     document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
     // 선택한 뷰 표시
@@ -2681,8 +2719,8 @@
       sidebar.classList.add('sidebar-collapsed');
       sidebar.style.display = '';
       mainEl.style.padding = '';
-    } else if (viewId === 'view-qr-scanner') {
-      // QR 스캐너: 사이드바 완전 숨김, 본문 전체 너비
+    } else if (viewId === 'view-qr-scanner' || viewId === 'view-qr-compare') {
+      // QR 뷰: 사이드바 완전 숨김, 본문 전체 너비 (다크 배경이 패딩 없이 꽉 차야 함)
       sidebar.style.display = 'none';
       mainEl.style.padding = '0';
     } else {
@@ -2760,7 +2798,6 @@
 
       setUpdateStatus('업데이트 완료! 차트가 갱신됐습니다.', 'ok');
     } catch(e) {
-      console.error(e);
       setUpdateStatus('오류: ' + e.message, 'err');
     }
 
@@ -5706,8 +5743,27 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     }
   }
 
+  function toggleMobileSidebar() {
+    const sidebar  = document.getElementById('main-sidebar');
+    const overlay  = document.getElementById('sidebar-overlay');
+    const isOpen   = sidebar.classList.contains('mobile-open');
+    if (isOpen) {
+      sidebar.classList.remove('mobile-open');
+      overlay.classList.remove('active');
+    } else {
+      sidebar.classList.add('mobile-open');
+      overlay.classList.add('active');
+    }
+  }
+
+  function closeMobileSidebar() {
+    document.getElementById('main-sidebar').classList.remove('mobile-open');
+    document.getElementById('sidebar-overlay').classList.remove('active');
+  }
+
   async function doLogout() {
     await _sb.auth.signOut();
+    _accessToken = '';
     sessionStorage.removeItem('nm_role');
     document.getElementById('login-email').value = '';
     document.getElementById('login-pw').value = '';
@@ -5718,19 +5774,31 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
 
   async function _handleSession(session) {
     if (!session) return;
-    if (session.access_token) _accessToken = session.access_token;
-    const email = session.user.email;
-    const { data: roleData } = await _sb.from('user_roles').select('role,name').eq('email', email).single();
-    if (roleData) {
-      const account = { email, role: roleData.role, name: roleData.name || email, avatar: email[0].toUpperCase(), label: ROLE_LABEL[roleData.role] || '일반' };
-      applyRole(roleData.role, account);
-    } else {
-      await _sb.auth.signOut();
+    try {
+      if (session.access_token) _accessToken = session.access_token;
+      const email = session.user?.email;
+      if (!email) throw new Error('세션에 이메일 정보 없음');
+      const { data: roleData } = await _sb.from('user_roles').select('role,name').eq('email', email).single();
+      if (roleData) {
+        const account = { email, role: roleData.role, name: roleData.name || email, avatar: email[0].toUpperCase(), label: ROLE_LABEL[roleData.role] || '일반' };
+        applyRole(roleData.role, account);
+      } else {
+        await _sb.auth.signOut();
+        _accessToken = '';
+        const errEl = document.getElementById('login-error');
+        errEl.textContent = '접근 권한이 없습니다. 관리자에게 문의하세요.';
+        errEl.classList.remove('hidden');
+        document.getElementById('login-form').classList.remove('hidden');
+        document.getElementById('login-sent').classList.add('hidden');
+      }
+    } catch(e) {
       const errEl = document.getElementById('login-error');
-      errEl.textContent = '접근 권한이 없습니다. 관리자에게 문의하세요.';
-      errEl.classList.remove('hidden');
-      document.getElementById('login-form').classList.remove('hidden');
-      document.getElementById('login-sent').classList.add('hidden');
+      if (errEl) {
+        errEl.textContent = '로그인 처리 중 오류가 발생했습니다. 다시 시도해 주세요.';
+        errEl.classList.remove('hidden');
+      }
+      document.getElementById('login-form')?.classList.remove('hidden');
+      document.getElementById('login-sent')?.classList.add('hidden');
     }
   }
 
@@ -5738,6 +5806,15 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   _sb.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
       await _handleSession(session);
+    } else if (event === 'TOKEN_REFRESHED' && session) {
+      // Access Token 갱신 시 전역 변수 동기화
+      _accessToken = session.access_token;
+    } else if (event === 'SIGNED_OUT') {
+      // 토큰 만료 또는 강제 로그아웃 시 로그인 화면으로
+      _accessToken = '';
+      sessionStorage.removeItem('nm_role');
+      document.getElementById('main-sidebar').style.display = '';
+      document.getElementById('login-screen').style.display = 'flex';
     }
   });
 
@@ -5810,19 +5887,32 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   }
 
   async function changeUserRole(email, role) {
-    await fetch(`${SUPABASE_URL}/rest/v1/user_roles?email=eq.${encodeURIComponent(email)}`, {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/user_roles?email=eq.${encodeURIComponent(email)}`, {
       method: 'PATCH',
       headers: { ..._urHeaders(), 'Prefer': 'return=minimal' },
       body: JSON.stringify({ role })
     });
+    if (!r.ok) {
+      const err = await r.json().catch(()=>({}));
+      showToast('역할 변경 실패: ' + (err.message || r.status), 'error');
+      return;
+    }
+    showToast(`${email} 역할을 '${role}'로 변경했습니다.`);
+    loadUserList();
   }
 
   async function removeUserRole(email) {
     if (!confirm(`${email} 접근 권한을 삭제하시겠습니까?`)) return;
-    await fetch(`${SUPABASE_URL}/rest/v1/user_roles?email=eq.${encodeURIComponent(email)}`, {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/user_roles?email=eq.${encodeURIComponent(email)}`, {
       method: 'DELETE',
       headers: _urHeaders()
     });
+    if (!r.ok) {
+      const err = await r.json().catch(()=>({}));
+      showToast('삭제 실패: ' + (err.message || r.status), 'error');
+      return;
+    }
+    showToast(`${email} 권한을 삭제했습니다.`);
     loadUserList();
   }
 
@@ -5999,7 +6089,16 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       },
       () => {}
     ).catch(err => {
-      alert('카메라 접근 실패: ' + err);
+      const name = err && err.name;
+      let msg = '카메라 접근 실패';
+      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        msg = '카메라 권한이 거부됐습니다. 브라우저 설정에서 카메라 허용 후 다시 시도해 주세요.';
+      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        msg = '카메라를 찾을 수 없습니다. 이 기기에는 카메라가 없거나 사용 중일 수 있습니다.';
+      } else if (name === 'NotReadableError' || name === 'TrackStartError') {
+        msg = '카메라가 다른 앱에서 사용 중입니다. 다른 앱을 종료 후 다시 시도해 주세요.';
+      }
+      document.getElementById('qr-cam-msg').textContent = msg;
       document.getElementById('qr-start-btn').style.display = 'block';
       document.getElementById('qr-stop-btn').style.display = 'none';
     });
@@ -6018,6 +6117,22 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     document.getElementById('qr-start-btn').style.display = 'block';
     document.getElementById('qr-stop-btn').style.display = 'none';
     document.getElementById('qr-cam-msg').textContent = '카메라 시작 버튼을 눌러주세요';
+  }
+
+  // 범용 토스트 (type: 'success'|'error')
+  function showToast(msg, type) {
+    let toast = document.getElementById('app-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'app-toast';
+      toast.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:9999;padding:10px 22px;border-radius:10px;font-size:13px;font-weight:600;color:#fff;transition:opacity 0.4s;pointer-events:none;';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.background = type === 'error' ? '#dc2626' : '#059669';
+    toast.style.opacity = '1';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
   }
 
   function showQRToast(msg, color) {
@@ -6117,7 +6232,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
         mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(qrParsed)
-      }).catch(e => console.warn('Sheets 전송 오류:', e));
+      }).catch(() => {});
     }
     document.getElementById('qr-result-box').style.display = 'none';
     qrParsed = null;
