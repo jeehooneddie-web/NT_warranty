@@ -5318,13 +5318,20 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     // localStorage 캐시
     localStorage.setItem('nm_menu_cfg', JSON.stringify(cfg.map(c => ({ key:c.key, minRole:c.minRole, hidden:c.hidden }))));
     // Supabase upsert
-    if (!_accessToken) return;
+    if (!_accessToken) {
+      alert('[메뉴 저장 오류] 로그인 토큰이 없습니다. 로그아웃 후 다시 로그인해주세요.');
+      return;
+    }
     const rows = cfg.map(c => ({ key: c.key, min_role: c.minRole, hidden: c.hidden, updated_at: new Date().toISOString() }));
-    await fetch(`${SUPABASE_URL}/rest/v1/menu_settings`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/menu_settings`, {
       method: 'POST',
       headers: { ..._urHeaders(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
       body: JSON.stringify(rows)
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert('[메뉴 저장 오류] ' + (err.message || err.hint || res.status));
+    }
   }
 
   function applyMenuCfg(cfg, role) {
