@@ -4629,7 +4629,17 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
             callbacks: {
               label: ctx => ` 미실시 ${ctx.parsed.x}건`
             }
+          },
+          datalabels: {
+            anchor: 'end',
+            align: 'end',
+            color: '#e2e8f0',
+            font: { size: 11, weight: '600' },
+            formatter: v => v + '건'
           }
+        },
+        layout: {
+          padding: { right: 40 }
         },
         scales: {
           x: {
