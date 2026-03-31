@@ -5431,6 +5431,8 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     const btn   = document.getElementById('login-btn');
     errEl.classList.add('hidden');
     if (!email) { errEl.textContent = '이메일을 입력하세요.'; errEl.classList.remove('hidden'); return; }
+    const allowed = email === 'jeehoon.eddie@gmail.com' || email.endsWith('@nationalmotors.co.kr');
+    if (!allowed) { errEl.textContent = '회사 이메일(@nationalmotors.co.kr)만 사용할 수 있습니다.'; errEl.classList.remove('hidden'); return; }
     btn.textContent = '발송 중...'; btn.disabled = true;
 
     const { error } = await _sb.auth.signInWithOtp({ email });
