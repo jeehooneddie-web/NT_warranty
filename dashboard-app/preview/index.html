@@ -3976,7 +3976,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
           c.save();
           c.textAlign = 'left';
           c.textBaseline = 'middle';
-          c.fillStyle = '#ffffff';
+          c.fillStyle = isDark ? '#ffffff' : '#334155';
           c.font = 'bold 10px Arial, sans-serif';
           totals.forEach((total, i) => {
             if (!total) return;
@@ -4041,7 +4041,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
             },
             y: {
               grid: { display: false },
-              ticks: { color: '#ffffff', font: { size: 10 } }
+              ticks: { color: isDark ? '#ffffff' : '#334155', font: { size: 10 } }
             }
           }
         }
