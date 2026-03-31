@@ -108,45 +108,68 @@
     /* ── 전체 다크모드 고정 ── */
     body { background: #0f172a; color: #e2e8f0; }
 
-    /* 상단 헤더 */
-    header { background: #1e293b !important; border-color: #334155 !important; }
-    header h1, header .text-slate-800 { color: #e2e8f0 !important; }
+    /* 상단 헤더 — 배경과 동일, 하단 구분선 반투명 */
+    header { background: #0f172a !important; border-color: rgba(255,255,255,0.08) !important; }
+    header h1, header .text-slate-800 { color: #ffffff !important; }
     header .text-slate-500 { color: #94a3b8 !important; }
     header button { color: #94a3b8 !important; }
-    header button:hover { background: #334155 !important; }
+    header button:hover { background: rgba(255,255,255,0.08) !important; }
 
     /* 메인 배경 */
     main { background: #0f172a !important; }
 
-    /* 카드 / 패널 */
-    .bg-white   { background: #1e293b !important; }
-    .bg-slate-50  { background: #162032 !important; }
-    .bg-slate-100 { background: #1e293b !important; color: #94a3b8 !important; }
+    /* 카드 / 패널 — 글라스모피즘 */
+    .bg-white {
+      background: rgba(255,255,255,0.06) !important;
+      border-color: rgba(255,255,255,0.1) !important;
+      backdrop-filter: blur(8px);
+    }
+    .bg-slate-50  { background: rgba(255,255,255,0.03) !important; }
+    .bg-slate-100 { background: rgba(255,255,255,0.08) !important; color: #94a3b8 !important; }
+
+    /* 커스텀 카드 클래스 + rounded 계열 카드 — 글라스모피즘 */
+    .sales-card, .sales-kpi,
+    .rounded-xl, .rounded-2xl {
+      background: rgba(255,255,255,0.06) !important;
+      border-color: rgba(255,255,255,0.1) !important;
+      backdrop-filter: blur(8px);
+    }
+    /* QR 뷰 카드는 다크 유지 */
+    .qr-page .rounded-xl, .qr-page .rounded-2xl,
+    #view-qr-compare .rounded-xl, #view-qr-compare .rounded-2xl { backdrop-filter: none; }
 
     /* 텍스트 */
     .text-slate-800,
-    .text-slate-700 { color: #e2e8f0 !important; }
+    .text-slate-700 { color: #ffffff !important; }
     .text-slate-600,
     .text-slate-500 { color: #94a3b8 !important; }
     .text-slate-400 { color: #64748b !important; }
 
+    /* 섹션 헤드라인 */
+    h2 { color: #ffffff !important; }
+
     /* 테두리 */
     .border-slate-200,
-    .border-slate-100 { border-color: #334155 !important; }
+    .border-slate-100 { border-color: rgba(255,255,255,0.1) !important; }
 
     /* 입력 필드 */
     textarea,
     input[type="text"],
     input[type="number"],
-    input[type="date"] { background: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important; }
+    input[type="date"] { background: rgba(255,255,255,0.06) !important; color: #e2e8f0 !important; border-color: rgba(255,255,255,0.1) !important; }
     textarea::placeholder { color: #475569 !important; }
 
     /* 그림자 */
-    .shadow-sm { box-shadow: 0 1px 4px rgba(0,0,0,0.4) !important; }
+    .shadow-sm { box-shadow: 0 4px 16px rgba(0,0,0,0.3) !important; }
+    .shadow-2xl { box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important; }
+
+    /* 테이블 헤더 */
+    thead tr { background: rgba(255,255,255,0.08) !important; }
+    thead th { color: #e2e8f0 !important; border-color: rgba(255,255,255,0.1) !important; }
 
     /* 테이블 */
-    tbody tr:hover { background: #1e293b !important; }
-    .divide-y > * { border-color: #334155 !important; }
+    tbody tr:hover { background: rgba(255,255,255,0.06) !important; }
+    .divide-y > * { border-color: rgba(255,255,255,0.08) !important; }
 
     /* 뱃지 */
     .badge-pending    { background: #451a03; color: #fcd34d; }
@@ -154,11 +177,11 @@
     .badge-resolved   { background: #052e16; color: #86efac; }
 
     /* 버튼류 */
-    .hover\:bg-slate-200:hover { background: #334155 !important; }
+    .hover\:bg-slate-200:hover { background: rgba(255,255,255,0.1) !important; }
 
     /* 확장 모달 */
-    #expand-modal-inner { background: #1e293b !important; }
-    #expand-textarea    { background: #0f172a !important; color: #e2e8f0 !important; }
+    #expand-modal-inner { background: #1a2540 !important; border: 1px solid rgba(255,255,255,0.1); }
+    #expand-textarea    { background: rgba(255,255,255,0.04) !important; color: #e2e8f0 !important; }
 
     /* 로그인 화면 — 화이트 유지 */
     #login-screen .bg-white        { background: #ffffff !important; }
@@ -212,7 +235,7 @@
     .sales-card  { background: #fff; border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
     .sales-kpi   { background: #fff; border-radius: 20px; padding: 22px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
     .sales-kpi-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
-    .sales-kpi-value { font-size: 28px; font-weight: 700; color: #0f172a; letter-spacing: -0.5px; line-height: 1; }
+    .sales-kpi-value { font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px; line-height: 1; }
     .sales-kpi-sub   { font-size: 12px; margin-top: 6px; color: #64748b; }
 
     .pill-group { display: inline-flex; flex-wrap: wrap; background: #e2e8f0; border-radius: 10px; padding: 3px; gap: 2px; }
