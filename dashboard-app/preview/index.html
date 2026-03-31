@@ -5327,15 +5327,16 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       method: 'DELETE',
       headers: _urHeaders()
     });
-    const rows = cfg.map(c => ({ key: c.key, min_role: c.minRole, hidden: c.hidden }));
+    const rows = cfg.map(c => ({ key: String(c.key), min_role: String(c.minRole || 'admin'), hidden: Boolean(c.hidden) }));
+    const body = JSON.stringify(rows);
     const res = await fetch(`${SUPABASE_URL}/rest/v1/menu_settings`, {
       method: 'POST',
       headers: { ..._urHeaders(), 'Prefer': 'return=minimal' },
-      body: JSON.stringify(rows)
+      body
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      alert('[메뉴 저장 오류] ' + (err.message || err.hint || res.status));
+      alert('[메뉴 저장 오류] ' + (err.message || err.hint || res.status) + '\n\n첫 행: ' + body.slice(0, 200));
     }
   }
 
