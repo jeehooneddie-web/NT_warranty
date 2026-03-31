@@ -5393,10 +5393,10 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   }
 
   async function saveMenuCfgChanges() {
-    _menuCfg = await ensureMenuCfg();
     const btn = event.target;
     const orig = btn.textContent;
     btn.textContent = '저장 중...'; btn.disabled = true;
+    _menuCfg = await ensureMenuCfg();
     await saveMenuCfg(_menuCfg);
     applyMenuCfg(_menuCfg);
     btn.textContent = '저장 완료 ✓';
@@ -5705,6 +5705,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
 
   async function _handleSession(session) {
     if (!session) return;
+    if (session.access_token) _accessToken = session.access_token;
     const email = session.user.email;
     const { data: roleData } = await _sb.from('user_roles').select('role,name').eq('email', email).single();
     if (roleData) {
