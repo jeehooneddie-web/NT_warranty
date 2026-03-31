@@ -5281,7 +5281,21 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
 
   let _menuCfg = null;
 
-  function loadMenuCfg() {
+  async function loadMenuCfg() {
+    // 1순위: Supabase
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/menu_settings?select=*`, {
+        headers: { 'apikey': SUPABASE_KEY }
+      });
+      const rows = await r.json();
+      if (Array.isArray(rows) && rows.length > 0) {
+        return DEFAULT_MENU_CFG.map(d => {
+          const found = rows.find(f => f.key === d.key);
+          return found ? { ...d, minRole: d.fixed ? d.minRole : found.min_role, hidden: found.hidden } : { ...d };
+        });
+      }
+    } catch(e) {}
+    // 2순위: localStorage
     try {
       const s = localStorage.getItem('nm_menu_cfg');
       if (s) {
@@ -5295,37 +5309,49 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     return DEFAULT_MENU_CFG.map(d => ({ ...d }));
   }
 
-  function saveMenuCfg(cfg) {
+  async function ensureMenuCfg() {
+    if (!_menuCfg) _menuCfg = await loadMenuCfg();
+    return _menuCfg;
+  }
+
+  async function saveMenuCfg(cfg) {
+    // localStorage 캐시
     localStorage.setItem('nm_menu_cfg', JSON.stringify(cfg.map(c => ({ key:c.key, minRole:c.minRole, hidden:c.hidden }))));
+    // Supabase upsert
+    if (!_accessToken) return;
+    const rows = cfg.map(c => ({ key: c.key, min_role: c.minRole, hidden: c.hidden, updated_at: new Date().toISOString() }));
+    await fetch(`${SUPABASE_URL}/rest/v1/menu_settings`, {
+      method: 'POST',
+      headers: { ..._urHeaders(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(rows)
+    });
   }
 
   function applyMenuCfg(cfg, role) {
     const r = role || sessionStorage.getItem('nm_role') || 'user';
     const userLevel = ROLE_LEVEL[r] || 1;
+    let hasVisibleAdminItem = false;
     cfg.forEach(item => {
       const el = document.querySelector(`[data-view="${item.key}"], [data-menu-key="${item.key}"]`);
       if (!el) return;
       const required = MINROLE_LEVEL[item.minRole] || 1;
-      if (item.hidden || userLevel < required) {
-        el.style.display = 'none';
-      } else {
-        el.style.display = '';
-      }
+      const visible = !item.hidden && userLevel >= required;
+      el.style.display = visible ? '' : 'none';
+      if (visible && item.minRole !== 'all') hasVisibleAdminItem = true;
     });
-    // 관리자 전용 구분선/레이블은 기존 admin-only 방식 유지
-    const isAdmin = r === 'admin';
+    // 구분선/레이블: 관리자급 메뉴가 하나라도 보일 때만 표시
     document.querySelectorAll('.admin-only:not([data-view]):not([data-menu-key])').forEach(el => {
-      el.style.display = isAdmin ? '' : 'none';
+      el.style.display = hasVisibleAdminItem ? '' : 'none';
     });
   }
 
-  function renderMenuCfgTable() {
-    if (!_menuCfg) _menuCfg = loadMenuCfg();
+  async function renderMenuCfgTable() {
+    _menuCfg = await ensureMenuCfg();
     const tbody = document.getElementById('menu-cfg-list');
     if (!tbody) return;
     const roleInfo = {
-      admin:  { label:'관리자',  cls:'bg-blue-100 text-blue-700',   next:'member' },
-      member: { label:'구성원',  cls:'bg-purple-100 text-purple-700', next:'all'  },
+      admin:  { label:'관리자',  cls:'bg-blue-100 text-blue-700',    next:'member' },
+      member: { label:'구성원',  cls:'bg-purple-100 text-purple-700', next:'all'   },
       all:    { label:'전체',    cls:'bg-emerald-100 text-emerald-700', next:'admin' },
     };
     tbody.innerHTML = _menuCfg.map((item, i) => {
@@ -5353,7 +5379,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   }
 
   function toggleMinRole(idx) {
-    if (!_menuCfg) _menuCfg = loadMenuCfg();
+    if (!_menuCfg) return;
     const order = ['admin', 'member', 'all'];
     const cur = _menuCfg[idx].minRole;
     _menuCfg[idx].minRole = order[(order.indexOf(cur) + 1) % 3];
@@ -5361,28 +5387,35 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   }
 
   function toggleMenuHidden(idx) {
-    if (!_menuCfg) _menuCfg = loadMenuCfg();
+    if (!_menuCfg) return;
     _menuCfg[idx].hidden = !_menuCfg[idx].hidden;
     renderMenuCfgTable();
   }
 
-  function saveMenuCfgChanges() {
-    if (!_menuCfg) _menuCfg = loadMenuCfg();
-    saveMenuCfg(_menuCfg);
-    applyMenuCfg(_menuCfg);
+  async function saveMenuCfgChanges() {
+    _menuCfg = await ensureMenuCfg();
     const btn = event.target;
     const orig = btn.textContent;
+    btn.textContent = '저장 중...'; btn.disabled = true;
+    await saveMenuCfg(_menuCfg);
+    applyMenuCfg(_menuCfg);
     btn.textContent = '저장 완료 ✓';
-    btn.disabled = true;
     setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
   }
 
-  function resetMenuCfg() {
+  async function resetMenuCfg() {
     if (!confirm('메뉴 설정을 기본값으로 초기화하시겠습니까?')) return;
     localStorage.removeItem('nm_menu_cfg');
+    // Supabase 초기화 (key가 비어있지 않은 전체 행 삭제)
+    if (_accessToken) {
+      await fetch(`${SUPABASE_URL}/rest/v1/menu_settings?key=neq.`, {
+        method: 'DELETE',
+        headers: _urHeaders()
+      });
+    }
     _menuCfg = null;
     renderMenuCfgTable();
-    applyMenuCfg(loadMenuCfg());
+    applyMenuCfg(DEFAULT_MENU_CFG.map(d => ({ ...d })));
   }
 
   /* -----------------------------------------------
@@ -5400,10 +5433,11 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
      인증 (로그인 / 로그아웃)
      ----------------------------------------------- */
 
-  function applyRole(role, account) {
-    const isAdmin = role === 'admin';
+  async function applyRole(role, account) {
     // 메뉴 설정 적용 (role 기반 표시/숨김)
-    applyMenuCfg(loadMenuCfg(), role);
+    const cfg = await loadMenuCfg();
+    _menuCfg = cfg;
+    applyMenuCfg(cfg, role);
     // 사이드바 프로필 업데이트
     if (account) {
       document.getElementById('sidebar-avatar').textContent = account.avatar;
