@@ -4338,10 +4338,10 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       const rate = tot ? (n / tot * 100).toFixed(1) : '-';
       const isActive = tcActiveBranches.has(b) || tcActiveBranches.size === TC_BRANCHES.length;
       const aboveTarget = tot && parseFloat(rate) > TC_TARGET;
-      const borderClr = aboveTarget ? '#f97316' : '#3b82f6';
+      const borderClr = aboveTarget ? '#fca5a5' : '#93c5fd';
       kpiRow.innerHTML += '<div class="rounded-2xl p-4 cursor-pointer ' + (isActive ? '' : 'opacity-40') + '" style="background:#1e2433; border:1px solid #222222; border-left:4px solid ' + borderClr + '; transition:all 0.25s ease;" onclick="toggleTcBranch(\'' + b + '\')">'
         + '<div style="font-size:11px; color:#9CA3AF; margin-bottom:4px; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">' + b + '</div>'
-        + '<div style="font-size:24px; font-weight:700; color:' + (aboveTarget ? '#f97316' : '#3B82F6') + ';">' + rate + '%</div>'
+        + '<div style="font-size:24px; font-weight:700; color:' + (aboveTarget ? '#fca5a5' : '#93c5fd') + ';">' + rate + '%</div>'
         + '<div style="font-size:10px; color:#6B7280; margin-top:4px;">미실시 ' + n.toLocaleString() + ' / ' + tot.toLocaleString() + '</div>'
         + '</div>';
     });
@@ -4359,7 +4359,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
         selMonths.forEach(m => { const v = TC_DATA[b] && TC_DATA[b][m]; if (v) { tot += v.total; n += v.n_count; } });
         return tot ? parseFloat((n / tot * 100).toFixed(1)) : 0;
       });
-      const barColors = barData.map(v => v > TC_TARGET ? '#0e7490' : '#0891b2');
+      const barColors = barData.map(v => v > TC_TARGET ? '#fca5a5' : '#a5b4fc');
       const barDatasets = [{ type: 'bar', label: barLabel, data: barData, backgroundColor: barColors, borderWidth: 0, borderRadius: 6, maxBarThickness: 80 }];
 
       const tcDrawPlugin = {
@@ -4378,7 +4378,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
             const val = chart.data.datasets[0].data[i];
             if (!val) return;
             c.font = 'bold 13px Arial, sans-serif';
-            c.fillStyle = val > TC_TARGET ? '#fb923c' : '#67e8f9';
+            c.fillStyle = val > TC_TARGET ? '#fca5a5' : '#a5b4fc';
             c.textAlign = 'center'; c.textBaseline = 'bottom';
             c.fillText(val + '%', bar.x, bar.y - 6);
           });
@@ -4457,7 +4457,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
         return tot ? parseFloat((n / tot * 100).toFixed(1)) : 0;
       });
 
-      const barColors = barData.map(v => v > TC_TARGET ? '#EF4444' : '#3B82F6');
+      const barColors = barData.map(v => v > TC_TARGET ? '#fca5a5' : '#93c5fd');
       const barDatasets = [{ type: 'bar', label: barLabel, data: barData, backgroundColor: barColors, borderWidth: 0, borderRadius: 6, maxBarThickness: 80 }];
 
       const tcDrawPlugin = {
@@ -4476,7 +4476,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
             const val = chart.data.datasets[0].data[i];
             if (!val) return;
             c.font = 'bold 13px Arial, sans-serif';
-            c.fillStyle = val > TC_TARGET ? '#fb923c' : '#93c5fd';
+            c.fillStyle = val > TC_TARGET ? '#fca5a5' : '#93c5fd';
             c.textAlign = 'center'; c.textBaseline = 'bottom';
             c.fillText(val + '%', bar.x, bar.y - 6);
           });
