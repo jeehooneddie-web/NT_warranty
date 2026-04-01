@@ -5112,7 +5112,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
           afterDraw(chart) {
             const { ctx: c, scales: { x, y } } = chart;
             c.save(); c.textAlign='left'; c.textBaseline='middle';
-            c.fillStyle='#ffffff'; c.font='bold 10px Arial,sans-serif';
+            c.fillStyle=_tc().fill; c.font='bold 10px Arial,sans-serif';
             values.forEach((v, i) => {
               if (!v) return;
               c.fillText(metric==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(), x.getPixelForValue(v)+5, y.getPixelForValue(i));
@@ -5129,7 +5129,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
             plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => metric==='amount' ? `₩${Math.round(ctx.raw).toLocaleString()}` : `${ctx.raw.toLocaleString()}건` } } },
             scales: {
               x: { grid: { color: gridCol }, ticks: { color: tickCol, maxTicksLimit:6, callback: v => metric==='amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString() } },
-              y: { grid: { display: false }, ticks: { color: '#ffffff', font: { size: 11 } } }
+              y: { grid: { display: false }, ticks: { color: _tc().fill, font: { size: 11 } } }
             }
           }
         });
