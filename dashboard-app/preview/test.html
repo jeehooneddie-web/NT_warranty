@@ -2050,6 +2050,7 @@
                     <th class="text-center py-3 px-4 font-semibold whitespace-nowrap" style="font-size:12px;">차대번호</th>
                     <th class="text-center py-3 px-4 font-semibold whitespace-nowrap" style="font-size:12px;">디펙트코드</th>
                     <th class="text-center py-3 px-4 font-semibold whitespace-nowrap" style="font-size:12px;">스캔시각</th>
+                    <th class="text-center py-3 px-4 font-semibold whitespace-nowrap" style="font-size:12px;"></th>
                   </tr>
                 </thead>
                 <tbody id="ql-table-body" class="divide-y divide-slate-100">
@@ -7105,8 +7106,10 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
         COL.location = (rows[0] || []).length - 1;
       }
 
+      if (!COL.scanTime && COL.scanTime !== 0) COL.scanTime = hi('scantime') ?? 0;
+      _qlCOL = COL;
       _qlRows = rows.filter(r => r[COL.claimNo]);
-      status.textContent = `전체 ${_qlRows.length}건 로드됨 (위치 col:${COL.location})`;
+      status.textContent = `전체 ${_qlRows.length}건 로드됨`;
 
       let filtered = _qlRows;
       if (branch)  filtered = filtered.filter(r => String(r[COL.branch]||'') === branch);
@@ -7122,27 +7125,90 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       }
 
       const t = _tc();
-      tbody.innerHTML = filtered.map(r => {
-        const loc     = r[COL.location] || '—';
+      tbody.innerHTML = filtered.map((r, idx) => {
+        const loc     = r[COL.location] || '';
         const br      = r[COL.branch]   || '';
         const claim   = r[COL.claimNo]  || '';
         const vin     = r[COL.chassis]  || '';
         const defCode = r[COL.defect]   || '';
         const scanned = String(r[COL.scanTime] || '').replace('T',' ').slice(0,16);
-        const locColor = loc !== '—' ? '#7C3AED' : t.textSub;
-        return `<tr style="border-bottom:1px solid ${t.border};" onmouseover="this.style.background='${t.cardAlt}'" onmouseout="this.style.background=''">
-          <td class="py-3 px-4" style="text-align:center; font-weight:700; color:${locColor}; font-size:14px;">${loc}</td>
+        const locDisp  = loc || '—';
+        const locColor = loc ? '#7C3AED' : t.textSub;
+        const rowId    = `ql-row-${idx}`;
+        const claimEnc = encodeURIComponent(claim);
+        const scanEnc  = encodeURIComponent(String(r[COL.scanTime]||''));
+        const locEnc   = encodeURIComponent(loc);
+        return `<tr id="${rowId}" style="border-bottom:1px solid ${t.border};" onmouseover="this.style.background='${t.cardAlt}'" onmouseout="this.style.background=''">
+          <td id="${rowId}-loc" class="py-3 px-4" style="text-align:center; font-weight:700; color:${locColor}; font-size:14px;">${locDisp}</td>
           <td class="py-3 px-4" style="text-align:center; font-size:13px; color:${t.text};">${br}</td>
           <td class="py-3 px-4" style="text-align:center; font-family:monospace; font-size:13px; color:${t.text};">${claim}</td>
           <td class="py-3 px-4" style="text-align:center; font-family:monospace; font-size:12px; color:${t.textSub};">${vin}</td>
           <td class="py-3 px-4" style="text-align:center; font-family:monospace; font-size:13px; color:${t.textSub};">${defCode}</td>
           <td class="py-3 px-4" style="text-align:center; font-size:12px; color:${t.textSub};">${scanned}</td>
+          <td class="py-3 px-4" style="text-align:center;">
+            <button onclick="editLocRow('${rowId}','${claimEnc}','${scanEnc}','${locEnc}')"
+              style="padding:4px 10px; font-size:11px; font-weight:600; border:1px solid #7C3AED; border-radius:6px; background:rgba(124,58,237,0.08); color:#7C3AED; cursor:pointer;">✏️ 수정</button>
+          </td>
         </tr>`;
       }).join('');
 
     } catch(e) {
       status.textContent = `연결 실패: ${e.message}`;
-      tbody.innerHTML = `<tr><td colspan="6" class="nm-text-sub" style="padding:48px; text-align:center; font-size:13px;">데이터 불러오기 실패</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="nm-text-sub" style="padding:48px; text-align:center; font-size:13px;">데이터 불러오기 실패</td></tr>`;
+    }
+  }
+
+  let _qlCOL = {};
+
+  function editLocRow(rowId, claimEnc, scanEnc, locEnc) {
+    const locCell = document.getElementById(rowId + '-loc');
+    if (!locCell) return;
+    const claim    = decodeURIComponent(claimEnc);
+    const scanTime = decodeURIComponent(scanEnc);
+    const curLoc   = decodeURIComponent(locEnc);
+    locCell.innerHTML = `
+      <div style="display:flex; align-items:center; gap:6px; justify-content:center;">
+        <input id="${rowId}-input" type="text" value="${curLoc}"
+          style="width:90px; padding:4px 8px; border-radius:6px; border:1px solid #7C3AED; font-size:13px; font-weight:700; color:#7C3AED; text-align:center; outline:none; background:rgba(124,58,237,0.06);"
+          onkeydown="if(event.key==='Enter') saveLocRow('${rowId}','${claimEnc}','${scanEnc}'); if(event.key==='Escape') cancelLocEdit('${rowId}','${locEnc}');">
+        <button onclick="saveLocRow('${rowId}','${claimEnc}','${scanEnc}')"
+          style="padding:3px 8px; font-size:12px; font-weight:700; border:none; border-radius:6px; background:#22C55E; color:#fff; cursor:pointer;">✓</button>
+        <button onclick="cancelLocEdit('${rowId}','${locEnc}')"
+          style="padding:3px 8px; font-size:12px; font-weight:700; border:none; border-radius:6px; background:#6B7280; color:#fff; cursor:pointer;">✗</button>
+      </div>`;
+    setTimeout(() => document.getElementById(rowId + '-input')?.focus(), 50);
+  }
+
+  function cancelLocEdit(rowId, locEnc) {
+    const locCell = document.getElementById(rowId + '-loc');
+    if (!locCell) return;
+    const loc = decodeURIComponent(locEnc);
+    locCell.style.fontWeight = '700';
+    locCell.style.color = loc ? '#7C3AED' : '#6B7280';
+    locCell.textContent = loc || '—';
+  }
+
+  async function saveLocRow(rowId, claimEnc, scanEnc) {
+    const input = document.getElementById(rowId + '-input');
+    if (!input) return;
+    const newLoc   = input.value.trim();
+    const claim    = decodeURIComponent(claimEnc);
+    const scanTime = decodeURIComponent(scanEnc);
+    const webhookUrl = localStorage.getItem('qr_webhook_url') || QR_WEBHOOK_DEFAULT;
+    const locCell  = document.getElementById(rowId + '-loc');
+    locCell.innerHTML = `<span style="color:#f59e0b; font-size:12px;">저장 중...</span>`;
+    try {
+      await fetch(webhookUrl, {
+        method: 'POST', mode: 'no-cors',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ action: 'update_location', claimNo: claim, scanTime, newLocation: newLoc, sheetName: '로케이션' })
+      });
+      locCell.style.fontWeight = '700';
+      locCell.style.color = newLoc ? '#7C3AED' : '#6B7280';
+      locCell.textContent = newLoc || '—';
+      showQRToast(`✓ 위치 수정 완료: ${newLoc || '(빈값)'}`, '#059669');
+    } catch(e) {
+      locCell.innerHTML = `<span style="color:#dc2626; font-size:12px; cursor:pointer;" onclick="editLocRow('${rowId}','${claimEnc}','${scanEnc}','${encodeURIComponent(newLoc)}')">오류 — 재시도</span>`;
     }
   }
 
@@ -7154,7 +7220,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     document.getElementById('ql-fetch-status').textContent = '';
     document.getElementById('ql-result-count').textContent = '';
     document.getElementById('ql-table-body').innerHTML =
-      `<tr><td colspan="6" class="nm-text-sub" style="padding:48px; text-align:center; font-size:13px;">조회 버튼을 눌러 데이터를 불러오세요</td></tr>`;
+      `<tr><td colspan="7" class="nm-text-sub" style="padding:48px; text-align:center; font-size:13px;">조회 버튼을 눌러 데이터를 불러오세요</td></tr>`;
   }
   // ────────────────────────────────────────────────────────────────
 
