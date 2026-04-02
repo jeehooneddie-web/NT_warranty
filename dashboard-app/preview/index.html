@@ -7190,15 +7190,16 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
         headers: {'Content-Type': 'text/plain'},
         body: JSON.stringify({ action: 'update_location', sheetRow, newLocation: newLoc, sheetName: '로케이션' })
       });
+      const rawText = await resp.text();
       let result;
-      try { result = await resp.json(); } catch(_) { result = null; }
+      try { result = JSON.parse(rawText); } catch(_) { result = null; }
       if (result && result.status === 'ok') {
         locCell.style.fontWeight = '700';
         locCell.style.color = newLoc ? '#7C3AED' : '#6B7280';
         locCell.textContent = newLoc || '—';
         showQRToast(`✓ 위치 수정 완료: ${newLoc || '(빈값)'}`, '#059669');
       } else {
-        const msg = result ? (result.message || result.status) : `HTTP ${resp.status}`;
+        const msg = result ? (result.message || result.status) : rawText.substring(0, 80);
         locCell.innerHTML = `<span style="color:#dc2626; font-size:12px; cursor:pointer;" onclick="editLocRow('${rowId}',${sheetRow},'${encodeURIComponent(newLoc)}')">오류: ${msg} — 재시도</span>`;
       }
     } catch(e) {
