@@ -7185,19 +7185,21 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     const locCell    = document.getElementById(rowId + '-loc');
     locCell.innerHTML = `<span style="color:#f59e0b; font-size:12px;">저장 중...</span>`;
     try {
-      const resp   = await fetch(webhookUrl, {
+      const resp = await fetch(webhookUrl, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'text/plain'},
         body: JSON.stringify({ action: 'update_location', sheetRow, newLocation: newLoc, sheetName: '로케이션' })
       });
-      const result = await resp.json();
-      if (result.status === 'ok') {
+      let result;
+      try { result = await resp.json(); } catch(_) { result = null; }
+      if (result && result.status === 'ok') {
         locCell.style.fontWeight = '700';
         locCell.style.color = newLoc ? '#7C3AED' : '#6B7280';
         locCell.textContent = newLoc || '—';
         showQRToast(`✓ 위치 수정 완료: ${newLoc || '(빈값)'}`, '#059669');
       } else {
-        locCell.innerHTML = `<span style="color:#dc2626; font-size:12px; cursor:pointer;" onclick="editLocRow('${rowId}',${sheetRow},'${encodeURIComponent(newLoc)}')">오류: ${result.message || result.status} — 재시도</span>`;
+        const msg = result ? (result.message || result.status) : `HTTP ${resp.status}`;
+        locCell.innerHTML = `<span style="color:#dc2626; font-size:12px; cursor:pointer;" onclick="editLocRow('${rowId}',${sheetRow},'${encodeURIComponent(newLoc)}')">오류: ${msg} — 재시도</span>`;
       }
     } catch(e) {
       locCell.innerHTML = `<span style="color:#dc2626; font-size:12px; cursor:pointer;" onclick="editLocRow('${rowId}',${sheetRow},'${encodeURIComponent(newLoc)}')">오류: ${e.message} — 재시도</span>`;
