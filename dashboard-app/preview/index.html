@@ -5996,10 +5996,6 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     }
   }
 
-  // ── AUTO LOGIN (test.html only) ──
-  sessionStorage.setItem('nm_role', 'admin');
-  applyRole('admin', { email: 'test@nationalmotors.co.kr', role: 'admin', name: '테스트관리자', avatar: 'T', label: '관리자' });
-
   // 세션 상태 변화 감지 (magic link 콜백 + 기존 세션 복원 통합)
   _sb.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
@@ -6008,7 +6004,8 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       // Access Token 갱신 시 전역 변수 동기화
       _accessToken = session.access_token;
     } else if (event === 'SIGNED_OUT') {
-      // test.html: no-op (auto-login active)
+      sessionStorage.clear();
+      document.getElementById('login-screen')?.classList.remove('hidden');
     }
   });
 
