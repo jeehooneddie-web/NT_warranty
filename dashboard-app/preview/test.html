@@ -7094,12 +7094,12 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
         return idx >= 0 ? idx : null;
       };
       const COL = {
-        scanTime: hi('scanTime') ?? hi('스캔시각') ?? 0,
-        branch:   hi('branch')   ?? hi('지점')    ?? 2,
-        claimNo:  hi('claimNo')  ?? hi('클레임번호') ?? 3,
-        chassis:  hi('chassisNo') ?? hi('차대번호') ?? 4,
-        defect:   hi('defectCode') ?? hi('디펙트코드') ?? 6,
-        location: hi('location') ?? hi('위치'),
+        scanTime: hi('스캔시간') ?? hi('scanTime') ?? 0,
+        branch:   hi('지점')    ?? hi('branch')   ?? 2,
+        claimNo:  hi('클레임번호') ?? hi('claimNo') ?? 3,
+        chassis:  hi('차대번호') ?? hi('chassisNo') ?? 4,
+        defect:   hi('디펙트코드') ?? hi('defectCode') ?? 6,
+        location: hi('위치')    ?? hi('location'),
       };
       const rows = allRows.slice(1);
       if (COL.location === null) {

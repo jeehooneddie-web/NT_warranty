@@ -7096,14 +7096,14 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
         const idx = headers.findIndex(h => h.toLowerCase() === k.toLowerCase());
         return idx >= 0 ? idx : null;
       };
-      // Apps Script가 쓰는 컬럼명 (한글/영문 모두 시도)
+      // Apps Script 헤더명 기준 (한글 우선, 영문 fallback, 최종 하드코딩)
       const COL = {
-        scanTime: hi('scanTime') ?? hi('스캔시각') ?? 0,
-        branch:   hi('branch')   ?? hi('지점')    ?? 2,
-        claimNo:  hi('claimNo')  ?? hi('클레임번호') ?? 3,
-        chassis:  hi('chassisNo') ?? hi('차대번호') ?? 4,
-        defect:   hi('defectCode') ?? hi('디펙트코드') ?? 6,
-        location: hi('location') ?? hi('위치'),
+        scanTime: hi('스캔시간') ?? hi('scanTime') ?? 0,
+        branch:   hi('지점')    ?? hi('branch')   ?? 2,
+        claimNo:  hi('클레임번호') ?? hi('claimNo') ?? 3,
+        chassis:  hi('차대번호') ?? hi('chassisNo') ?? 4,
+        defect:   hi('디펙트코드') ?? hi('defectCode') ?? 6,
+        location: hi('위치')    ?? hi('location'),
       };
       // 헤더가 없는 시트 (데이터만 있을 때): location 컬럼을 마지막으로 추정
       const rows = allRows.slice(1);
