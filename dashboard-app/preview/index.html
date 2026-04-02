@@ -6387,6 +6387,8 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   let qrMode = 'goopum'; // 'goopum' | 'inventory' | 'location'
   let locPendingScans = []; // 위치 미지정 임시 목록
   const QR_WEBHOOK_DEFAULT = 'https://script.google.com/macros/s/AKfycbwFLap0XWfhV9mcZH07aDrSk6kn8OKLWfM0SsAUXRrXcU_h3-AOrjiESszPVl6aOZgu/exec';
+  // 구버전 webhook URL이 localStorage에 남아있으면 자동 삭제
+  (function(){ const s = localStorage.getItem('qr_webhook_url'); if (s && s !== QR_WEBHOOK_DEFAULT) localStorage.removeItem('qr_webhook_url'); })();
   const QR_CSV_URL     = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQougnJK4_kro-lAQlm0-RGIinvOBLEAq1WmwCz_LRo_dQtaqGtdACZpaiQ68yMokaAX34n2T9FPi4j/pub?output=csv';
   const QR_EXEMPT_URL  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQougnJK4_kro-lAQlm0-RGIinvOBLEAq1WmwCz_LRo_dQtaqGtdACZpaiQ68yMokaAX34n2T9FPi4j/pub?gid=1758684472&single=true&output=csv';
   const QR_LOC_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQougnJK4_kro-lAQlm0-RGIinvOBLEAq1WmwCz_LRo_dQtaqGtdACZpaiQ68yMokaAX34n2T9FPi4j/pub?gid=1388680909&single=true&output=csv';
