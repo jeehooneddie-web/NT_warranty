@@ -1764,51 +1764,22 @@
 
             <!-- ── 로케이션 결과 박스 ── -->
             <div id="qr-loc-result-box" style="display:none; background:#1e2433; border-radius:16px; padding:16px; border:1px solid #222222; margin-bottom:12px;">
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                <span style="color:#9CA3AF; font-size:12px; font-weight:600;">로케이션 지정</span>
-                <div style="display:flex; gap:4px;">
-                  <button id="loc-sub-manual" onclick="switchLocStep('part')" style="font-size:11px; padding:4px 10px; border-radius:8px; background:#3B82F6; color:#fff; border:none; cursor:pointer; transition:all 0.2s;">수기입력</button>
-                  <button id="loc-sub-qr" onclick="switchLocStep('location_first')" style="font-size:11px; padding:4px 10px; border-radius:8px; background:#253349; color:#9CA3AF; border:1px solid #333; cursor:pointer; transition:all 0.2s;">위치QR 먼저</button>
-                </div>
+              <!-- 헤더 -->
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                <span style="color:#9CA3AF; font-size:12px; font-weight:600;">스캔 목록 <span id="qr-loc-pending-count" style="color:#6B7280; font-weight:400;">(0건)</span></span>
+                <button onclick="clearLocPending()" style="font-size:12px; color:#6B7280; background:none; border:none; cursor:pointer;">전체삭제</button>
               </div>
-              <!-- 고정 위치 배너 (위치QR 스캔 후 표시) -->
-              <div id="qr-loc-fixed-banner" style="display:none; background:#0d2b1a; border-radius:10px; padding:10px 14px; border:1px solid #0d5c3a; margin-bottom:10px; align-items:center; gap:8px;">
-                <span style="color:#86efac; font-size:12px; font-weight:600;">📍 현재 위치:</span>
-                <span id="qr-loc-fixed-text" style="color:#4ade80; font-size:13px; font-weight:700; flex:1;"></span>
-                <button onclick="clearLocFixed()" style="font-size:11px; color:#6B7280; background:none; border:none; cursor:pointer;">초기화</button>
+              <!-- 임시 스캔 목록 -->
+              <div id="qr-loc-pending-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+                <div style="color:#6B7280; font-size:13px; text-align:center; padding:16px 0;">QR을 스캔하면 여기에 쌓입니다</div>
               </div>
-              <!-- 대기 메시지 -->
-              <div id="qr-loc-waiting" style="display:none; text-align:center; padding:18px 0;">
-                <div style="color:#9CA3AF; font-size:13px;">위치 QR을 먼저 스캔해주세요</div>
-              </div>
-              <!-- 부품 QR 스캔 후 표시 -->
-              <div id="qr-loc-fields" style="display:none;">
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
-                  <div style="background:#0A0A0A; border-radius:10px; padding:10px; border:1px solid #222222;">
-                    <div style="color:#6B7280; font-size:11px; margin-bottom:3px;">지점</div>
-                    <div id="qr-loc-branch" style="color:#FFFFFF; font-size:14px; font-weight:700;"></div>
-                  </div>
-                  <div style="background:#0A0A0A; border-radius:10px; padding:10px; border:1px solid #222222;">
-                    <div style="color:#6B7280; font-size:11px; margin-bottom:3px;">클레임번호</div>
-                    <div id="qr-loc-claim" style="color:#FFFFFF; font-size:13px; font-weight:700; font-family:monospace;"></div>
-                  </div>
-                  <div style="background:#0A0A0A; border-radius:10px; padding:10px; border:1px solid #222222;">
-                    <div style="color:#6B7280; font-size:11px; margin-bottom:3px;">부품번호</div>
-                    <div id="qr-loc-port" style="color:#3B82F6; font-size:12px; font-weight:700; font-family:monospace; word-break:break-all;"></div>
-                  </div>
-                  <div style="background:#0A0A0A; border-radius:10px; padding:10px; border:1px solid #222222;">
-                    <div style="color:#6B7280; font-size:11px; margin-bottom:3px;">부품명</div>
-                    <div id="qr-loc-partdesc" style="color:#FFFFFF; font-size:13px; font-weight:700;"></div>
-                  </div>
-                </div>
-                <div style="margin-bottom:12px;">
-                  <div style="color:#6B7280; font-size:12px; margin-bottom:6px;">📍 위치</div>
+              <!-- 위치 지정 + 일괄 저장 (항목 있을 때만 표시) -->
+              <div id="qr-loc-assign-area" style="display:none;">
+                <div style="margin-bottom:10px;">
+                  <div style="color:#6B7280; font-size:12px; margin-bottom:6px;">📍 위치 입력 <span style="color:#4B5563; font-size:11px;">(위치 QR 스캔 시 자동 채워짐)</span></div>
                   <input id="qr-loc-input" type="text" placeholder="예: A-03-2층" style="width:100%; font-size:14px; padding:12px 14px; border-radius:10px; border:1px solid #374151; background:#0A0A0A; color:#FFFFFF; box-sizing:border-box; font-weight:600;">
                 </div>
-                <div style="display:flex; gap:10px;">
-                  <button onclick="submitLocScan()" style="flex:1; padding:14px; border-radius:12px; background:#22C55E; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer;">✓ 저장</button>
-                  <button onclick="resetQRResult()" style="padding:14px 20px; border-radius:12px; background:#253349; color:#9CA3AF; font-size:14px; font-weight:600; border:1px solid #333333; cursor:pointer;">재스캔</button>
-                </div>
+                <button onclick="submitLocBatch()" style="width:100%; padding:14px; border-radius:12px; background:#22C55E; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer;">✓ 일괄 저장</button>
               </div>
             </div>
 
@@ -2592,7 +2563,7 @@
           <div class="flex items-center justify-between mb-5">
             <div>
               <h3 class="text-sm font-semibold nm-text">월별 보증매출</h3>
-              <span class="text-xs nm-text-sub">취소 제외 · 바스크 1번 기준 건수 · Claim 상세_전체</span>
+              <span class="text-xs nm-text-sub">취소 제외 · Claim 상세_전체</span>
             </div>
             <div class="pill-group">
               <button onclick="setSalesMode('amount')" id="btn-sales-amount" class="sales-pill active">금액</button>
@@ -6337,8 +6308,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   const QR_SCAN_KEY = 'qr_scans_today';
   let qrParsed = null;
   let qrMode = 'goopum'; // 'goopum' | 'inventory' | 'location'
-  let locStep = 'part';  // 'part' | 'location_first'
-  let locCurrent = '';   // 현재 고정 위치값
+  let locPendingScans = []; // 위치 미지정 임시 목록
   const QR_WEBHOOK_DEFAULT = 'https://script.google.com/macros/s/AKfycbwFLap0XWfhV9mcZH07aDrSk6kn8OKLWfM0SsAUXRrXcU_h3-AOrjiESszPVl6aOZgu/exec';
   const QR_CSV_URL     = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQougnJK4_kro-lAQlm0-RGIinvOBLEAq1WmwCz_LRo_dQtaqGtdACZpaiQ68yMokaAX34n2T9FPi4j/pub?output=csv';
   const QR_EXEMPT_URL  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQougnJK4_kro-lAQlm0-RGIinvOBLEAq1WmwCz_LRo_dQtaqGtdACZpaiQ68yMokaAX34n2T9FPi4j/pub?gid=1758684472&single=true&output=csv';
@@ -6558,43 +6528,17 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
 
   function handleLocResult(data) {
     if (data._type === 'location') {
-      if (locStep !== 'location_first') {
-        showQRToast('위치QR 먼저 모드로 전환해주세요', '#d97706');
-        _resumeQRCamera();
-        return;
-      }
-      locCurrent = data.raw;
-      document.getElementById('qr-loc-fixed-text').textContent = data.raw;
-      document.getElementById('qr-loc-fixed-banner').style.display = 'flex';
-      const wait = document.getElementById('qr-loc-waiting');
-      wait.style.display = 'block';
-      wait.textContent = '부품 QR을 스캔해주세요';
-      document.getElementById('qr-loc-fields').style.display = 'none';
-      showQRToast('📍 위치 설정: ' + data.raw, '#7C3AED');
+      // 위치 QR → 입력창 자동 채우기
+      document.getElementById('qr-loc-input').value = data.raw;
+      showQRToast('📍 위치 자동입력: ' + data.raw, '#7C3AED');
       _resumeQRCamera();
       return;
     }
     if (!data.claimNo) { showQRToast('QR 파싱 실패. 다시 시도해주세요', '#dc2626'); _resumeQRCamera(); return; }
-    qrParsed = data;
-    document.getElementById('qr-loc-branch').textContent   = data.branch;
-    document.getElementById('qr-loc-claim').textContent    = data.claimNo;
-    document.getElementById('qr-loc-port').textContent     = data.portNo;
-    document.getElementById('qr-loc-partdesc').textContent = data.partDesc;
-    const locInput = document.getElementById('qr-loc-input');
-    if (locStep === 'location_first' && locCurrent) {
-      locInput.value    = locCurrent;
-      locInput.readOnly = true;
-      locInput.style.color = '#4ade80';
-    } else {
-      locInput.value    = '';
-      locInput.readOnly = false;
-      locInput.style.color = '#FFFFFF';
-    }
-    document.getElementById('qr-loc-result-box').style.display = 'block';
-    document.getElementById('qr-loc-waiting').style.display = 'none';
-    document.getElementById('qr-loc-fields').style.display  = 'block';
-    document.getElementById('qr-cam-msg').textContent = '✓ QR 인식 완료';
-    showQRToast('✓ QR 인식! 위치 확인 후 저장해주세요', '#3B82F6');
+    locPendingScans.push(data);
+    renderLocPendingList();
+    showQRToast(`✓ 추가됨 (${locPendingScans.length}건) — 계속 스캔하세요`, '#3B82F6');
+    _resumeQRCamera();
   }
 
   function resetQRResult() {
@@ -6604,14 +6548,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     } else if (qrMode === 'inventory') {
       document.getElementById('qr-inv-result-box').style.display = 'none';
     } else if (qrMode === 'location') {
-      document.getElementById('qr-loc-fields').style.display = 'none';
-      if (locStep === 'location_first') {
-        const wait = document.getElementById('qr-loc-waiting');
-        wait.style.display = 'block';
-        wait.textContent = locCurrent ? '부품 QR을 스캔해주세요' : '위치 QR을 먼저 스캔해주세요';
-      } else {
-        document.getElementById('qr-loc-result-box').style.display = 'none';
-      }
+      // 박스는 유지, 카메라만 재개
     }
     _resumeQRCamera();
   }
@@ -6701,47 +6638,42 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     document.getElementById('qr-inv-list-section').style.display    = mode === 'inventory' ? 'flex' : 'none';
     document.getElementById('qr-loc-list-section').style.display    = mode === 'location'  ? 'flex' : 'none';
     const locBox = document.getElementById('qr-loc-result-box');
-    if (mode === 'location' && locStep === 'location_first') {
-      locBox.style.display = 'block';
-      const wait = document.getElementById('qr-loc-waiting');
-      wait.style.display   = 'block';
-      wait.textContent     = locCurrent ? '부품 QR을 스캔해주세요' : '위치 QR을 먼저 스캔해주세요';
-      document.getElementById('qr-loc-fields').style.display = 'none';
-      document.getElementById('qr-loc-fixed-banner').style.display = locCurrent ? 'flex' : 'none';
-    } else {
-      locBox.style.display = 'none';
-    }
+    locBox.style.display = mode === 'location' ? 'block' : 'none';
+    if (mode === 'location') renderLocPendingList();
   }
 
-  function switchLocStep(step) {
-    locStep    = step;
-    locCurrent = '';
-    document.getElementById('loc-sub-manual').style.background = step === 'part'           ? '#3B82F6' : '#253349';
-    document.getElementById('loc-sub-manual').style.color      = step === 'part'           ? '#fff'    : '#9CA3AF';
-    document.getElementById('loc-sub-qr').style.background     = step === 'location_first' ? '#3B82F6' : '#253349';
-    document.getElementById('loc-sub-qr').style.color          = step === 'location_first' ? '#fff'    : '#9CA3AF';
-    document.getElementById('qr-loc-fixed-banner').style.display = 'none';
-    document.getElementById('qr-loc-fields').style.display       = 'none';
-    qrParsed = null;
-    if (step === 'location_first') {
-      document.getElementById('qr-loc-result-box').style.display = 'block';
-      const wait = document.getElementById('qr-loc-waiting');
-      wait.style.display = 'block';
-      wait.textContent   = '위치 QR을 먼저 스캔해주세요';
-    } else {
-      document.getElementById('qr-loc-result-box').style.display = 'none';
-      document.getElementById('qr-loc-waiting').style.display    = 'none';
+  function renderLocPendingList() {
+    const el  = document.getElementById('qr-loc-pending-list');
+    const cnt = document.getElementById('qr-loc-pending-count');
+    const area = document.getElementById('qr-loc-assign-area');
+    if (!el) return;
+    cnt.textContent = `(${locPendingScans.length}건)`;
+    if (locPendingScans.length === 0) {
+      el.innerHTML = '<div style="color:#6B7280; font-size:13px; text-align:center; padding:16px 0;">QR을 스캔하면 여기에 쌓입니다</div>';
+      area.style.display = 'none';
+      return;
     }
+    area.style.display = 'block';
+    el.innerHTML = locPendingScans.map((s, i) => `
+      <div style="display:flex; align-items:center; gap:8px; background:#0A0A0A; border-radius:10px; padding:10px 12px; border:1px solid #222222;">
+        <div style="flex:1; min-width:0;">
+          <div style="color:#FFFFFF; font-size:12px; font-weight:700; font-family:monospace;">${s.claimNo} <span style="color:#6B7280; font-weight:400;">/ ${s.portNo}</span></div>
+          <div style="color:#6B7280; font-size:11px; margin-top:2px;">${s.branch} · ${s.partDesc} · Part ${s.partIndex}/${s.totalParts}</div>
+        </div>
+        <button onclick="removeLocPending(${i})" style="font-size:16px; color:#6B7280; background:none; border:none; cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0;">×</button>
+      </div>`).join('');
   }
 
-  function clearLocFixed() {
-    locCurrent = '';
-    document.getElementById('qr-loc-fixed-banner').style.display = 'none';
-    document.getElementById('qr-loc-fields').style.display = 'none';
-    const wait = document.getElementById('qr-loc-waiting');
-    wait.style.display = 'block';
-    wait.textContent   = '위치 QR을 먼저 스캔해주세요';
-    qrParsed = null;
+  function removeLocPending(idx) {
+    locPendingScans.splice(idx, 1);
+    renderLocPendingList();
+  }
+
+  function clearLocPending() {
+    if (locPendingScans.length === 0) return;
+    if (!confirm('스캔 목록을 전체 삭제하시겠습니까?')) return;
+    locPendingScans = [];
+    renderLocPendingList();
   }
 
   function submitInvScan() {
@@ -6789,36 +6721,29 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     renderInvScanList();
   }
 
-  function submitLocScan() {
-    if (!qrParsed) return;
+  function submitLocBatch() {
+    if (locPendingScans.length === 0) return;
     const locInput = document.getElementById('qr-loc-input');
     const location = locInput.value.trim();
     if (!location) { showQRToast('위치를 입력해주세요', '#dc2626'); locInput.focus(); return; }
     const LOC_KEY  = 'qr_location_scans';
     const existing = JSON.parse(localStorage.getItem(LOC_KEY) || '[]');
-    const entry    = {...qrParsed, location};
-    existing.push(entry);
-    localStorage.setItem(LOC_KEY, JSON.stringify(existing));
-    renderLocScanList();
     const webhookUrl = localStorage.getItem('qr_webhook_url') || QR_WEBHOOK_DEFAULT;
-    if (webhookUrl) {
-      fetch(webhookUrl, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({...entry, sheetName:'로케이션'}) }).catch(()=>{});
-    }
-    document.getElementById('qr-loc-fields').style.display = 'none';
-    qrParsed = null;
-    showQRToast('✓ 로케이션 저장 완료!', '#059669');
-    if (locStep === 'location_first') {
-      const wait = document.getElementById('qr-loc-waiting');
-      wait.style.display = 'block';
-      wait.textContent   = '부품 QR을 스캔해주세요';
-      _resumeQRCamera();
-    } else {
-      document.getElementById('qr-loc-result-box').style.display = 'none';
-      document.getElementById('qr-reader').style.display = 'block';
-      if (html5QrScanner) { try { html5QrScanner.resume(); document.getElementById('qr-start-btn').style.display='none'; document.getElementById('qr-stop-btn').style.display='block'; document.getElementById('qr-cam-msg').textContent='QR을 화면 안에 맞춰주세요'; return; } catch(e){} }
-      startQRCamera();
-    }
+    locPendingScans.forEach(s => {
+      const entry = {...s, location};
+      existing.push(entry);
+      if (webhookUrl) {
+        fetch(webhookUrl, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({...entry, sheetName:'로케이션'}) }).catch(()=>{});
+      }
+    });
+    localStorage.setItem(LOC_KEY, JSON.stringify(existing));
+    const savedCount = locPendingScans.length;
+    locPendingScans = [];
+    locInput.value  = '';
+    renderLocPendingList();
+    renderLocScanList();
+    showQRToast(`✓ ${savedCount}건 저장 완료!`, '#059669');
   }
 
   function renderLocScanList() {
