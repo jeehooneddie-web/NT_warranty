@@ -7086,19 +7086,34 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
         cols.push(cur.trim());
         return cols;
       });
-      const rows = parseCSV(text).slice(1);
-      // 로케이션 시트 컬럼: 0=스캔시각, 1=딜러번호, 2=지점, 3=클레임번호, 4=차대번호,
-      //   5=모델, 6=디펙트코드, 7=주행거리, 8=등록일, 9=수리일, 10=부품번호, 11=부품명,
-      //   12=Part순서, 13=위치
-      _qlRows = rows.filter(r => r[3]);
+      const allRows = parseCSV(text);
+      const headers = allRows[0] || [];
+      const hi = k => {
+        const idx = headers.findIndex(h => h.toLowerCase() === k.toLowerCase());
+        return idx >= 0 ? idx : null;
+      };
+      const COL = {
+        scanTime: hi('scanTime') ?? hi('스캔시각') ?? 0,
+        branch:   hi('branch')   ?? hi('지점')    ?? 2,
+        claimNo:  hi('claimNo')  ?? hi('클레임번호') ?? 3,
+        chassis:  hi('chassisNo') ?? hi('차대번호') ?? 4,
+        defect:   hi('defectCode') ?? hi('디펙트코드') ?? 6,
+        location: hi('location') ?? hi('위치'),
+      };
+      const rows = allRows.slice(1);
+      if (COL.location === null) {
+        COL.location = (rows[0] || []).length - 1;
+      }
+
+      _qlRows = rows.filter(r => r[COL.claimNo]);
+      status.textContent = `전체 ${_qlRows.length}건 로드됨 (위치 col:${COL.location})`;
 
       let filtered = _qlRows;
-      if (branch)  filtered = filtered.filter(r => String(r[2]||'') === branch);
-      if (claimQ)  filtered = filtered.filter(r => String(r[3]||'').toUpperCase().replace(/^WC/,'').includes(claimQ.replace(/^WC/,'')));
-      if (chassis) filtered = filtered.filter(r => String(r[4]||'').toUpperCase().includes(chassis));
-      if (defect)  filtered = filtered.filter(r => String(r[6]||'').includes(defect));
+      if (branch)  filtered = filtered.filter(r => String(r[COL.branch]||'') === branch);
+      if (claimQ)  filtered = filtered.filter(r => String(r[COL.claimNo]||'').toUpperCase().replace(/^WC/,'').includes(claimQ.replace(/^WC/,'')));
+      if (chassis) filtered = filtered.filter(r => String(r[COL.chassis]||'').toUpperCase().includes(chassis));
+      if (defect)  filtered = filtered.filter(r => String(r[COL.defect]||'').includes(defect));
 
-      status.textContent = `전체 ${_qlRows.length}건 로드됨`;
       document.getElementById('ql-result-count').textContent = `${filtered.length}건`;
 
       if (!filtered.length) {
@@ -7108,12 +7123,12 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
 
       const t = _tc();
       tbody.innerHTML = filtered.map(r => {
-        const loc     = r[13] || '—';
-        const br      = r[2]  || '';
-        const claim   = r[3]  || '';
-        const vin     = r[4]  || '';
-        const defCode = r[6]  || '';
-        const scanned = String(r[0] || '').replace('T',' ').slice(0,16);
+        const loc     = r[COL.location] || '—';
+        const br      = r[COL.branch]   || '';
+        const claim   = r[COL.claimNo]  || '';
+        const vin     = r[COL.chassis]  || '';
+        const defCode = r[COL.defect]   || '';
+        const scanned = String(r[COL.scanTime] || '').replace('T',' ').slice(0,16);
         const locColor = loc !== '—' ? '#7C3AED' : t.textSub;
         return `<tr style="border-bottom:1px solid ${t.border};" onmouseover="this.style.background='${t.cardAlt}'" onmouseout="this.style.background=''">
           <td class="py-3 px-4" style="text-align:center; font-weight:700; color:${locColor}; font-size:14px;">${loc}</td>
