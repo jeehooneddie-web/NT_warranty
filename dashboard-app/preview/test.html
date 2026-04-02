@@ -550,6 +550,11 @@
         <span>고품 반납 현황</span>
       </div>
 
+      <div class="nav-item admin-only" data-view="view-qr-location" onclick="showView('view-qr-location')">
+        <i data-lucide="map-pin"></i>
+        <span>고품 로케이션 조회</span>
+      </div>
+
       <!-- 구분선 (도구) -->
       <div class="pt-3 pb-1 px-1">
         <span style="color:#3B82F6; opacity:0.5; font-size:11px; text-transform:uppercase; letter-spacing:.1em; font-weight:600;">도구</span>
@@ -1992,6 +1997,71 @@
         </div>
       </div><!-- /view-qr-match -->
 
+      <div id="view-qr-location" class="view hidden">
+        <div style="padding:24px; min-height:100vh;">
+
+          <!-- 필터 카드 -->
+          <div class="nm-card" style="border-radius:16px; border-top:3px solid #7C3AED; overflow:hidden; margin-bottom:20px;">
+            <div class="px-5 py-3 flex items-center justify-between nm-border-b">
+              <h2 class="text-sm font-bold nm-text">고품 로케이션 조회</h2>
+              <span id="ql-fetch-status" class="nm-text-sub" style="font-size:11px;"></span>
+            </div>
+            <div class="px-5 py-4" style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label class="nm-text-sub" style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em;">지점</label>
+                <select id="ql-branch" class="nm-input" style="padding:7px 12px; border-radius:8px; font-size:13px; min-width:100px;">
+                  <option value="">전체</option>
+                  <option value="군산">군산</option>
+                  <option value="목포">목포</option>
+                  <option value="서산">서산</option>
+                  <option value="전주">전주</option>
+                  <option value="평택">평택</option>
+                </select>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label class="nm-text-sub" style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em;">클레임번호</label>
+                <input type="text" id="ql-claim" class="nm-input" placeholder="예: WC123456" style="padding:7px 10px; border-radius:8px; font-size:13px; width:140px;">
+              </div>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label class="nm-text-sub" style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em;">차대번호</label>
+                <input type="text" id="ql-chassis" class="nm-input" placeholder="일부 입력 가능" style="padding:7px 10px; border-radius:8px; font-size:13px; width:160px;">
+              </div>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label class="nm-text-sub" style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em;">디펙트코드</label>
+                <input type="text" id="ql-defect" class="nm-input" placeholder="예: 12345678" style="padding:7px 10px; border-radius:8px; font-size:13px; width:140px;">
+              </div>
+              <button onclick="runQRLocation()" style="padding:8px 22px; background:#7C3AED; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.25s ease;">조회</button>
+              <button onclick="resetQRLocation()" style="padding:8px 14px; background:none; color:#6B7280; border:1px solid #374151; border-radius:8px; font-size:13px; cursor:pointer; transition:all 0.25s ease;">초기화</button>
+            </div>
+          </div>
+
+          <!-- 결과 카드 -->
+          <div class="nm-card" style="border-radius:16px; overflow:hidden;">
+            <div class="nm-border-b px-5 py-3 flex items-center justify-between">
+              <span class="nm-text-sub" style="font-size:12px; font-weight:600;">조회 결과 <span id="ql-result-count" style="color:#7C3AED; font-weight:700;"></span></span>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="nm-th" style="border-bottom-width:1px;">
+                    <th class="text-center py-3 px-4 font-semibold whitespace-nowrap" style="font-size:12px;">📍 위치</th>
+                    <th class="text-center py-3 px-4 font-semibold whitespace-nowrap" style="font-size:12px;">지점</th>
+                    <th class="text-center py-3 px-4 font-semibold whitespace-nowrap" style="font-size:12px;">클레임번호</th>
+                    <th class="text-center py-3 px-4 font-semibold whitespace-nowrap" style="font-size:12px;">차대번호</th>
+                    <th class="text-center py-3 px-4 font-semibold whitespace-nowrap" style="font-size:12px;">디펙트코드</th>
+                    <th class="text-center py-3 px-4 font-semibold whitespace-nowrap" style="font-size:12px;">스캔시각</th>
+                  </tr>
+                </thead>
+                <tbody id="ql-table-body" class="divide-y divide-slate-100">
+                  <tr><td colspan="6" class="nm-text-sub" style="padding:48px; text-align:center; font-size:13px;">조회 버튼을 눌러 데이터를 불러오세요</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /view-qr-location -->
+
       <!-- 미대상 처리 모달 -->
       <div id="exempt-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
         <div class="nm-card" style="border-radius:16px; padding:28px; width:420px; max-width:90vw; box-shadow:0 20px 60px rgba(0,0,0,0.4);">
@@ -2913,6 +2983,7 @@
       'view-claim':            'CLAIM 상태 확인',
       'view-qr-scanner':       '고품 QR 스캔',
       'view-qr-match':         '고품 반납 현황',
+      'view-qr-location':      '고품 로케이션 조회',
       'view-wholesale':        '클레임 볼륨',
     };
     document.getElementById('page-title').textContent = titles[viewId] || '';
@@ -2927,7 +2998,8 @@
     if (viewId === 'view-tc-top20') renderTop20View();
     if (viewId === 'view-claim') initClaimView();
     if (viewId === 'view-qr-scanner') initQRScanner();
-    if (viewId === 'view-qr-match')   initQRMatch();
+    if (viewId === 'view-qr-match')    initQRMatch();
+    if (viewId === 'view-qr-location') initQRLocation();
     if (viewId === 'view-wholesale') renderWholesale();
     if (viewId === 'view-admin-menus') renderMenuCfgTable();
     if (viewId === 'view-user-mgmt')  loadUserList();
@@ -5587,7 +5659,8 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     { key:'view-tc-top20',    label:'미실시 상위 20',   minRole:'admin',  hidden:false, fixed:false },
     { key:'view-claim',       label:'CLAIM 상태 확인', minRole:'admin',  hidden:false, fixed:false },
     { key:'view-wholesale',   label:'클레임 볼륨',      minRole:'admin',  hidden:false, fixed:false },
-    { key:'view-qr-match',    label:'고품 반납 현황',  minRole:'admin',  hidden:false, fixed:false },
+    { key:'view-qr-match',    label:'고품 반납 현황',   minRole:'admin',  hidden:false, fixed:false },
+    { key:'view-qr-location', label:'고품 로케이션 조회', minRole:'admin',  hidden:false, fixed:false },
     { key:'view-user-mgmt',   label:'구성원 관리',       minRole:'admin',  hidden:false, fixed:true  },
     { key:'view-admin-menus', label:'메뉴 관리',        minRole:'admin',  hidden:false, fixed:true  },
     { key:'data-update',      label:'데이터 업데이트',  minRole:'admin',  hidden:false, fixed:true  },
@@ -6315,6 +6388,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   const QR_WEBHOOK_DEFAULT = 'https://script.google.com/macros/s/AKfycbwFLap0XWfhV9mcZH07aDrSk6kn8OKLWfM0SsAUXRrXcU_h3-AOrjiESszPVl6aOZgu/exec';
   const QR_CSV_URL     = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQougnJK4_kro-lAQlm0-RGIinvOBLEAq1WmwCz_LRo_dQtaqGtdACZpaiQ68yMokaAX34n2T9FPi4j/pub?output=csv';
   const QR_EXEMPT_URL  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQougnJK4_kro-lAQlm0-RGIinvOBLEAq1WmwCz_LRo_dQtaqGtdACZpaiQ68yMokaAX34n2T9FPi4j/pub?gid=1758684472&single=true&output=csv';
+  const QR_LOC_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQougnJK4_kro-lAQlm0-RGIinvOBLEAq1WmwCz_LRo_dQtaqGtdACZpaiQ68yMokaAX34n2T9FPi4j/pub?gid=1388680909&single=true&output=csv';
 
   function initQRScanner() {
     const saved = localStorage.getItem('qr_webhook_url') || QR_WEBHOOK_DEFAULT;
@@ -6982,6 +7056,92 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       </tr>`;
     }).join('');
   }
+
+  // ─── 고품 로케이션 조회 ────────────────────────────────────────
+  let _qlRows = [];
+
+  function initQRLocation() { /* 진입 시 초기화 필요 없음 — 상태 유지 */ }
+
+  async function runQRLocation() {
+    const branch  = document.getElementById('ql-branch').value.trim();
+    const claimQ  = document.getElementById('ql-claim').value.trim().toUpperCase();
+    const chassis = document.getElementById('ql-chassis').value.trim().toUpperCase();
+    const defect  = document.getElementById('ql-defect').value.trim();
+    const status  = document.getElementById('ql-fetch-status');
+    const tbody   = document.getElementById('ql-table-body');
+
+    status.textContent = '불러오는 중...';
+    tbody.innerHTML = `<tr><td colspan="6" class="nm-text-sub" style="padding:48px; text-align:center; font-size:13px;">로딩 중...</td></tr>`;
+
+    try {
+      const res  = await fetch(QR_LOC_CSV_URL);
+      const text = await res.text();
+      const parseCSV = t => t.trim().split('\n').map(line => {
+        const cols = []; let cur = ''; let inQ = false;
+        for (const c of line) {
+          if (c === '"') { inQ = !inQ; }
+          else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+          else { cur += c; }
+        }
+        cols.push(cur.trim());
+        return cols;
+      });
+      const rows = parseCSV(text).slice(1);
+      // 로케이션 시트 컬럼: 0=스캔시각, 1=딜러번호, 2=지점, 3=클레임번호, 4=차대번호,
+      //   5=모델, 6=디펙트코드, 7=주행거리, 8=등록일, 9=수리일, 10=부품번호, 11=부품명,
+      //   12=Part순서, 13=위치
+      _qlRows = rows.filter(r => r[3]);
+
+      let filtered = _qlRows;
+      if (branch)  filtered = filtered.filter(r => String(r[2]||'') === branch);
+      if (claimQ)  filtered = filtered.filter(r => String(r[3]||'').toUpperCase().replace(/^WC/,'').includes(claimQ.replace(/^WC/,'')));
+      if (chassis) filtered = filtered.filter(r => String(r[4]||'').toUpperCase().includes(chassis));
+      if (defect)  filtered = filtered.filter(r => String(r[6]||'').includes(defect));
+
+      status.textContent = `전체 ${_qlRows.length}건 로드됨`;
+      document.getElementById('ql-result-count').textContent = `${filtered.length}건`;
+
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="nm-text-sub" style="padding:48px; text-align:center; font-size:13px;">조건에 맞는 데이터가 없습니다</td></tr>`;
+        return;
+      }
+
+      const t = _tc();
+      tbody.innerHTML = filtered.map(r => {
+        const loc     = r[13] || '—';
+        const br      = r[2]  || '';
+        const claim   = r[3]  || '';
+        const vin     = r[4]  || '';
+        const defCode = r[6]  || '';
+        const scanned = String(r[0] || '').replace('T',' ').slice(0,16);
+        const locColor = loc !== '—' ? '#7C3AED' : t.textSub;
+        return `<tr style="border-bottom:1px solid ${t.border};" onmouseover="this.style.background='${t.cardAlt}'" onmouseout="this.style.background=''">
+          <td class="py-3 px-4" style="text-align:center; font-weight:700; color:${locColor}; font-size:14px;">${loc}</td>
+          <td class="py-3 px-4" style="text-align:center; font-size:13px; color:${t.text};">${br}</td>
+          <td class="py-3 px-4" style="text-align:center; font-family:monospace; font-size:13px; color:${t.text};">${claim}</td>
+          <td class="py-3 px-4" style="text-align:center; font-family:monospace; font-size:12px; color:${t.textSub};">${vin}</td>
+          <td class="py-3 px-4" style="text-align:center; font-family:monospace; font-size:13px; color:${t.textSub};">${defCode}</td>
+          <td class="py-3 px-4" style="text-align:center; font-size:12px; color:${t.textSub};">${scanned}</td>
+        </tr>`;
+      }).join('');
+
+    } catch(e) {
+      status.textContent = `연결 실패: ${e.message}`;
+      tbody.innerHTML = `<tr><td colspan="6" class="nm-text-sub" style="padding:48px; text-align:center; font-size:13px;">데이터 불러오기 실패</td></tr>`;
+    }
+  }
+
+  function resetQRLocation() {
+    document.getElementById('ql-branch').value  = '';
+    document.getElementById('ql-claim').value   = '';
+    document.getElementById('ql-chassis').value = '';
+    document.getElementById('ql-defect').value  = '';
+    document.getElementById('ql-fetch-status').textContent = '';
+    document.getElementById('ql-result-count').textContent = '';
+    document.getElementById('ql-table-body').innerHTML =
+      `<tr><td colspan="6" class="nm-text-sub" style="padding:48px; text-align:center; font-size:13px;">조회 버튼을 눌러 데이터를 불러오세요</td></tr>`;
+  }
+  // ────────────────────────────────────────────────────────────────
 
   function openExemptModal(r) {
     _exemptPending = r;
