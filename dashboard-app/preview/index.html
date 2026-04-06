@@ -6861,6 +6861,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   let _qmResults  = [];
   let _qmTab      = 'all';
   let _qmType     = '';
+  let _qmTypes    = new Set();
   let _exemptSet  = new Set(); // 수거미대상 클레임번호
   let _exemptPending = null;   // 모달 대기 중인 row 데이터
 
@@ -6978,11 +6979,15 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   }
 
   function setQMType(type) {
-    _qmType = type;
-    const typeMap = {'':'all','Warranty':'warranty','TC/RECALL':'tc','Goodwill':'goodwill','WP':'wp','LOCAL TC':'ltc'};
-    document.querySelectorAll('[id^="qmt-"]').forEach(b => {
-      b.classList.toggle('active', b.id === 'qmt-' + (typeMap[type] ?? ''));
-    });
+    if (type === '') {
+      _qmTypes.clear();
+      document.querySelectorAll('[id^="qmt-"]').forEach(b => b.classList.toggle('active', b.id === 'qmt-all'));
+    } else {
+      _qmTypes.has(type) ? _qmTypes.delete(type) : _qmTypes.add(type);
+      const typeMap = {'Warranty':'warranty','TC/RECALL':'tc','Goodwill':'goodwill','WP':'wp','LOCAL TC':'ltc'};
+      document.getElementById('qmt-' + typeMap[type])?.classList.toggle('active', _qmTypes.has(type));
+      document.getElementById('qmt-all')?.classList.toggle('active', _qmTypes.size === 0);
+    }
     renderQMTable();
   }
 
@@ -6998,7 +7003,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     const tbody = document.getElementById('qm-table-body');
 
     // KPI: 타입 필터 기준 (항상 업데이트)
-    const typeFiltered = _qmType ? _qmResults.filter(r => r.type === _qmType) : _qmResults;
+    const typeFiltered = _qmTypes.size > 0 ? _qmResults.filter(r => _qmTypes.has(r.type)) : _qmResults;
     document.getElementById('qm-stat-total').textContent     = typeFiltered.length;
     document.getElementById('qm-stat-matched').textContent   = typeFiltered.filter(r => r.matched && !r.exempt).length;
     document.getElementById('qm-stat-unmatched').textContent = typeFiltered.filter(r => !r.matched && !r.exempt).length;
