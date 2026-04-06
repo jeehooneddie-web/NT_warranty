@@ -2241,6 +2241,49 @@
               <button onclick="togglePersonMonth('12')" id="pmonth-12" class="sales-pill">12월</button>
             </div>
           </div>
+          <div class="flex items-center gap-3 mt-3">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">상태</span>
+            <div class="pill-group">
+              <button onclick="setPersonStatus('청구')" id="pstatus-claim" class="sales-pill active">청구</button>
+              <button onclick="setPersonStatus('취소')" id="pstatus-cancel" class="sales-pill">취소</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 카드 + 취소율 테이블 -->
+        <div id="person-kpi-section" class="mb-4">
+          <div class="grid grid-cols-3 gap-3 mb-3">
+            <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
+              <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">전체 청구</p>
+              <p id="kpi-claim-count" class="text-2xl font-bold text-slate-700 dark:text-slate-100">-</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">건</p>
+            </div>
+            <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
+              <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">전체 취소</p>
+              <p id="kpi-cancel-count" class="text-2xl font-bold text-slate-700 dark:text-slate-100">-</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">건</p>
+            </div>
+            <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
+              <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">취소율</p>
+              <p id="kpi-cancel-rate" class="text-2xl font-bold text-rose-500">-</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">%</p>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="border-b border-slate-200 dark:border-slate-700 text-slate-400">
+                  <th class="text-left px-4 py-2 font-semibold">이름</th>
+                  <th class="text-right px-4 py-2 font-semibold">청구</th>
+                  <th class="text-right px-4 py-2 font-semibold">취소</th>
+                  <th class="text-right px-4 py-2 font-semibold">취소율</th>
+                </tr>
+              </thead>
+              <tbody id="kpi-person-table-body">
+                <tr><td colspan="4" class="text-center py-4 text-slate-400">데이터 없음</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- 차트 카드 -->
@@ -2256,10 +2299,6 @@
               <div id="pmode-wrap" class="pill-group" style="margin-right:6px;">
                 <button onclick="setPersonTotalMode(false)" id="pmode-individual" class="sales-pill active">개인별</button>
                 <button onclick="setPersonTotalMode(true)"  id="pmode-total"      class="sales-pill">전체합계</button>
-              </div>
-              <div class="pill-group">
-                <button onclick="setPersonStatus('청구')" id="pstatus-claim" class="sales-pill active">청구</button>
-                <button onclick="setPersonStatus('취소')" id="pstatus-cancel" class="sales-pill">취소</button>
               </div>
               <div class="pill-group">
                 <button onclick="setPersonMetric('amount')" id="pmetric-amount" class="sales-pill active">금액</button>
@@ -5123,6 +5162,51 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     renderPersonLegend();
   }
 
+  function updatePersonKpi() {
+    const visMo = pGetVisibleMonths();
+    const visMoSet = new Set(visMo);
+    const personAgg = {};
+    for (const row of PERSON_DATA) {
+      const [person, mo, tp, status, cnt] = row;
+      if (person === '전체합계') continue;
+      if (!pActiveTypes.has(tp)) continue;
+      if (!visMoSet.has(mo)) continue;
+      if (!personAgg[person]) personAgg[person] = { claim: 0, cancel: 0 };
+      if (status === '청구') personAgg[person].claim  += cnt;
+      if (status === '취소') personAgg[person].cancel += cnt;
+    }
+    let totalClaim = 0, totalCancel = 0;
+    for (const { claim, cancel } of Object.values(personAgg)) {
+      totalClaim += claim; totalCancel += cancel;
+    }
+    const totalRate = totalClaim > 0 ? (totalCancel / totalClaim * 100) : 0;
+    const el = id => document.getElementById(id);
+    if (el('kpi-claim-count'))  el('kpi-claim-count').textContent  = totalClaim.toLocaleString();
+    if (el('kpi-cancel-count')) el('kpi-cancel-count').textContent = totalCancel.toLocaleString();
+    if (el('kpi-cancel-rate'))  el('kpi-cancel-rate').textContent  = totalRate.toFixed(1);
+    const tbody = el('kpi-person-table-body');
+    if (!tbody) return;
+    const rows = Object.entries(personAgg)
+      .map(([id, { claim, cancel }]) => ({
+        id, claim, cancel,
+        rate: claim > 0 ? (cancel / claim * 100) : 0,
+        name: PERSON_NAMES[id] || id,
+      }))
+      .sort((a, b) => b.rate - a.rate);
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-400">데이터 없음</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(r => `
+      <tr class="border-t border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/40">
+        <td class="px-4 py-2 font-medium text-slate-700 dark:text-slate-200">${r.name}</td>
+        <td class="px-4 py-2 text-right text-slate-600 dark:text-slate-300">${r.claim.toLocaleString()}</td>
+        <td class="px-4 py-2 text-right text-slate-600 dark:text-slate-300">${r.cancel.toLocaleString()}</td>
+        <td class="px-4 py-2 text-right font-semibold ${r.rate >= 10 ? 'text-rose-500' : r.rate >= 5 ? 'text-amber-500' : 'text-emerald-500'}">${r.rate.toFixed(1)}%</td>
+      </tr>
+    `).join('');
+  }
+
   function setPersonTotalMode(isTotal) {
     pShowTotal = isTotal;
     document.getElementById('pmode-individual').className = 'sales-pill' + (!isTotal ? ' active' : '');
@@ -5160,6 +5244,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   }
 
   function renderPersonChart() {
+    updatePersonKpi();
     const visMo = pGetVisibleMonths();
     const visMoSet = new Set(visMo);
     const gridCol = 'rgba(255,255,255,0.08)';
@@ -5448,6 +5533,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       });
     }
     renderPersonDailyLegend(activePeople);
+    updatePersonKpi();
   }
 
   function renderPersonDailyLegend(activePeople) {
