@@ -151,13 +151,21 @@ select role from public.user_roles where email = auth.jwt()->>'email' limit 1;
 ### 공개 뷰
 | view ID | 메뉴명 | 설명 |
 |---------|--------|------|
+| view-dashboard | 대시보드 | 초기 진입 화면 |
 | view-notices | 공지사항 | 공지 열람 |
+| view-inquiries | 문의하기 | 일반 사용자 문의 |
 | view-translator | 보증번역기 | 한→영 7개 항목 번역 |
 | view-warranty | 보증기간 조회 | 디펙트코드별 보증기간 |
 | view-qr-scanner | 고품 QR 스캔 | QR 스캔 → Google Sheets 저장 |
 | view-qr-compare | 고품 QR 비교 | 로그인 없이 접근 가능 |
 
-### 관리자 전용 (admin-only)
+### 관리자 전용 (숨김 — 사이드바 미노출)
+| view ID | 메뉴명 | 설명 |
+|---------|--------|------|
+| view-admin-inquiries | 문의 관리 | 문의 답변·처리 |
+| view-admin-notices | 공지 관리 | 공지 작성·수정·삭제 |
+
+### 관리자 전용 (admin-only, 사이드바 노출)
 | view ID | 메뉴명 | 데이터 변수 | 설명 |
 |---------|--------|------------|------|
 | view-sales | 보증 매출 | `BRANCH_DATA` | Chart.js 누적막대 |
@@ -202,8 +210,15 @@ const PERSON_DAILY = [ ["홍길동", "26-03-15", "BSI", 2, 5000000], ... ];
 const TC_DATA = { "군산": { "26-01": { total: 168, n_count: 79 } } };
 // 미실시율(%) = n_count / total × 100
 
+// TC 캠페인별 미실시 집계 — [지점, 월, 캠페인코드, 캠페인명, total, n_count]
+const TC_TOP_DATA = [ ... ];
+
+// 당월 발행 TC (발행월==입고월) — 동일 구조
+const TC_SAME_MONTH_DATA = [ ... ];
+
 // 클레임 검토 — [클레임번호, 지점, 클레임상태, WarrantyStage, ClaimType,
-//               DefectCode, 날짜, 금액, 담당확인자, 차대번호]
+//               DefectCode, 날짜, 금액, 담당확인자, 차대번호, Credit수신일자]
+// [10] Credit수신일자: 클레임현황 시트에서 승인대기 행의 수신일자 매핑
 const CLAIM_DATA = [ ... ];
 
 // 클레임 볼륨 — 기준 > ClaimType > 월 > { charge, approve, pending }
@@ -270,7 +285,8 @@ M열(Defect Code) 기준:
 | cols[23] | X | 담당자 |
 
 ### 파일 2: `2026_STAGE2,3 Whole sale data_ Total.xlsx`
-파일1 `클레임현황`을 외부 참조(SUMIFS)하여 월별/유형별 집계.
+파일1 `클레임현황`을 외부 참조(SUMIFS)하여 월별/유형별 집계. Excel 참조 파일이며,
+`update_all.py`는 파일1의 `클레임현황` 시트를 직접 읽어 WHOLESALE_DATA를 집계 (파일2 미사용).
 시트 3개: `클레임 PART only_RAW(보증마감기준)` / `클레임 PART only_RAW(회계마감기준)` / `클레임 청구 볼륨_RAW`
 
 ---
@@ -281,14 +297,16 @@ M열(Defect Code) 기준:
 C:\Users\user\Desktop\업데이트.bat 더블클릭
     └→ 1. DATA/update_all.py 실행
 
-처리 순서 (줄번호 기준):
-  Step 3  (94~110줄)   BRANCH_DATA   ← Claim 상세_전체, sheet_name=2
-  Step 4~5(112~143줄)  DEFECT_RAW·DESC·UNMATCHED
-  Step 6  (145~196줄)  PERSON_DATA·PERSON_DAILY
-  Step 7  (198~220줄)  TC_DATA       ← RecallTcRptRawData.xlsx
-  Step 8  (222~248줄)  CLAIM_DATA
-  Step 8-0             QR_CLAIM_DATA ← Claim 상세_전체
-  Step 9  (250~309줄)  WHOLESALE_DATA← 클레임현황 시트
+처리 순서 (실제 줄번호 기준):
+  Step 2  (44~95줄)    RAW 클레임 읽기 + ClaimType 계산
+  Step 3  (97~114줄)   BRANCH_DATA   ← Claim 상세_전체 sheet_name=2
+  Step 4  (116~121줄)  디펙트코드 리스트 읽기
+  Step 5  (123~147줄)  DEFECT_RAW·DESC·UNMATCHED
+  Step 6  (149~200줄)  PERSON_DATA·PERSON_DAILY
+  Step 7  (202~287줄)  TC_DATA·TC_TOP_DATA·TC_SAME_MONTH_DATA ← RecallTcRptRawData.xlsx
+  Step 8  (289~334줄)  CLAIM_DATA (+ Credit수신일자 매핑)
+  Step 8-0(397~445줄)  QR_CLAIM_DATA ← Claim 상세_전체
+  Step 9  (336~395줄)  WHOLESALE_DATA← 클레임현황 시트 (직접 읽기)
 
     ↓ 집계 완료
 각 변수 → index.html에 regex embed
