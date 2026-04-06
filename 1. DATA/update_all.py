@@ -18,6 +18,7 @@ DEFECT_SRC   = f'{ONEDRIVE}/디펙트코드 리스트.xlsx'
 DEFECT_TMP   = f'{DATA_DIR}/defect_list_tmp.xlsx'
 TC_SRC       = f'{ONEDRIVE}/RecallTcRptRawData.xlsx'
 TC_TMP       = f'{DATA_DIR}/tc_raw_tmp.xlsx'
+TC_ARCHIVE   = f'C:/Users/user/OneDrive - 내쇼날모터스/보증팀 원드라이브/TC_누적_RAW.xlsx'
 EXCLUDE_SRC  = f'{ONEDRIVE}/RECALL TC 작업불가 리스트.xlsx'
 EXCLUDE_TMP  = f'{DATA_DIR}/tc_exclude_tmp.xlsx'
 
@@ -216,7 +217,18 @@ for _, row in exclude_df.iterrows():
         exclude_list_raw.append({'code': code, 'branch': branch, 'reason': reason})
 ok(f'작업불가 코드: {len(exclude_codes)}개')
 
-tc_df = pd.read_excel(TC_TMP, header=0, engine='openpyxl')
+# ── 누적 아카이브 병합 (당해년도 신규 + 이전 연도 누적) ──
+tc_new = pd.read_excel(TC_TMP, header=0, engine='openpyxl')
+if os.path.exists(TC_ARCHIVE):
+    tc_old = pd.read_excel(TC_ARCHIVE, header=0, engine='openpyxl')
+    tc_df = pd.concat([tc_old, tc_new], ignore_index=True)
+else:
+    tc_df = tc_new
+_dedup_keys = [tc_df.columns[1], tc_df.columns[4], tc_df.columns[6], tc_df.columns[11]]
+tc_df = tc_df.drop_duplicates(subset=_dedup_keys, keep='last')
+tc_df.to_excel(TC_ARCHIVE, index=False, engine='openpyxl')
+ok(f'TC 누적 아카이브: {len(tc_df):,}행 저장')
+
 tc_cols = tc_df.columns.tolist()
 tc_campaign = tc_cols[1]; tc_car = tc_cols[4]; tc_dealer = tc_cols[6]
 tc_ro = tc_cols[11]; tc_result = tc_cols[9]; tc_date = tc_cols[5]
@@ -310,8 +322,8 @@ for _, r in df_claim.iterrows():
         claim_no,                                             # [0] H: 클레임번호
         str(r[cols[5]]).replace('AS_',''),                    # [1] F: 지점
         str(r[cols[6]]),                                      # [2] G: 클레임상태
-        str(r[cols[10]]),                                     # [3] K: 워런티Stage
-        str(r[cols[11]]),                                     # [4] L: Claim Type
+        r[type_col],                                          # [3] ClaimType (_compute_type 결과 — 다른 카테고리와 동일 기준)
+        str(r[cols[11]]),                                     # [4] L: Claim Type (DMS 원본)
         str(r[cols[12]]),                                     # [5] M: Defect Code
         date_val,                                             # [6] N: 날짜
         int(claim_amount_total.get(claim_no, 0)),             # [7] W: 클레임금액 (전체합산)
@@ -397,11 +409,11 @@ try:
         d = str(defect).strip() if pd.notna(defect) else ''
         if 'goodwill' in s.lower(): return 'Goodwill'
         if 'warranty plus' in s.lower(): return 'WP'
-        if 'bsi' in s.lower(): return 'BSI'
         if d.upper().startswith('LA'): return 'LOCAL TC'
         try:
             num = float(d.replace(',',''))
             if num < 100_000_000: return 'TC/RECALL'
+            if num > 8_700_000_000 and not d.startswith('99'): return 'BSI'
         except Exception: pass
         return 'Warranty'
     df_cl['_cdate'] = pd.to_datetime(df_cl[cc_cdate], errors='coerce')

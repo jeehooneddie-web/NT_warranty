@@ -6369,7 +6369,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     tbody.innerHTML = filtered.map(r => {
       const [claimNo, branch, status, stage, claimType, defectCode, date, amount, person, vin, creditDate] = r;
       const statusCol = CS_STATUS_COLOR[status] || '#475569';
-      const stageShort = stage.replace('일반보증(TC/Recall)','TC/Recall').replace('BSI and BRI','BSI/BRI').replace('Pre-Delivery Defect','Pre-Delivery').replace('AG Goodwill','AG GW').replace('KR Goodwill','KR GW').replace('Warranty Plus','WP');
+      const stageShort = stage; // _compute_type() 결과 (BSI/Warranty/TC/RECALL/Goodwill/WP/LOCAL TC)
       return `<tr style="border-bottom:1px solid ${_ct.border};" onmouseover="this.style.background='${_ct.cardAlt}'" onmouseout="this.style.background=''">
         <td class="px-3 py-2 text-center font-medium whitespace-nowrap" style="color:${_ct.text};">${branch}</td>
         <td class="px-3 py-2 text-center font-mono whitespace-nowrap" style="color:${_ct.text};">${claimNo}</td>
