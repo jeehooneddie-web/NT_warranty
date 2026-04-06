@@ -1967,7 +1967,7 @@
             <button id="qmt-goodwill" onclick="setQMType('Goodwill')" class="sales-pill">Goodwill</button>
             <button id="qmt-wp"       onclick="setQMType('WP')"       class="sales-pill">WP</button>
             <button id="qmt-tc"       onclick="setQMType('TC/RECALL')"class="sales-pill">TC/RECALL</button>
-            <button id="qmt-bsi"      onclick="setQMType('BSI')"      class="sales-pill">BSI</button>
+
             <button id="qmt-ltc"      onclick="setQMType('LOCAL TC')" class="sales-pill">LOCAL TC</button>
           </div>
 
@@ -6952,7 +6952,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       try { if (parseFloat(s.replace(/,/g,'')) < 1e8) return 'TC/RECALL'; } catch(e) {}
       return 'Warranty';
     };
-    _qmResults = claims.map(r => {
+    _qmResults = claims.filter(r => r[5] !== 'BSI').map(r => {
       const no       = r[0];
       const matched  = no in scanMap;
       const scanDate = matched ? scanMap[no] : '';
