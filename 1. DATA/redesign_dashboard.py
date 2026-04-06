@@ -1,7 +1,7 @@
 import sys, re
 sys.stdout.reconfigure(encoding='utf-8')
 
-HTML_PATH = 'c:/Users/user/Desktop/work for_/dashboard-app/preview/index.html'
+HTML_PATH = 'D:/코딩/work for_/dashboard-app/preview/index.html'
 with open(HTML_PATH, 'r', encoding='utf-8') as f:
     html = f.read()
 

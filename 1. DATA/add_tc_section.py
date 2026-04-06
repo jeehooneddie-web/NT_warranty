@@ -1,7 +1,7 @@
 import sys, json, re
 sys.stdout.reconfigure(encoding='utf-8')
 
-HTML_PATH = 'c:/Users/user/Desktop/work for_/dashboard-app/preview/index.html'
+HTML_PATH = 'D:/코딩/work for_/dashboard-app/preview/index.html'
 
 with open(HTML_PATH, 'r', encoding='utf-8') as f:
     html = f.read()
@@ -78,7 +78,7 @@ if 'renderTcView' not in html:
     print('✓ renderTcView 호출 추가')
 
 # ── 4. TC_DATA constant ───────────────────────────────────────────────
-with open('c:/Users/user/Desktop/work for_/1. DATA/tc_data.json', encoding='utf-8') as f:
+with open('D:/코딩/work for_/1. DATA/tc_data.json', encoding='utf-8') as f:
     tc_data = json.load(f)
 tc_js = 'const TC_DATA=' + json.dumps(tc_data, ensure_ascii=False, separators=(',',':')) + ';'
 

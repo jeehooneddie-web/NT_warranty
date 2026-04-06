@@ -11,7 +11,7 @@
 |------|-----|
 | 배포 URL | https://jeehooneddie-web.github.io/NT_warranty/ |
 | 메인 파일 | `dashboard-app/preview/index.html` (~635KB, 단일 파일 SPA) |
-| Git 루트 | `c:/Users/user/Desktop/work for_` |
+| Git 루트 | `d:/코딩/work for_` |
 | 배포 방식 | push to main → GitHub Actions → GitHub Pages 자동 배포 |
 | 배포 반영 | push 후 **1~3분** 소요 |
 
@@ -42,7 +42,7 @@ grep -n "view-xxx\|TARGET_PATTERN" "dashboard-app/preview/index.html" | head -20
 
 ### 2-3. git push 명령어
 ```bash
-cd "c:/Users/user/Desktop/work for_" \
+cd "d:/코딩/work for_" \
   && git add dashboard-app/preview/index.html \
   && git commit -m "메시지" \
   && git push
@@ -467,6 +467,7 @@ const normNo = v => String(v).replace(/^WC/i, '').trim();
 | QR 스캐너 구조 | `MD/07_고품QR스캐너.md` |
 | 고품 반납 현황 구조 | `MD/08_고품수거비교.md` |
 | 인증·RLS·메뉴 권한 | `MD/09_로그인_보안_AUTH.md` |
+| 엑셀 파일 구조 (RAW_Claim, Wholesale) | `MD/파일구조_설명.md` |
 | MD 저장 규칙 | `MD/00_MD_관리규칙.md` |
 
 ---
@@ -475,7 +476,7 @@ const normNo = v => String(v).replace(/^WC/i, '').trim();
 
 ```
 새 MD 파일 → 항상 두 곳 동시 저장:
-  ① c:/Users/user/Desktop/work for_/MD/          (Git, Claude Code 접근)
+  ① d:/코딩/work for_/MD/          (Git, Claude Code 접근)
   ② C:/Users/user/OneDrive - 내쇼날모터스/보증팀 원드라이브/MD/  (공유·백업)
 
 네이밍: 번호_카테고리명_데이터명.md

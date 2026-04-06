@@ -7,7 +7,7 @@ OneDrive Excel → 집계 → HTML embed → git push 원클릭 자동화
 import pandas as pd
 import json, re, os, shutil, subprocess, sys
 
-BASE      = 'C:/Users/user/Desktop/work for_'
+BASE      = 'D:/코딩/work for_'
 DATA_DIR  = f'{BASE}/1. DATA'
 HTML_PATH = f'{BASE}/dashboard-app/preview/index.html'
 ONEDRIVE  = 'C:/Users/user/OneDrive - 내쇼날모터스/보증팀 원드라이브/1. Warranty Claim RAW'
