@@ -1961,22 +1961,23 @@
 
           <!-- 테이블 카드 -->
           <!-- 타입 필터 -->
-          <div class="nm-border-b" style="display:flex; gap:0; margin-bottom:0;">
-            <button id="qmt-all"      onclick="setQMType('')"          class="nm-tab-active"   style="padding:10px 16px; font-size:13px; font-weight:600; border:none; background:none; cursor:pointer; border-bottom:2px solid #3B82F6; transition:all 0.25s ease;">전체</button>
-            <button id="qmt-warranty" onclick="setQMType('Warranty')"  class="nm-tab-inactive" style="padding:10px 16px; font-size:13px; font-weight:600; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; transition:all 0.25s ease;">Warranty</button>
-            <button id="qmt-goodwill" onclick="setQMType('Goodwill')"  class="nm-tab-inactive" style="padding:10px 16px; font-size:13px; font-weight:600; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; transition:all 0.25s ease;">Goodwill</button>
-            <button id="qmt-wp"       onclick="setQMType('WP')"        class="nm-tab-inactive" style="padding:10px 16px; font-size:13px; font-weight:600; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; transition:all 0.25s ease;">WP</button>
-            <button id="qmt-tc"       onclick="setQMType('TC/RECALL')" class="nm-tab-inactive" style="padding:10px 16px; font-size:13px; font-weight:600; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; transition:all 0.25s ease;">TC/RECALL</button>
-            <button id="qmt-ltc"      onclick="setQMType('LOCAL TC')"  class="nm-tab-inactive" style="padding:10px 16px; font-size:13px; font-weight:600; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; transition:all 0.25s ease;">LOCAL TC</button>
+          <!-- 타입 필터 (pill) -->
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+            <button id="qmt-all"      onclick="setQMType('')"          class="sales-pill active">전체</button>
+            <button id="qmt-warranty" onclick="setQMType('Warranty')"  class="sales-pill">Warranty</button>
+            <button id="qmt-goodwill" onclick="setQMType('Goodwill')"  class="sales-pill">Goodwill</button>
+            <button id="qmt-wp"       onclick="setQMType('WP')"        class="sales-pill">WP</button>
+            <button id="qmt-tc"       onclick="setQMType('TC/RECALL')" class="sales-pill">TC/RECALL</button>
+            <button id="qmt-ltc"      onclick="setQMType('LOCAL TC')"  class="sales-pill">LOCAL TC</button>
           </div>
 
           <div class="nm-card" style="border-radius:16px; overflow:hidden;">
-            <!-- 탭 -->
-            <div class="nm-border-b" style="display:flex; gap:0; padding:0 20px;">
-              <button id="qm-tab-all"       onclick="switchQMTab('all')"       class="nm-tab-active"   style="padding:12px 18px; font-size:13px; font-weight:600; border:none; background:none; cursor:pointer; border-bottom:2px solid #3B82F6; transition:all 0.25s ease;">전체</button>
-              <button id="qm-tab-matched"   onclick="switchQMTab('matched')"   class="nm-tab-inactive" style="padding:12px 18px; font-size:13px; font-weight:600; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; transition:all 0.25s ease;">수거완료 ✓</button>
-              <button id="qm-tab-unmatched" onclick="switchQMTab('unmatched')" class="nm-tab-inactive" style="padding:12px 18px; font-size:13px; font-weight:600; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; transition:all 0.25s ease;">미수거 ✗</button>
-              <button id="qm-tab-exempt"    onclick="switchQMTab('exempt')"    class="nm-tab-inactive" style="padding:12px 18px; font-size:13px; font-weight:600; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; transition:all 0.25s ease;">미대상 —</button>
+            <!-- 수거 상태 pill -->
+            <div style="display:flex; flex-wrap:wrap; gap:6px; padding:14px 16px; border-bottom:1px solid var(--nm-border, #e2e8f0);">
+              <button id="qm-tab-all"       onclick="switchQMTab('all')"       class="sales-pill active">전체</button>
+              <button id="qm-tab-matched"   onclick="switchQMTab('matched')"   class="sales-pill">수거완료 ✓</button>
+              <button id="qm-tab-unmatched" onclick="switchQMTab('unmatched')" class="sales-pill">미수거 ✗</button>
+              <button id="qm-tab-exempt"    onclick="switchQMTab('exempt')"    class="sales-pill">미대상 —</button>
             </div>
             <!-- 테이블 -->
             <div style="overflow-x:auto;">
@@ -6980,26 +6981,15 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     _qmType = type;
     const typeMap = {'':'all','Warranty':'warranty','TC/RECALL':'tc','Goodwill':'goodwill','WP':'wp','LOCAL TC':'ltc'};
     document.querySelectorAll('[id^="qmt-"]').forEach(b => {
-      const isActive = b.id === 'qmt-' + (typeMap[type] ?? '');
-      b.className = isActive ? 'nm-tab-active' : 'nm-tab-inactive';
-      b.style.borderBottom = isActive ? '2px solid #3B82F6' : '2px solid transparent';
+      b.classList.toggle('active', b.id === 'qmt-' + (typeMap[type] ?? ''));
     });
     renderQMTable();
   }
 
   function switchQMTab(tab) {
     _qmTab = tab;
-    const tabColors = { all:'#3B82F6', matched:'#22C55E', unmatched:'#EF4444', exempt:'#f59e0b' };
-    const _tSwitch = _tc();
     ['all','matched','unmatched','exempt'].forEach(t => {
-      const btn = document.getElementById(`qm-tab-${t}`);
-      if (!btn) return;
-      const active = t === tab;
-      btn.style.borderBottomColor = active ? (tabColors[t]||'#3B82F6') : 'transparent';
-      btn.style.color             = active ? _tSwitch.text : _tSwitch.textSub;
-      btn.className = active ? 'nm-tab-active' : 'nm-tab-inactive';
-      btn.style.padding='12px 18px'; btn.style.fontSize='13px'; btn.style.fontWeight='600';
-      btn.style.border='none'; btn.style.background='none'; btn.style.cursor='pointer'; btn.style.transition='all 0.25s ease';
+      document.getElementById(`qm-tab-${t}`)?.classList.toggle('active', t === tab);
     });
     renderQMTable();
   }
