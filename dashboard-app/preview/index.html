@@ -2319,12 +2319,12 @@
           <div class="grid grid-cols-3 gap-3 mb-3">
             <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
               <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">전체 청구</p>
-              <p id="kpi-claim-count" class="text-2xl font-bold text-slate-700 dark:text-slate-100">-</p>
+              <p id="kpi-claim-count" class="text-2xl font-bold text-slate-900 dark:text-slate-100">-</p>
               <p class="text-[10px] text-slate-500 mt-0.5">건</p>
             </div>
             <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
               <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">전체 취소</p>
-              <p id="kpi-cancel-count" class="text-2xl font-bold text-slate-700 dark:text-slate-100">-</p>
+              <p id="kpi-cancel-count" class="text-2xl font-bold text-slate-900 dark:text-slate-100">-</p>
               <p class="text-[10px] text-slate-500 mt-0.5">건</p>
             </div>
             <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
@@ -2337,10 +2337,10 @@
             <table class="w-full text-xs">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                  <th class="text-left px-4 py-2 font-semibold text-slate-600 dark:text-slate-300">이름</th>
-                  <th class="text-right px-4 py-2 font-semibold text-slate-600 dark:text-slate-300">청구</th>
-                  <th class="text-right px-4 py-2 font-semibold text-slate-600 dark:text-slate-300">취소</th>
-                  <th class="text-right px-4 py-2 font-semibold text-slate-600 dark:text-slate-300">취소율</th>
+                  <th class="text-left px-4 py-2 font-semibold text-slate-800 dark:text-slate-300">이름</th>
+                  <th class="text-right px-4 py-2 font-semibold text-slate-800 dark:text-slate-300">청구</th>
+                  <th class="text-right px-4 py-2 font-semibold text-slate-800 dark:text-slate-300">취소</th>
+                  <th class="text-right px-4 py-2 font-semibold text-slate-800 dark:text-slate-300">취소율</th>
                 </tr>
               </thead>
               <tbody id="kpi-person-table-body">
@@ -5199,9 +5199,9 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     }
     tbody.innerHTML = rows.map(r => `
       <tr class="border-t border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/40">
-        <td class="px-4 py-2 font-medium text-slate-700 dark:text-slate-200">${r.name}</td>
-        <td class="px-4 py-2 text-right text-slate-600 dark:text-slate-300">${r.claim.toLocaleString()}</td>
-        <td class="px-4 py-2 text-right text-slate-600 dark:text-slate-300">${r.cancel.toLocaleString()}</td>
+        <td class="px-4 py-2 font-medium text-slate-900 dark:text-slate-200">${r.name}</td>
+        <td class="px-4 py-2 text-right text-slate-800 dark:text-slate-300">${r.claim.toLocaleString()}</td>
+        <td class="px-4 py-2 text-right text-slate-800 dark:text-slate-300">${r.cancel.toLocaleString()}</td>
         <td class="px-4 py-2 text-right font-semibold ${r.rate >= 10 ? 'text-rose-500' : r.rate >= 5 ? 'text-amber-500' : 'text-emerald-500'}">${r.rate.toFixed(1)}%</td>
       </tr>
     `).join('');
