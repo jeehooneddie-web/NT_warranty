@@ -538,10 +538,6 @@
         <i data-lucide="percent"></i>
         <span>TC 미실시율</span>
       </div>
-      <div class="nav-item admin-only" data-view="view-tc-top20" onclick="showView('view-tc-top20')" style="padding-left:2.5rem">
-        <i data-lucide="bar-chart-horizontal"></i>
-        <span>미실시 상위 20</span>
-      </div>
 
       <div class="nav-item admin-only" data-view="view-claim" onclick="showView('view-claim')">
         <i data-lucide="clipboard-list"></i>
@@ -2386,6 +2382,7 @@
         <div class="nm-border-b" style="display:flex; gap:0; margin-bottom:16px;">
           <button id="tc-maintab-rate"    onclick="switchTCMainTab('rate')"    class="nm-tab-active"    style="padding:10px 20px; font-size:13px; font-weight:700; border:none; background:none; cursor:pointer; border-bottom:3px solid #3B82F6; margin-bottom:-2px; transition:all 0.25s ease;">미실시율</button>
           <button id="tc-maintab-samemon" onclick="switchTCMainTab('samemon')" class="nm-tab-inactive" style="padding:10px 20px; font-size:13px; font-weight:700; border:none; background:none; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; transition:all 0.25s ease;">당월발행 TC</button>
+          <button id="tc-maintab-top20"   onclick="switchTCMainTab('top20')"   class="nm-tab-inactive"   style="padding:10px 20px; font-size:13px; font-weight:700; border:none; background:none; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; transition:all 0.25s ease;">미실시 상위 20</button>
         </div>
 
         <!-- 미실시율 섹션 -->
@@ -2491,69 +2488,67 @@
           </div>
         </div><!-- /tc-section-samemon -->
 
-      </div><!-- /view-tc -->
-
-      <!-- =============================================
-           뷰: 미실시 상위 20
-           ============================================= -->
-      <div id="view-tc-top20" class="view hidden">
-        <!-- 필터 카드 -->
-        <div class="rounded-2xl p-5 mb-4 nm-card">
-          <div class="flex flex-wrap gap-6 items-start">
-            <div>
-              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">지점</span>
-              <div class="pill-group">
-                <button onclick="setTop20Branch('all')" id="top20-fbranch-all" class="sales-pill active">전체</button>
-                <button onclick="setTop20Branch('전주')" id="top20-fbranch-전주" class="sales-pill">전주</button>
-                <button onclick="setTop20Branch('평택')" id="top20-fbranch-평택" class="sales-pill">평택</button>
-                <button onclick="setTop20Branch('군산')" id="top20-fbranch-군산" class="sales-pill">군산</button>
-                <button onclick="setTop20Branch('목포')" id="top20-fbranch-목포" class="sales-pill">목포</button>
-                <button onclick="setTop20Branch('서산')" id="top20-fbranch-서산" class="sales-pill">서산</button>
+        <!-- 미실시 상위 20 섹션 -->
+        <div id="tc-section-top20" style="display:none;">
+          <!-- 필터 카드 -->
+          <div class="rounded-2xl p-5 mb-4 nm-card">
+            <div class="flex flex-wrap gap-6 items-start">
+              <div>
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">지점</span>
+                <div class="pill-group">
+                  <button onclick="setTop20Branch('all')" id="top20-fbranch-all" class="sales-pill active">전체</button>
+                  <button onclick="setTop20Branch('전주')" id="top20-fbranch-전주" class="sales-pill">전주</button>
+                  <button onclick="setTop20Branch('평택')" id="top20-fbranch-평택" class="sales-pill">평택</button>
+                  <button onclick="setTop20Branch('군산')" id="top20-fbranch-군산" class="sales-pill">군산</button>
+                  <button onclick="setTop20Branch('목포')" id="top20-fbranch-목포" class="sales-pill">목포</button>
+                  <button onclick="setTop20Branch('서산')" id="top20-fbranch-서산" class="sales-pill">서산</button>
+                </div>
               </div>
-            </div>
-            <div>
-              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">기간 단위</span>
-              <div class="pill-group">
-                <button onclick="setTop20PeriodMode('monthly')"   id="top20-mode-monthly"   class="sales-pill active">월별</button>
-                <button onclick="setTop20PeriodMode('quarterly')" id="top20-mode-quarterly" class="sales-pill">분기</button>
+              <div>
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">기간 단위</span>
+                <div class="pill-group">
+                  <button onclick="setTop20PeriodMode('monthly')"   id="top20-mode-monthly"   class="sales-pill active">월별</button>
+                  <button onclick="setTop20PeriodMode('quarterly')" id="top20-mode-quarterly" class="sales-pill">분기</button>
+                </div>
               </div>
-            </div>
-            <div id="top20-month-wrap">
-              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">월</span>
-              <div class="pill-group">
-                <button onclick="toggleTop20Month('all')" id="top20-fmonth-all" class="sales-pill active">전체</button>
-                <button onclick="toggleTop20Month('01')" id="top20-fmonth-01" class="sales-pill">1월</button>
-                <button onclick="toggleTop20Month('02')" id="top20-fmonth-02" class="sales-pill">2월</button>
-                <button onclick="toggleTop20Month('03')" id="top20-fmonth-03" class="sales-pill">3월</button>
-                <button onclick="toggleTop20Month('04')" id="top20-fmonth-04" class="sales-pill">4월</button>
-                <button onclick="toggleTop20Month('05')" id="top20-fmonth-05" class="sales-pill">5월</button>
-                <button onclick="toggleTop20Month('06')" id="top20-fmonth-06" class="sales-pill">6월</button>
-                <button onclick="toggleTop20Month('07')" id="top20-fmonth-07" class="sales-pill">7월</button>
-                <button onclick="toggleTop20Month('08')" id="top20-fmonth-08" class="sales-pill">8월</button>
-                <button onclick="toggleTop20Month('09')" id="top20-fmonth-09" class="sales-pill">9월</button>
-                <button onclick="toggleTop20Month('10')" id="top20-fmonth-10" class="sales-pill">10월</button>
-                <button onclick="toggleTop20Month('11')" id="top20-fmonth-11" class="sales-pill">11월</button>
-                <button onclick="toggleTop20Month('12')" id="top20-fmonth-12" class="sales-pill">12월</button>
+              <div id="top20-month-wrap">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">월</span>
+                <div class="pill-group">
+                  <button onclick="toggleTop20Month('all')" id="top20-fmonth-all" class="sales-pill active">전체</button>
+                  <button onclick="toggleTop20Month('01')" id="top20-fmonth-01" class="sales-pill">1월</button>
+                  <button onclick="toggleTop20Month('02')" id="top20-fmonth-02" class="sales-pill">2월</button>
+                  <button onclick="toggleTop20Month('03')" id="top20-fmonth-03" class="sales-pill">3월</button>
+                  <button onclick="toggleTop20Month('04')" id="top20-fmonth-04" class="sales-pill">4월</button>
+                  <button onclick="toggleTop20Month('05')" id="top20-fmonth-05" class="sales-pill">5월</button>
+                  <button onclick="toggleTop20Month('06')" id="top20-fmonth-06" class="sales-pill">6월</button>
+                  <button onclick="toggleTop20Month('07')" id="top20-fmonth-07" class="sales-pill">7월</button>
+                  <button onclick="toggleTop20Month('08')" id="top20-fmonth-08" class="sales-pill">8월</button>
+                  <button onclick="toggleTop20Month('09')" id="top20-fmonth-09" class="sales-pill">9월</button>
+                  <button onclick="toggleTop20Month('10')" id="top20-fmonth-10" class="sales-pill">10월</button>
+                  <button onclick="toggleTop20Month('11')" id="top20-fmonth-11" class="sales-pill">11월</button>
+                  <button onclick="toggleTop20Month('12')" id="top20-fmonth-12" class="sales-pill">12월</button>
+                </div>
               </div>
-            </div>
-            <div id="top20-quarter-wrap" style="display:none">
-              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">분기</span>
-              <div class="pill-group">
-                <button onclick="toggleTop20Quarter('all')" id="top20-fq-all" class="sales-pill active">전체</button>
-                <button onclick="toggleTop20Quarter('Q1')" id="top20-fq-Q1" class="sales-pill">Q1</button>
-                <button onclick="toggleTop20Quarter('Q2')" id="top20-fq-Q2" class="sales-pill">Q2</button>
-                <button onclick="toggleTop20Quarter('Q3')" id="top20-fq-Q3" class="sales-pill">Q3</button>
-                <button onclick="toggleTop20Quarter('Q4')" id="top20-fq-Q4" class="sales-pill">Q4</button>
+              <div id="top20-quarter-wrap" style="display:none">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">분기</span>
+                <div class="pill-group">
+                  <button onclick="toggleTop20Quarter('all')" id="top20-fq-all" class="sales-pill active">전체</button>
+                  <button onclick="toggleTop20Quarter('Q1')" id="top20-fq-Q1" class="sales-pill">Q1</button>
+                  <button onclick="toggleTop20Quarter('Q2')" id="top20-fq-Q2" class="sales-pill">Q2</button>
+                  <button onclick="toggleTop20Quarter('Q3')" id="top20-fq-Q3" class="sales-pill">Q3</button>
+                  <button onclick="toggleTop20Quarter('Q4')" id="top20-fq-Q4" class="sales-pill">Q4</button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <!-- 차트 카드 -->
-        <div class="rounded-2xl p-5 nm-card">
-          <h2 class="text-sm font-semibold mb-4 nm-text">미실시 캠페인 상위 20 (건수 기준)</h2>
-          <div style="height:600px;"><canvas id="tc-top20-chart"></canvas></div>
-        </div>
-      </div><!-- /view-tc-top20 -->
+          <!-- 차트 카드 -->
+          <div class="rounded-2xl p-5 nm-card">
+            <h2 class="text-sm font-semibold mb-4 nm-text">미실시 캠페인 상위 20 (건수 기준)</h2>
+            <div style="height:600px;"><canvas id="tc-top20-chart"></canvas></div>
+          </div>
+        </div><!-- /tc-section-top20 -->
+
+      </div><!-- /view-tc -->
 
       <!-- =============================================
            뷰: CLAIM 상태 확인
@@ -3056,7 +3051,6 @@
       'view-top-defect':       'TOP DEFECT',
       'view-person':           '개인별 청구 현황',
       'view-tc':               'TC 미실시율',
-      'view-tc-top20':         '미실시 상위 20',
       'view-claim':            'CLAIM 상태 확인',
       'view-qr-scanner':       '고품 QR 스캔',
       'view-qr-match':         '고품 반납 현황',
@@ -3072,7 +3066,6 @@
     // 개인별 청구 차트 초기화
     if (viewId === 'view-person') { renderPersonChart(); renderPersonDailyCharts(); }
     if (viewId === 'view-tc') renderTcView();
-    if (viewId === 'view-tc-top20') renderTop20View();
     if (viewId === 'view-claim') initClaimView();
     if (viewId === 'view-qr-scanner') initQRScanner();
     if (viewId === 'view-qr-match')    initQRMatch();
@@ -4670,15 +4663,19 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   let _tcMainTab = 'rate';
   function switchTCMainTab(tab) {
     _tcMainTab = tab;
-    const isRate = tab === 'rate';
-    document.getElementById('tc-section-rate').style.display    = isRate ? '' : 'none';
-    document.getElementById('tc-section-samemon').style.display = isRate ? 'none' : '';
     const _tTab = _tc();
-    document.getElementById('tc-maintab-rate').style.borderBottomColor    = isRate ? '#3B82F6' : 'transparent';
-    document.getElementById('tc-maintab-rate').style.color                = isRate ? _tTab.text : _tTab.textSub;
-    document.getElementById('tc-maintab-samemon').style.borderBottomColor = isRate ? 'transparent' : '#3B82F6';
-    document.getElementById('tc-maintab-samemon').style.color             = isRate ? _tTab.textSub : _tTab.text;
-    if (!isRate) renderTCSameMonth();
+    const tabs = ['rate', 'samemon', 'top20'];
+    tabs.forEach(t => {
+      const btn = document.getElementById('tc-maintab-' + t);
+      const sec = document.getElementById('tc-section-' + t);
+      if (btn) {
+        btn.style.borderBottomColor = t === tab ? '#3B82F6' : 'transparent';
+        btn.style.color = t === tab ? _tTab.text : _tTab.textSub;
+      }
+      if (sec) sec.style.display = t === tab ? '' : 'none';
+    });
+    if (tab === 'samemon') renderTCSameMonth();
+    if (tab === 'top20')   renderTop20View();
   }
 
   function renderTCSameMonth() {
@@ -5811,7 +5808,6 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     { key:'view-top-defect',  label:'TOP DEFECT',      minRole:'admin',  hidden:false, fixed:false },
     { key:'view-person',      label:'개인별 청구',      minRole:'admin',  hidden:false, fixed:false },
     { key:'view-tc',          label:'TC 미실시율',      minRole:'admin',  hidden:false, fixed:false },
-    { key:'view-tc-top20',    label:'미실시 상위 20',   minRole:'admin',  hidden:false, fixed:false },
     { key:'view-claim',       label:'CLAIM 상태 확인', minRole:'admin',  hidden:false, fixed:false },
     { key:'view-wholesale',   label:'클레임 볼륨',      minRole:'admin',  hidden:false, fixed:false },
     { key:'view-qr-match',    label:'고품 반납 현황',   minRole:'admin',  hidden:false, fixed:false },
