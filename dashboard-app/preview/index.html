@@ -2342,18 +2342,30 @@
           <!-- 우: 일별 현황 -->
           <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
             <div class="flex items-center justify-between mb-3">
-              <p class="text-xs font-semibold text-gray-700 dark:text-slate-300">일별 현황</p>
-              <div class="flex items-center gap-2">
-                <span id="person-daily-month-label" class="text-xs text-slate-400"></span>
-                <div class="pill-group">
-                  <button onclick="setDailySubTab('bar')" id="pdaily-bar" class="sales-pill active">일별</button>
-                  <button onclick="setDailySubTab('cum')" id="pdaily-cum" class="sales-pill">누적</button>
-                </div>
+              <p class="text-xs font-semibold text-gray-700 dark:text-slate-300">일별 현황 <span id="person-daily-month-label" class="text-slate-400 font-normal"></span></p>
+              <div class="pill-group">
+                <button onclick="setDailySubTab('spark')" id="pdaily-bar" class="sales-pill active">스파크라인</button>
+                <button onclick="setDailySubTab('grid')" id="pdaily-cum" class="sales-pill">숫자표</button>
               </div>
             </div>
-            <div id="person-chart-legend-daily" class="flex flex-wrap gap-x-4 gap-y-1 mb-2 items-center"></div>
-            <div id="pdaily-bar-area" style="height:280px;"><canvas id="daily-bar-chart"></canvas></div>
-            <div id="pdaily-cum-area" class="hidden" style="height:280px;"><canvas id="daily-cum-chart"></canvas></div>
+            <!-- B: 스파크라인 테이블 -->
+            <div id="pdaily-bar-area" class="overflow-auto">
+              <table class="w-full text-xs" id="daily-spark-table">
+                <thead><tr class="border-b border-slate-100 dark:border-slate-700">
+                  <th class="text-left px-2 py-1.5 font-semibold text-gray-700 dark:text-slate-300 w-20">이름</th>
+                  <th class="text-right px-2 py-1.5 font-semibold text-gray-700 dark:text-slate-300 w-14">합계</th>
+                  <th class="px-2 py-1.5 font-semibold text-gray-700 dark:text-slate-300">추이</th>
+                </tr></thead>
+                <tbody id="daily-spark-body"></tbody>
+              </table>
+            </div>
+            <!-- D: 숫자 테이블 -->
+            <div id="pdaily-cum-area" class="hidden overflow-auto">
+              <table class="text-xs border-collapse" id="daily-grid-table" style="min-width:100%">
+                <thead id="daily-grid-head"></thead>
+                <tbody id="daily-grid-body"></tbody>
+              </table>
+            </div>
           </div>
 
         </div>
@@ -5113,7 +5125,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   let pChartAmount   = null;
   let pChartCount    = null;
   let pShowTotal     = false;
-  let pDailySubTab   = 'bar';
+  let pDailySubTab   = 'spark';
   let pChartDailyBar = null;
   let pChartDailyCum = null;
 
@@ -5454,27 +5466,32 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   // ── 일별 현황 ──────────────────────────────────────────────
   function setDailySubTab(tab) {
     pDailySubTab = tab;
-    document.getElementById('pdaily-bar').className = 'sales-pill' + (tab==='bar'?' active':'');
-    document.getElementById('pdaily-cum').className = 'sales-pill' + (tab==='cum'?' active':'');
-    document.getElementById('pdaily-bar-area').classList.toggle('hidden', tab!=='bar');
-    document.getElementById('pdaily-cum-area').classList.toggle('hidden', tab!=='cum');
+    document.getElementById('pdaily-bar').className = 'sales-pill' + (tab==='spark'?' active':'');
+    document.getElementById('pdaily-cum').className = 'sales-pill' + (tab==='grid'?' active':'');
+    document.getElementById('pdaily-bar-area').classList.toggle('hidden', tab!=='spark');
+    document.getElementById('pdaily-cum-area').classList.toggle('hidden', tab!=='grid');
     renderPersonDailyCharts();
   }
 
   function renderPersonDailyCharts() {
-    if (!PERSON_DAILY || PERSON_DAILY.length === 0) {
-      ['person-chart-legend-daily'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML='<span class="text-xs text-slate-500">당월 데이터 없음</span>'; });
+    const noData = !PERSON_DAILY || PERSON_DAILY.length === 0;
+    const monthLbl = document.getElementById('person-daily-month-label');
+
+    if (noData) {
+      const sparkBody = document.getElementById('daily-spark-body');
+      if (sparkBody) sparkBody.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-slate-400">당월 데이터 없음</td></tr>';
+      const gridBody = document.getElementById('daily-grid-body');
+      if (gridBody) gridBody.innerHTML = '<tr><td class="text-center py-6 text-slate-400">당월 데이터 없음</td></tr>';
       return;
     }
+
     function getName(id) { return PERSON_NAMES[id] || id; }
     const allDates   = [...new Set(PERSON_DAILY.map(r => r[1]))].sort();
     const allPersons = [...new Set(PERSON_DAILY.map(r => r[0]))].sort();
-    const labels     = allDates.map(d => d.substring(3)); // MM-DD
 
-    const monthLbl = document.getElementById('person-daily-month-label');
-    if (monthLbl && allDates.length > 0) monthLbl.textContent = '당월 (' + allDates[0].substring(0,5) + ')';
+    if (monthLbl && allDates.length > 0) monthLbl.textContent = '(' + allDates[0].substring(0,5) + ')';
 
-    // type 필터 집계
+    // 집계
     const dayAgg = {};
     for (const [person, date, tp, cnt, amt] of PERSON_DAILY) {
       if (!pActiveTypes.has(tp)) continue;
@@ -5485,64 +5502,95 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     }
     const activePeople = allPersons.filter(p => dayAgg[p]);
 
-    function makeDatasets(cumulative) {
-      return activePeople.map((person, i) => {
-        let cum = 0;
-        const data = allDates.map(d => {
+    // ── B: 스파크라인 테이블 ──────────────────────────────
+    const sparkBody = document.getElementById('daily-spark-body');
+    if (sparkBody) {
+      const isDark = document.body.classList.contains('dark');
+      const W = 200, H = 36, PAD = 4;
+      sparkBody.innerHTML = activePeople.map((person, i) => {
+        const color = PERSON_COLORS[i % PERSON_COLORS.length];
+        const vals = allDates.map(d => dayAgg[person]?.[d]?.[pMetric] || 0);
+        const total = vals.reduce((s,v)=>s+v,0);
+        const totalDisp = pMetric==='amount' ? (Math.round(total/1000000)).toLocaleString()+'M' : total.toLocaleString();
+        const maxV = Math.max(...vals, 1);
+        // SVG 스파크라인 생성
+        const pts = vals.map((v, idx) => {
+          const x = PAD + idx * (W - PAD*2) / Math.max(vals.length-1, 1);
+          const y = H - PAD - (v / maxV) * (H - PAD*2);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        }).join(' ');
+        const areaBot = `${(PAD + (vals.length-1)*(W-PAD*2)/Math.max(vals.length-1,1)).toFixed(1)},${H-PAD} ${PAD},${H-PAD}`;
+        const fillPts = pts + ' ' + areaBot;
+        const textColor = isDark ? '#cbd5e1' : '#374151';
+        const subColor  = isDark ? '#94a3b8' : '#6B7280';
+        return `<tr class="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30">
+          <td class="px-2 py-2 font-medium whitespace-nowrap" style="color:${textColor}">${getName(person)}</td>
+          <td class="px-2 py-2 text-right whitespace-nowrap font-semibold" style="color:${color}">${totalDisp}</td>
+          <td class="px-2 py-1">
+            <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block">
+              <polygon points="${fillPts}" fill="${color}" fill-opacity="0.15"/>
+              <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+              ${vals.map((v,idx)=>{
+                if(!v) return '';
+                const x = PAD + idx*(W-PAD*2)/Math.max(vals.length-1,1);
+                const y = H - PAD - (v/maxV)*(H-PAD*2);
+                return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="${color}"/>`;
+              }).join('')}
+            </svg>
+          </td>
+        </tr>`;
+      }).join('');
+      if (!activePeople.length) sparkBody.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-slate-400">데이터 없음</td></tr>';
+    }
+
+    // ── D: 숫자 테이블 ────────────────────────────────────
+    const gridHead = document.getElementById('daily-grid-head');
+    const gridBody = document.getElementById('daily-grid-body');
+    if (gridHead && gridBody) {
+      const isDark = document.body.classList.contains('dark');
+      const thStyle = `padding:4px 6px;font-weight:600;white-space:nowrap;font-size:11px;color:${isDark?'#94a3b8':'#374151'};border-bottom:1px solid ${isDark?'#334155':'#e2e8f0'};`;
+      const dayLabels = allDates.map(d => d.substring(3)); // MM-DD
+      gridHead.innerHTML = `<tr>
+        <th style="${thStyle}text-align:left;position:sticky;left:0;background:${isDark?'#1e293b':'#f8fafc'};">이름</th>
+        ${dayLabels.map(d=>`<th style="${thStyle}text-align:center;">${d}</th>`).join('')}
+        <th style="${thStyle}text-align:right;background:${isDark?'#1e293b':'#f8fafc'};">합계</th>
+      </tr>`;
+
+      // 셀 색상: 건수/금액 기준 강도
+      const allVals = activePeople.flatMap(p => allDates.map(d => dayAgg[p]?.[d]?.[pMetric]||0)).filter(v=>v>0);
+      const p50 = allVals.length ? allVals.sort((a,b)=>a-b)[Math.floor(allVals.length*0.5)] : 1;
+      const p90 = allVals.length ? allVals[Math.floor(allVals.length*0.9)] : 1;
+
+      function cellBg(v) {
+        if (!v) return isDark ? 'transparent' : 'transparent';
+        if (v >= p90) return isDark ? 'rgba(59,130,246,0.5)'  : 'rgba(59,130,246,0.25)';
+        if (v >= p50) return isDark ? 'rgba(59,130,246,0.25)' : 'rgba(59,130,246,0.12)';
+        return isDark ? 'rgba(59,130,246,0.12)' : 'rgba(59,130,246,0.06)';
+      }
+
+      const tdBase = `padding:3px 6px;text-align:center;font-size:11px;white-space:nowrap;border-bottom:1px solid ${isDark?'#1e293b':'#f1f5f9'};`;
+      const nameStyle = `padding:3px 8px;font-size:11px;white-space:nowrap;font-weight:500;text-align:left;position:sticky;left:0;border-bottom:1px solid ${isDark?'#1e293b':'#f1f5f9'};background:${isDark?'#1e293b':'#ffffff'};color:${isDark?'#cbd5e1':'#374151'};`;
+      const sumStyle  = `padding:3px 8px;font-size:11px;text-align:right;font-weight:600;border-bottom:1px solid ${isDark?'#1e293b':'#f1f5f9'};color:${isDark?'#60a5fa':'#2563eb'};`;
+
+      gridBody.innerHTML = activePeople.map(person => {
+        let total = 0;
+        const cells = allDates.map(d => {
           const v = dayAgg[person]?.[d]?.[pMetric] || 0;
-          if (cumulative) { cum += v; return cum ? (pMetric==='amount' ? Math.round(cum/1000000) : cum) : null; }
-          return v ? (pMetric==='amount' ? Math.round(v/1000000) : v) : null;
-        });
-        return {
-          label: getName(person),
-          data,
-          borderColor: PERSON_COLORS[i % PERSON_COLORS.length],
-          backgroundColor: PERSON_COLORS[i % PERSON_COLORS.length] + (cumulative ? '22' : 'cc'),
-          borderWidth: cumulative ? 2 : 1,
-          tension: 0.3, fill: false, pointRadius: cumulative ? 3 : 0,
-          pointHoverRadius: 6, spanGaps: true,
-        };
-      });
+          total += v;
+          const disp = v ? (pMetric==='amount' ? Math.round(v/1000000) : v) : '';
+          const color = v ? (isDark?'#e2e8f0':'#1e293b') : (isDark?'#475569':'#94a3b8');
+          return `<td style="${tdBase}background:${cellBg(v)};color:${color};">${disp}</td>`;
+        }).join('');
+        const totalDisp = pMetric==='amount' ? Math.round(total/1000000).toLocaleString()+'M' : total.toLocaleString();
+        return `<tr class="hover:brightness-95">
+          <td style="${nameStyle}">${getName(person)}</td>
+          ${cells}
+          <td style="${sumStyle}">${totalDisp}</td>
+        </tr>`;
+      }).join('');
+      if (!activePeople.length) gridBody.innerHTML = `<tr><td colspan="${allDates.length+2}" style="text-align:center;padding:24px;color:${isDark?'#94a3b8':'#6B7280'};">데이터 없음</td></tr>`;
     }
 
-    const scaleOpts = {
-      x: { stacked: !pDailySubTab==='cum', ticks: { color:'#94a3b8', font:{size:10} }, grid: { color:'#222222' } },
-      y: { ticks: { color:'#94a3b8', callback: v => pMetric==='amount' ? v.toLocaleString() : v }, grid: { color:'#222222' }, beginAtZero: true },
-    };
-    const pluginOpts = {
-      legend: { display: false },
-      tooltip: { mode:'index', intersect:false, callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw?.toLocaleString()??'-'}${pMetric==='amount'?'백만원':'건'}` } },
-      datalabels: { display: false },
-    };
-
-    if (pDailySubTab === 'bar') {
-      if (pChartDailyBar) { pChartDailyBar.destroy(); pChartDailyBar = null; }
-      const ctx = document.getElementById('daily-bar-chart');
-      if (!ctx) return;
-      pChartDailyBar = new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets: makeDatasets(false).map(ds => ({...ds, fill:undefined, tension:undefined, pointRadius:undefined, pointHoverRadius:undefined})) },
-        options: { responsive:true, maintainAspectRatio:false,
-          plugins: pluginOpts,
-          scales: { x:{...scaleOpts.x, stacked:true}, y:{...scaleOpts.y, stacked:true} } }
-      });
-    } else {
-      if (pChartDailyCum) { pChartDailyCum.destroy(); pChartDailyCum = null; }
-      const ctx = document.getElementById('daily-cum-chart');
-      if (!ctx) return;
-      const cumDatasets = makeDatasets(true).map(ds => ({
-        ...ds, fill: undefined, tension: undefined, pointRadius: undefined, pointHoverRadius: undefined,
-        backgroundColor: ds.borderColor + 'cc', borderWidth: 1,
-      }));
-      pChartDailyCum = new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets: cumDatasets },
-        options: { responsive:true, maintainAspectRatio:false,
-          plugins: pluginOpts,
-          scales: { x:{...scaleOpts.x, stacked:true}, y:{...scaleOpts.y, stacked:true} } }
-      });
-    }
-    renderPersonDailyLegend(activePeople);
     updatePersonKpi();
   }
 
@@ -5568,39 +5616,9 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     wrap.innerHTML = allCheck + items;
   }
 
-  function toggleDailyAll() {
-    const chart = pDailySubTab === 'bar' ? pChartDailyBar : pChartDailyCum;
-    if (!chart) return;
-    const anyHidden = chart.data.datasets.some((_, i) => !chart.isDatasetVisible(i));
-    chart.data.datasets.forEach((_, i) => chart.setDatasetVisibility(i, anyHidden));
-    chart.update();
-    // 개별 체크박스 색상 동기화
-    chart.data.datasets.forEach((ds, i) => {
-      const el = document.getElementById(`dlgnd-${i}`);
-      const color = PERSON_COLORS[i % PERSON_COLORS.length];
-      if (el) el.style.background = anyHidden ? color : 'transparent';
-    });
-    const allEl = document.getElementById('dlgnd-all');
-    if (allEl) allEl.style.background = anyHidden ? '#94a3b8' : 'transparent';
-  }
+  function toggleDailyAll() { /* 스파크라인/숫자표로 교체되어 미사용 */ }
 
-  function toggleDailyPerson(person, idx) {
-    const chart = pDailySubTab === 'bar' ? pChartDailyBar : pChartDailyCum;
-    if (!chart) return;
-    function getName(id) { return PERSON_NAMES[id] || id; }
-    const dsIdx = chart.data.datasets.findIndex(ds => ds.label === getName(person));
-    if (dsIdx < 0) return;
-    const vis = chart.isDatasetVisible(dsIdx);
-    chart.setDatasetVisibility(dsIdx, !vis);
-    chart.update();
-    const color = PERSON_COLORS[idx % PERSON_COLORS.length];
-    const el = document.getElementById(`dlgnd-${idx}`);
-    if (el) el.style.background = !vis ? color : 'transparent';
-    // 전체 체크박스 상태 갱신
-    const allVis = chart.data.datasets.every((_, i) => chart.isDatasetVisible(i));
-    const allEl = document.getElementById('dlgnd-all');
-    if (allEl) allEl.style.background = allVis ? '#94a3b8' : 'transparent';
-  }
+  function toggleDailyPerson(person, idx) { /* 스파크라인/숫자표로 교체되어 미사용 */ }
   // ===================== /개인별 청구 현황 =====================
 
   // ===================== 클레임 볼륨 =====================
