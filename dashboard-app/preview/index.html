@@ -4513,7 +4513,16 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
       agg[mo][tp].amount += amt;
     }
 
-    const months = Object.keys(agg).sort();
+    // RAW 첫 월 ~ 마지막 년도 12월까지 전체 범위 생성
+    const allRawMonths = [...new Set(DEFECT_RAW.map(r => r[1]))].sort();
+    const firstMonth = allRawMonths[0];
+    const lastYear   = parseInt(allRawMonths[allRawMonths.length - 1].slice(0, 2));
+    const months = [];
+    let cy = parseInt(firstMonth.slice(0, 2)), cm = parseInt(firstMonth.slice(3, 5));
+    while (cy < lastYear || (cy === lastYear && cm <= 12)) {
+      months.push(`${String(cy).padStart(2,'0')}-${String(cm).padStart(2,'0')}`);
+      cm++; if (cm > 12) { cm = 1; cy++; }
+    }
     const hasData = months.some(m => agg[m] && Object.keys(agg[m]).length > 0);
     if (emptyEl) emptyEl.classList.toggle('hidden', hasData);
     canvasEl.style.display = hasData ? '' : 'none';
