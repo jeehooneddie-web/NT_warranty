@@ -4346,9 +4346,9 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     const mainSec = document.getElementById('defect-main-section');
     const codeSec = document.getElementById('defect-code-section');
     const ymFilter = document.getElementById('defect-filter-yearmonth');
-    if (mainSec) mainSec.style.display = tab === 'topdefect' ? '' : 'none';
-    if (codeSec) codeSec.style.display = tab === 'code' ? '' : 'none';
-    if (ymFilter) ymFilter.style.display = tab === 'code' ? 'none' : '';
+    if (mainSec) mainSec.classList.toggle('hidden', tab !== 'topdefect');
+    if (codeSec) codeSec.classList.toggle('hidden', tab !== 'code');
+    if (ymFilter) ymFilter.classList.toggle('hidden', tab === 'code');
     if (tab === 'code') renderDefectCodeChart();
     else renderTopDefect();
   }
