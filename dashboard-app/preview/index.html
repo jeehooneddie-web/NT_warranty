@@ -3109,7 +3109,7 @@
     // 보증 매출 차트 초기화
     if (viewId === 'view-sales') setTimeout(initSalesChart, 50);
     // TOP DEFECT 테이블 초기화
-    if (viewId === 'view-top-defect') renderTopDefect();
+    if (viewId === 'view-top-defect') setDefectMainTab(dMainTab || 'topdefect');
     // 개인별 청구 차트 초기화
     if (viewId === 'view-person') { renderPersonChart(); renderPersonDailyCharts(); }
     if (viewId === 'view-tc') renderTcView();
