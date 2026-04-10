@@ -2198,6 +2198,10 @@
                 oninput="renderDefectCodeChart()"
                 class="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 w-64 outline-none focus:ring-2 focus:ring-blue-500" />
               <span id="defect-code-desc" class="text-xs text-slate-400 italic flex-1"></span>
+              <button onclick="toggleDefectCodeDetail()" id="btn-dcode-detail"
+                class="px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                상세
+              </button>
               <div class="pill-group">
                 <button onclick="setDefectCodeMetric('amount')" id="dcmetric-amount" class="sales-pill active">금액</button>
                 <button onclick="setDefectCodeMetric('count')"  id="dcmetric-count"  class="sales-pill">건수</button>
@@ -4297,6 +4301,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
   let dChartCount     = null;
   let dCodeMetric     = 'amount';
   let dCodeChart      = null;
+  let dCodeDetail     = false;
 
   function dGetVisibleMonths() {
     const DATA_MO = [...new Set(DEFECT_RAW.map(r => r[1]))].sort();
@@ -4334,6 +4339,17 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     dCodeMetric = m;
     ['amount','count'].forEach(x =>
       document.getElementById('dcmetric-'+x)?.classList.toggle('active', x===m));
+    renderDefectCodeChart();
+  }
+
+  function toggleDefectCodeDetail() {
+    dCodeDetail = !dCodeDetail;
+    const btn = document.getElementById('btn-dcode-detail');
+    if (btn) {
+      btn.className = dCodeDetail
+        ? 'px-3 py-1 text-xs font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors'
+        : 'px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors';
+    }
     renderDefectCodeChart();
   }
 
@@ -4387,7 +4403,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     const gridCol = _isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
     const tickCol = _isDark ? '#cbd5e1' : '#374151';
 
-    // 월별 합계 (total line용)
+    // 월별 합계
     const totalVals = months.map(m => {
       if (!agg[m]) return null;
       let v = 0;
@@ -4395,37 +4411,62 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
       return v || null;
     });
 
-    const barDatasets = activeTypes.map(tp => ({
-      type: 'bar', label: tp,
-      data: months.map(m => agg[m]?.[tp]?.[metric] || null),
-      backgroundColor: SALES_COLORS[tp],
-      borderRadius: 3, borderSkipped: 'bottom', maxBarThickness: 28,
-      datalabels: {
-        display: ctx => { const v = ctx.dataset.data[ctx.dataIndex]; return v && v > 0; },
-        color: '#fff', font: { size: 9, weight: '700' },
-        formatter: v => metric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(),
-        anchor: 'center', align: 'center', clamp: true,
-      }
-    }));
-    const totalDataset = {
-      type: 'line', label: 'Total', data: totalVals,
-      borderColor: _tc().fill, backgroundColor: _tc().fill,
-      borderWidth: 0, pointRadius: 0, pointHoverRadius: 0, tension: 0, order: -1,
-      datalabels: {
-        display: ctx => !!totalVals[ctx.dataIndex],
-        color: _tc().fill, font: { size: 10, weight: '700' },
-        formatter: v => v ? (metric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString()) : '',
-        anchor: 'end', align: 'top', offset: 5,
-      }
-    };
+    let datasets;
+    let stacked;
+    if (dCodeDetail) {
+      // 상세: ClaimType별 누적막대 + Total 선
+      const barDatasets = activeTypes.map(tp => ({
+        type: 'bar', label: tp,
+        data: months.map(m => agg[m]?.[tp]?.[metric] || null),
+        backgroundColor: SALES_COLORS[tp],
+        borderRadius: 3, borderSkipped: 'bottom', maxBarThickness: 28,
+        datalabels: {
+          display: ctx => { const v = ctx.dataset.data[ctx.dataIndex]; return v && v > 0; },
+          color: '#fff', font: { size: 9, weight: '700' },
+          formatter: v => metric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(),
+          anchor: 'center', align: 'center', clamp: true,
+        }
+      }));
+      const totalDataset = {
+        type: 'line', label: 'Total', data: totalVals,
+        borderColor: _tc().fill, backgroundColor: _tc().fill,
+        borderWidth: 0, pointRadius: 0, pointHoverRadius: 0, tension: 0, order: -1,
+        datalabels: {
+          display: ctx => !!totalVals[ctx.dataIndex],
+          color: _tc().fill, font: { size: 10, weight: '700' },
+          formatter: v => v ? (metric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString()) : '',
+          anchor: 'end', align: 'top', offset: 5,
+        }
+      };
+      datasets = [...barDatasets, totalDataset];
+      stacked = true;
+    } else {
+      // 일반: 단일 막대 (합계)
+      const n = totalVals.length;
+      const bgColors = totalVals.map((_, i) =>
+        `rgba(59,130,246,${(1 - i * 0.5 / Math.max(n-1,1)).toFixed(2)})`);
+      datasets = [{
+        type: 'bar', label: '합계',
+        data: totalVals,
+        backgroundColor: bgColors,
+        borderRadius: 3, borderSkipped: 'bottom', maxBarThickness: 40,
+        datalabels: {
+          display: ctx => !!totalVals[ctx.dataIndex],
+          color: _tc().fill, font: { size: 10, weight: '700' },
+          formatter: v => v ? (metric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString()) : '',
+          anchor: 'end', align: 'top', offset: 4,
+        }
+      }];
+      stacked = false;
+    }
 
     if (dCodeChart) { dCodeChart.destroy(); dCodeChart = null; }
     dCodeChart = new Chart(canvasEl, {
-      data: { labels: months.map(getMonthLabel), datasets: [...barDatasets, totalDataset] },
+      data: { labels: months.map(getMonthLabel), datasets },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'top', labels: { color: tickCol, font: { size: 11 }, boxWidth: 12 } },
+          legend: { display: dCodeDetail, position: 'top', labels: { color: tickCol, font: { size: 11 }, boxWidth: 12 } },
           tooltip: {
             callbacks: {
               label: ctx => {
@@ -4440,12 +4481,12 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
         },
         scales: {
           x: {
-            stacked: true,
+            stacked,
             grid: { color: gridCol },
             ticks: { color: tickCol, font: { size: 11 } }
           },
           y: {
-            stacked: true,
+            stacked,
             grid: { color: gridCol },
             ticks: {
               color: tickCol,
