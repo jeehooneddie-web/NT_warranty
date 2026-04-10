@@ -2209,9 +2209,9 @@
               oninput="renderDefectCodeChart()"
               class="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 w-72 outline-none focus:ring-2 focus:ring-blue-500" />
             <span id="defect-code-desc" class="text-xs text-slate-400 italic flex-1"></span>
-            <button id="btn-dcode-compare" onclick="renderDefectMultiChart()"
+            <button id="btn-dcode-compare" onclick="renderDefectSumChart()"
               class="hidden px-3 py-1 text-xs font-semibold rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white transition-colors">
-              비교 차트 <span id="dcode-compare-cnt" class="ml-1 bg-white/30 px-1.5 py-0.5 rounded-full text-[10px]"></span>
+              합계 차트 <span id="dcode-compare-cnt" class="ml-1 bg-white/30 px-1.5 py-0.5 rounded-full text-[10px]"></span>
             </button>
             <button onclick="toggleDefectCodeDetail()" id="btn-dcode-detail"
               class="px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -2239,9 +2239,6 @@
           <div id="defect-code-empty" class="hidden py-16 text-center text-slate-400 text-sm">데이터 없음</div>
           <div id="defect-code-chart-wrap" style="height:460px; position:relative;">
             <canvas id="defect-code-chart"></canvas>
-          </div>
-          <div id="defect-multi-chart-wrap" class="hidden" style="height:460px; position:relative;">
-            <canvas id="defect-multi-chart"></canvas>
           </div>
         </div>
 
@@ -4516,27 +4513,28 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     _updateCompareBtn();
   }
 
-  function renderDefectMultiChart() {
-    const chartWrap  = document.getElementById('defect-code-chart-wrap');
-    const multiWrap  = document.getElementById('defect-multi-chart-wrap');
-    const canvasEl   = document.getElementById('defect-multi-chart');
-    const listEl     = document.getElementById('defect-code-list');
-    if (!canvasEl || selectedDefectCodes.size === 0) return;
+  function renderDefectSumChart() {
+    // 선택된 코드들의 합계를 기존 단일 코드 차트 방식으로 표시
+    if (selectedDefectCodes.size === 0) return;
+    const listEl    = document.getElementById('defect-code-list');
+    const chartWrap = document.getElementById('defect-code-chart-wrap');
+    const descEl    = document.getElementById('defect-code-desc');
+    if (listEl)  listEl.classList.add('hidden');
+    if (chartWrap) chartWrap.style.display = '';
+    if (descEl) descEl.textContent = `선택 ${selectedDefectCodes.size}개 합계`;
 
-    if (chartWrap) chartWrap.style.display = 'none';
-    if (listEl)    listEl.classList.add('hidden');
-    if (multiWrap) multiWrap.classList.remove('hidden');
-
-    const metric  = dCodeMetric;
-    const codes   = [...selectedDefectCodes];
+    // 입력창을 선택 코드 첫번째로 설정 (내부 처리용)
+    // 직접 agg 구성 후 _renderDefectChart 호출
+    const codes  = [...selectedDefectCodes];
+    const metric = dCodeMetric;
     const _isDark = document.body.classList.contains('dark');
     const gridCol = _isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
     const tickCol = _isDark ? '#cbd5e1' : '#374151';
 
     // 전체 월 범위
     const allRawMonths = [...new Set(DEFECT_RAW.map(r => r[1]))].sort();
-    const firstMonth   = allRawMonths[0];
-    const lastYear     = parseInt(allRawMonths[allRawMonths.length - 1].slice(0, 2));
+    const firstMonth = allRawMonths[0];
+    const lastYear   = parseInt(allRawMonths[allRawMonths.length - 1].slice(0, 2));
     const months = [];
     let cy = parseInt(firstMonth.slice(0,2)), cm = parseInt(firstMonth.slice(3,5));
     while (cy < lastYear || (cy === lastYear && cm <= 12)) {
@@ -4544,61 +4542,88 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
       cm++; if (cm > 12) { cm = 1; cy++; }
     }
 
-    const PALETTE = ['#3B82F6','#EF4444','#10B981','#F59E0B','#8B5CF6','#EC4899','#06B6D4','#F97316','#84CC16','#14B8A6'];
+    // 선택 코드 합산 집계 (ClaimType별)
+    const TYPES_ORDER = ['BSI','Warranty','TC/RECALL','Goodwill','WP','LOCAL TC'];
+    const activeTypes = TYPES_ORDER.filter(tp => dActiveTypes.has(tp));
+    const agg = {};
+    for (const row of DEFECT_RAW) {
+      const [br, mo, tp, cd, cnt, amt] = row;
+      if (!codes.some(c => cd.startsWith(c))) continue;
+      if (!dActiveBranches.has(br)) continue;
+      if (!dActiveTypes.has(tp)) continue;
+      if (!agg[mo]) agg[mo] = {};
+      if (!agg[mo][tp]) agg[mo][tp] = { count: 0, amount: 0 };
+      agg[mo][tp].count  += cnt;
+      agg[mo][tp].amount += amt;
+    }
 
-    const datasets = codes.map((code, i) => {
-      const agg = {};
-      for (const row of DEFECT_RAW) {
-        const [br, mo, tp, cd, cnt, amt] = row;
-        if (!cd.startsWith(code)) continue;
-        if (!dActiveBranches.has(br)) continue;
-        agg[mo] = (agg[mo] || 0) + (metric === 'amount' ? amt : cnt);
-      }
-      const color = PALETTE[i % PALETTE.length];
-      const desc  = DEFECT_DESC[Object.keys(DEFECT_DESC).find(k => k.startsWith(code)) || ''] || code;
-      const label = desc.length > 20 ? desc.slice(0,20)+'…' : desc;
-      return {
-        label,
-        data: months.map(m => agg[m] || null),
-        borderColor: color, backgroundColor: color + '22',
-        borderWidth: 2, pointRadius: 3, pointHoverRadius: 5,
-        tension: 0.3, fill: false,
-        datalabels: { display: false }
-      };
+    const totalVals = months.map(m => {
+      if (!agg[m]) return null;
+      let v = 0;
+      for (const tp of activeTypes) v += agg[m]?.[tp]?.[metric] || 0;
+      return v || null;
     });
 
-    if (dMultiChart) { dMultiChart.destroy(); dMultiChart = null; }
+    let datasets, stacked;
+    if (dCodeDetail) {
+      const barDatasets = activeTypes.map(tp => ({
+        type: 'bar', label: tp,
+        data: months.map(m => agg[m]?.[tp]?.[metric] || null),
+        backgroundColor: SALES_COLORS[tp],
+        borderRadius: 3, borderSkipped: 'bottom', maxBarThickness: 28,
+        datalabels: {
+          display: ctx => { const v = ctx.dataset.data[ctx.dataIndex]; return v && v > 0; },
+          color: '#fff', font: { size: 9, weight: '700' },
+          formatter: v => metric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString(),
+          anchor: 'center', align: 'center', clamp: true,
+        }
+      }));
+      const totalDataset = {
+        type: 'line', label: 'Total', data: totalVals,
+        borderColor: _tc().fill, backgroundColor: _tc().fill,
+        borderWidth: 0, pointRadius: 0, tension: 0, order: -1,
+        datalabels: {
+          display: ctx => !!totalVals[ctx.dataIndex],
+          color: _tc().fill, font: { size: 10, weight: '700' },
+          formatter: v => v ? (metric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString()) : '',
+          anchor: 'end', align: 'top', offset: 5,
+        }
+      };
+      datasets = [...barDatasets, totalDataset]; stacked = true;
+    } else {
+      const n = totalVals.length;
+      datasets = [{
+        type: 'bar', label: '합계',
+        data: totalVals,
+        backgroundColor: totalVals.map((_, i) => `rgba(99,102,241,${(1 - i*0.5/Math.max(n-1,1)).toFixed(2)})`),
+        borderRadius: 3, borderSkipped: 'bottom', maxBarThickness: 40,
+        datalabels: {
+          display: ctx => !!totalVals[ctx.dataIndex],
+          color: _tc().fill, font: { size: 10, weight: '700' },
+          formatter: v => v ? (metric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString()) : '',
+          anchor: 'end', align: 'top', offset: 4,
+        }
+      }]; stacked = false;
+    }
+
+    if (dCodeChart) { dCodeChart.destroy(); dCodeChart = null; }
     Chart.register(ChartDataLabels);
-    dMultiChart = new Chart(canvasEl, {
-      type: 'line',
+    dCodeChart = new Chart(document.getElementById('defect-code-chart'), {
+      type: 'bar',
       data: { labels: months.map(getMonthLabel), datasets },
       options: {
         responsive: true, maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
+        layout: { padding: { top: 28, right: 8 } },
         plugins: {
           datalabels: { display: false },
-          legend: { position: 'top', labels: { color: tickCol, font: { size: 11 }, boxWidth: 12 } },
-          tooltip: {
-            callbacks: {
-              label: ctx => {
-                const v = ctx.parsed.y;
-                if (!v) return null;
-                return metric === 'amount'
-                  ? ` ${ctx.dataset.label}: ${Math.round(v/1000000).toLocaleString()}백만원`
-                  : ` ${ctx.dataset.label}: ${v.toLocaleString()}건`;
-              }
-            }
-          }
+          legend: { display: dCodeDetail, position: 'top', labels: { color: tickCol, font: { size: 11 }, boxWidth: 12 } },
+          tooltip: { callbacks: { label: ctx => { const v = ctx.parsed.y; if (!v) return null;
+            return metric === 'amount' ? `${ctx.dataset.label}: ₩${Math.round(v).toLocaleString()}` : `${ctx.dataset.label}: ${v.toLocaleString()}건`; } } }
         },
         scales: {
-          x: { grid: { color: gridCol }, ticks: { color: tickCol, font: { size: 10 } } },
-          y: {
-            grid: { color: gridCol },
-            ticks: {
-              color: tickCol,
-              callback: v => metric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString()
-            }
-          }
+          x: { stacked, grid: { color: gridCol }, ticks: { color: tickCol, font: { size: 11 } } },
+          y: { stacked, grid: { color: gridCol }, ticks: { color: tickCol,
+            callback: v => metric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString() } }
         }
       }
     });
