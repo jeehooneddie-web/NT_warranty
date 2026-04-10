@@ -2094,7 +2094,15 @@
            ============================================= -->
       <div id="view-top-defect" class="view hidden">
 
-        <!-- 필터 카드 -->
+        <!-- 메인 탭바 (TC 스타일) -->
+        <div style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid rgba(148,163,184,0.2);">
+          <button id="dtab-main-topdefect" onclick="setDefectMainTab('topdefect')"
+            style="padding:10px 20px; font-size:13px; font-weight:700; border:none; background:none; cursor:pointer; border-bottom:3px solid #3B82F6; margin-bottom:-2px; transition:all 0.25s ease;">TOP DEFECT</button>
+          <button id="dtab-main-code" onclick="setDefectMainTab('code')"
+            style="padding:10px 20px; font-size:13px; font-weight:700; border:none; background:none; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; transition:all 0.25s ease;">디펙트별 추이</button>
+        </div>
+
+        <!-- 필터 카드 (공통) -->
         <div class="bg-white dark:bg-slate-800 rounded-xl p-4 mb-4 border border-slate-200 dark:border-slate-700">
           <div class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">지점</span>
@@ -2119,40 +2127,41 @@
               <button onclick="toggleDefectType('LOCAL TC')" id="dtype-LOCALTC" class="sales-pill">LOCAL TC</button>
             </div>
           </div>
-          <div class="flex items-center gap-3 mb-3">
-            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">년도</span>
-            <div class="pill-group">
-              <button onclick="toggleDefectYear('all')" id="dyear-all" class="sales-pill active">전체</button>
-              <button onclick="toggleDefectYear('25')" id="dyear-25" class="sales-pill">2025</button>
-              <button onclick="toggleDefectYear('26')" id="dyear-26" class="sales-pill">2026</button>
+          <div id="defect-filter-yearmonth">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">년도</span>
+              <div class="pill-group">
+                <button onclick="toggleDefectYear('all')" id="dyear-all" class="sales-pill active">전체</button>
+                <button onclick="toggleDefectYear('25')" id="dyear-25" class="sales-pill">2025</button>
+                <button onclick="toggleDefectYear('26')" id="dyear-26" class="sales-pill">2026</button>
+              </div>
             </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">월별</span>
-            <div class="pill-group">
-              <button onclick="toggleDefectMonth('all')" id="dmonth-all" class="sales-pill active">전체</button>
-              <button onclick="toggleDefectMonth('01')" id="dmonth-01" class="sales-pill">1월</button>
-              <button onclick="toggleDefectMonth('02')" id="dmonth-02" class="sales-pill">2월</button>
-              <button onclick="toggleDefectMonth('03')" id="dmonth-03" class="sales-pill">3월</button>
-              <button onclick="toggleDefectMonth('04')" id="dmonth-04" class="sales-pill">4월</button>
-              <button onclick="toggleDefectMonth('05')" id="dmonth-05" class="sales-pill">5월</button>
-              <button onclick="toggleDefectMonth('06')" id="dmonth-06" class="sales-pill">6월</button>
-              <button onclick="toggleDefectMonth('07')" id="dmonth-07" class="sales-pill">7월</button>
-              <button onclick="toggleDefectMonth('08')" id="dmonth-08" class="sales-pill">8월</button>
-              <button onclick="toggleDefectMonth('09')" id="dmonth-09" class="sales-pill">9월</button>
-              <button onclick="toggleDefectMonth('10')" id="dmonth-10" class="sales-pill">10월</button>
-              <button onclick="toggleDefectMonth('11')" id="dmonth-11" class="sales-pill">11월</button>
-              <button onclick="toggleDefectMonth('12')" id="dmonth-12" class="sales-pill">12월</button>
+            <div class="flex items-center gap-3">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">월별</span>
+              <div class="pill-group">
+                <button onclick="toggleDefectMonth('all')" id="dmonth-all" class="sales-pill active">전체</button>
+                <button onclick="toggleDefectMonth('01')" id="dmonth-01" class="sales-pill">1월</button>
+                <button onclick="toggleDefectMonth('02')" id="dmonth-02" class="sales-pill">2월</button>
+                <button onclick="toggleDefectMonth('03')" id="dmonth-03" class="sales-pill">3월</button>
+                <button onclick="toggleDefectMonth('04')" id="dmonth-04" class="sales-pill">4월</button>
+                <button onclick="toggleDefectMonth('05')" id="dmonth-05" class="sales-pill">5월</button>
+                <button onclick="toggleDefectMonth('06')" id="dmonth-06" class="sales-pill">6월</button>
+                <button onclick="toggleDefectMonth('07')" id="dmonth-07" class="sales-pill">7월</button>
+                <button onclick="toggleDefectMonth('08')" id="dmonth-08" class="sales-pill">8월</button>
+                <button onclick="toggleDefectMonth('09')" id="dmonth-09" class="sales-pill">9월</button>
+                <button onclick="toggleDefectMonth('10')" id="dmonth-10" class="sales-pill">10월</button>
+                <button onclick="toggleDefectMonth('11')" id="dmonth-11" class="sales-pill">11월</button>
+                <button onclick="toggleDefectMonth('12')" id="dmonth-12" class="sales-pill">12월</button>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- 그래프 / 미매칭 카드 -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <!-- TOP DEFECT 섹션 -->
+        <div id="defect-main-section" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div class="flex items-center px-5 py-3 border-b border-slate-200 dark:border-slate-700 gap-2">
             <button onclick="setDefectTab('top')" id="dtab-top" class="sales-pill active">상위 20개</button>
             <button onclick="setDefectTab('unmatched')" id="dtab-unmatched" class="sales-pill">미매칭 코드 <span id="dtab-unmatched-cnt" class="ml-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full"></span></button>
-            <button onclick="setDefectTab('code')" id="dtab-code" class="sales-pill">코드별 추이</button>
             <button onclick="exportUnmatchedCSV()" id="btn-export-unmatched" class="hidden ml-2 px-3 py-1 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">⬇ CSV 내보내기</button>
           </div>
           <!-- 상위 20개: 두 차트 -->
@@ -2190,42 +2199,44 @@
               <tbody id="defect-tbody"></tbody>
             </table>
           </div>
-          <!-- 코드별 추이 -->
-          <div id="defect-code-area" class="hidden p-4">
-            <div class="flex items-center gap-3 mb-4 flex-wrap">
-              <input id="defect-code-input" type="text"
-                placeholder="디펙트코드 입력 (예: LA0001234KR)"
-                oninput="renderDefectCodeChart()"
-                class="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 w-64 outline-none focus:ring-2 focus:ring-blue-500" />
-              <span id="defect-code-desc" class="text-xs text-slate-400 italic flex-1"></span>
-              <button onclick="toggleDefectCodeDetail()" id="btn-dcode-detail"
-                class="px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                상세
-              </button>
-              <div class="pill-group">
-                <button onclick="setDefectCodeMetric('amount')" id="dcmetric-amount" class="sales-pill active">금액</button>
-                <button onclick="setDefectCodeMetric('count')"  id="dcmetric-count"  class="sales-pill">건수</button>
-              </div>
-            </div>
-            <div id="defect-code-list" class="hidden overflow-auto rounded-lg border border-slate-200 dark:border-slate-700" style="max-height:420px;">
-              <table class="w-full text-xs">
-                <thead class="sticky top-0 bg-slate-50 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400">
-                  <tr>
-                    <th class="px-3 py-2 text-left w-32">코드</th>
-                    <th class="px-3 py-2 text-left">설명</th>
-                    <th class="px-3 py-2 text-center w-16">코드 수</th>
-                    <th class="px-3 py-2 text-right w-20">클레임</th>
-                  </tr>
-                </thead>
-                <tbody id="defect-code-list-body"></tbody>
-              </table>
-            </div>
-            <div id="defect-code-empty" class="hidden py-16 text-center text-slate-400 text-sm">데이터 없음</div>
-            <div id="defect-code-chart-wrap" style="height:420px; position:relative;">
-              <canvas id="defect-code-chart"></canvas>
+        </div>
+
+        <!-- 디펙트별 추이 섹션 -->
+        <div id="defect-code-section" class="hidden bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div class="flex items-center gap-3 mb-4 flex-wrap">
+            <input id="defect-code-input" type="text"
+              placeholder="디펙트코드 입력 (예: 243504 또는 2435040200)"
+              oninput="renderDefectCodeChart()"
+              class="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 w-72 outline-none focus:ring-2 focus:ring-blue-500" />
+            <span id="defect-code-desc" class="text-xs text-slate-400 italic flex-1"></span>
+            <button onclick="toggleDefectCodeDetail()" id="btn-dcode-detail"
+              class="px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+              상세
+            </button>
+            <div class="pill-group">
+              <button onclick="setDefectCodeMetric('amount')" id="dcmetric-amount" class="sales-pill active">금액</button>
+              <button onclick="setDefectCodeMetric('count')"  id="dcmetric-count"  class="sales-pill">건수</button>
             </div>
           </div>
+          <div id="defect-code-list" class="hidden overflow-auto rounded-lg border border-slate-200 dark:border-slate-700" style="max-height:460px;">
+            <table class="w-full text-xs">
+              <thead class="sticky top-0 bg-slate-50 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400">
+                <tr>
+                  <th class="px-3 py-2 text-left w-32">코드</th>
+                  <th class="px-3 py-2 text-left">설명</th>
+                  <th class="px-3 py-2 text-center w-16">코드 수</th>
+                  <th class="px-3 py-2 text-right w-20">클레임</th>
+                </tr>
+              </thead>
+              <tbody id="defect-code-list-body"></tbody>
+            </table>
+          </div>
+          <div id="defect-code-empty" class="hidden py-16 text-center text-slate-400 text-sm">데이터 없음</div>
+          <div id="defect-code-chart-wrap" style="height:460px; position:relative;">
+            <canvas id="defect-code-chart"></canvas>
+          </div>
         </div>
+
       </div><!-- /view-top-defect -->
 
       <!-- =============================================
@@ -4309,7 +4320,8 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
   let dActiveTypes    = new Set(D_ALL_TYPES);
   let dActiveYears    = new Set(D_ALL_YEARS);
   let dActiveMonths   = new Set(D_ALL_MO);
-  let dTabMode        = 'top';   // 'top' | 'unmatched' | 'code'
+  let dTabMode        = 'top';   // 'top' | 'unmatched'
+  let dMainTab        = 'topdefect'; // 'topdefect' | 'code'
   let dChartAmount    = null;
   let dChartCount     = null;
   let dCodeMetric     = 'amount';
@@ -4321,9 +4333,29 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     return DATA_MO.filter(m => dActiveYears.has(m.slice(0,2)) && dActiveMonths.has(m.slice(3,5)));
   }
 
+  function setDefectMainTab(tab) {
+    dMainTab = tab;
+    const _tCol = _tc();
+    ['topdefect','code'].forEach(t => {
+      const btn = document.getElementById('dtab-main-'+t);
+      if (btn) {
+        btn.style.borderBottomColor = t === tab ? '#3B82F6' : 'transparent';
+        btn.style.color = t === tab ? _tCol.text : _tCol.textSub;
+      }
+    });
+    const mainSec = document.getElementById('defect-main-section');
+    const codeSec = document.getElementById('defect-code-section');
+    const ymFilter = document.getElementById('defect-filter-yearmonth');
+    if (mainSec) mainSec.style.display = tab === 'topdefect' ? '' : 'none';
+    if (codeSec) codeSec.style.display = tab === 'code' ? '' : 'none';
+    if (ymFilter) ymFilter.style.display = tab === 'code' ? 'none' : '';
+    if (tab === 'code') renderDefectCodeChart();
+    else renderTopDefect();
+  }
+
   function setDefectTab(tab) {
     dTabMode = tab;
-    ['top','unmatched','code'].forEach(t => {
+    ['top','unmatched'].forEach(t => {
       const el = document.getElementById('dtab-'+t);
       if (el) el.className = 'sales-pill' + (t===tab?' active':'');
     });
@@ -4378,14 +4410,12 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
       return;
     }
 
-    // 클레임 건수 집계 (현재 지점·월 필터 반영)
-    const visMo = new Set(dGetVisibleMonths());
+    // 클레임 건수 집계 (지점 필터 반영, 년도/월 필터 무시 — 전체 기간)
     const claimByCode = {};
     for (const row of DEFECT_RAW) {
       const [br, mo, tp, cd, cnt] = row;
       if (!cd.startsWith(code)) continue;
       if (!dActiveBranches.has(br)) continue;
-      if (!visMo.has(mo)) continue;
       claimByCode[cd] = (claimByCode[cd] || 0) + cnt;
     }
 
@@ -4470,22 +4500,20 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     const matchedCode = Object.keys(DEFECT_DESC).find(k => k.startsWith(code));
     if (descEl) descEl.textContent = matchedCode ? `${matchedCode}: ${DEFECT_DESC[matchedCode]}` : '(설명 없음)';
 
-    // DEFECT_RAW 필터 & 월별 × ClaimType 집계
-    const visMo = new Set(dGetVisibleMonths());
+    // DEFECT_RAW 필터 & 월별 × ClaimType 집계 (년도/월 필터 무시 — 전체 기간)
     const agg = {}; // { 'YY-MM': { ClaimType: {count, amount} } }
     for (const row of DEFECT_RAW) {
       const [br, mo, tp, cd, cnt, amt] = row;
       if (!cd.startsWith(code)) continue;
       if (!dActiveBranches.has(br)) continue;
       if (!dActiveTypes.has(tp)) continue;
-      if (!visMo.has(mo)) continue;
       if (!agg[mo]) agg[mo] = {};
       if (!agg[mo][tp]) agg[mo][tp] = {count:0, amount:0};
       agg[mo][tp].count  += cnt;
       agg[mo][tp].amount += amt;
     }
 
-    const months = [...visMo].sort();
+    const months = Object.keys(agg).sort();
     const hasData = months.some(m => agg[m] && Object.keys(agg[m]).length > 0);
     if (emptyEl) emptyEl.classList.toggle('hidden', hasData);
     canvasEl.style.display = hasData ? '' : 'none';
@@ -4563,6 +4591,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
       data: { labels: months.map(getMonthLabel), datasets },
       options: {
         responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 28, right: 8 } },
         plugins: {
           legend: { display: dCodeDetail, position: 'top', labels: { color: tickCol, font: { size: 11 }, boxWidth: 12 } },
           tooltip: {
@@ -4600,20 +4629,9 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     const cntEl = document.getElementById('dtab-unmatched-cnt');
     if (cntEl) cntEl.textContent = DEFECT_UNMATCHED.length;
 
-    const topArea  = document.getElementById('defect-top-area');
-    const umArea   = document.getElementById('defect-unmatched-area');
-    const codeArea = document.getElementById('defect-code-area');
-    const tbody    = document.getElementById('defect-tbody');
-
-    // 코드별 추이 탭
-    if (dTabMode === 'code') {
-      if (topArea)  topArea.classList.add('hidden');
-      if (umArea)   umArea.classList.add('hidden');
-      if (codeArea) codeArea.classList.remove('hidden');
-      renderDefectCodeChart();
-      return;
-    }
-    if (codeArea) codeArea.classList.add('hidden');
+    const topArea = document.getElementById('defect-top-area');
+    const umArea  = document.getElementById('defect-unmatched-area');
+    const tbody   = document.getElementById('defect-tbody');
 
     // 미매칭 탭
     if (dTabMode === 'unmatched') {
