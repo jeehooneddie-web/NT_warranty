@@ -4353,14 +4353,15 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     }
 
     // 코드 설명
-    if (descEl) descEl.textContent = DEFECT_DESC[code] ? DEFECT_DESC[code] : '(설명 없음)';
+    const matchedCode = Object.keys(DEFECT_DESC).find(k => k.includes(code));
+    if (descEl) descEl.textContent = matchedCode ? `${matchedCode}: ${DEFECT_DESC[matchedCode]}` : '(설명 없음)';
 
     // DEFECT_RAW 필터 & 월별 × ClaimType 집계
     const visMo = new Set(dGetVisibleMonths());
     const agg = {}; // { 'YY-MM': { ClaimType: {count, amount} } }
     for (const row of DEFECT_RAW) {
       const [br, mo, tp, cd, cnt, amt] = row;
-      if (cd !== code) continue;
+      if (!cd.includes(code)) continue;
       if (!dActiveBranches.has(br)) continue;
       if (!dActiveTypes.has(tp)) continue;
       if (!visMo.has(mo)) continue;
