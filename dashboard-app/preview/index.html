@@ -2207,8 +2207,21 @@
                 <button onclick="setDefectCodeMetric('count')"  id="dcmetric-count"  class="sales-pill">건수</button>
               </div>
             </div>
+            <div id="defect-code-list" class="hidden overflow-auto rounded-lg border border-slate-200 dark:border-slate-700" style="max-height:420px;">
+              <table class="w-full text-xs">
+                <thead class="sticky top-0 bg-slate-50 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400">
+                  <tr>
+                    <th class="px-3 py-2 text-left w-32">코드</th>
+                    <th class="px-3 py-2 text-left">설명</th>
+                    <th class="px-3 py-2 text-center w-16">코드 수</th>
+                    <th class="px-3 py-2 text-right w-20">클레임</th>
+                  </tr>
+                </thead>
+                <tbody id="defect-code-list-body"></tbody>
+              </table>
+            </div>
             <div id="defect-code-empty" class="hidden py-16 text-center text-slate-400 text-sm">데이터 없음</div>
-            <div style="height:420px; position:relative;">
+            <div id="defect-code-chart-wrap" style="height:420px; position:relative;">
               <canvas id="defect-code-chart"></canvas>
             </div>
           </div>
@@ -4353,20 +4366,105 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     renderDefectCodeChart();
   }
 
+  function renderDefectCodeList(code) {
+    const body   = document.getElementById('defect-code-list-body');
+    const descEl = document.getElementById('defect-code-desc');
+    if (!body) return;
+
+    const allMatched = Object.keys(DEFECT_DESC).filter(k => k.startsWith(code));
+    if (allMatched.length === 0) {
+      body.innerHTML = '<tr><td colspan="4" class="text-center py-10 text-slate-400">일치하는 코드 없음</td></tr>';
+      if (descEl) descEl.textContent = '';
+      return;
+    }
+
+    // 클레임 건수 집계 (현재 지점·월 필터 반영)
+    const visMo = new Set(dGetVisibleMonths());
+    const claimByCode = {};
+    for (const row of DEFECT_RAW) {
+      const [br, mo, tp, cd, cnt] = row;
+      if (!cd.startsWith(code)) continue;
+      if (!dActiveBranches.has(br)) continue;
+      if (!visMo.has(mo)) continue;
+      claimByCode[cd] = (claimByCode[cd] || 0) + cnt;
+    }
+
+    if (code.length <= 5) {
+      // ── 그룹 모드: 6자리 prefix 기준 ──
+      const groups = {};
+      for (const c of allMatched) {
+        const p6 = c.slice(0, 6);
+        if (!groups[p6]) groups[p6] = { codes: [], claim: 0 };
+        groups[p6].codes.push(c);
+        groups[p6].claim += claimByCode[c] || 0;
+      }
+      const entries = Object.entries(groups).map(([p6, g]) => {
+        const rep = g.codes.find(c => c === p6+'0000')
+                 || g.codes.find(c => c.endsWith('00'))
+                 || g.codes[0];
+        return { p6, desc: DEFECT_DESC[rep] || '', codeCount: g.codes.length, claim: g.claim };
+      }).sort((a, b) => b.claim - a.claim);
+
+      if (descEl) descEl.textContent = `${entries.length}개 부품 그룹 매칭`;
+      body.innerHTML = entries.map(({ p6, desc, codeCount, claim }) => `
+        <tr class="border-b border-slate-100 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700/40 cursor-pointer"
+            onclick="document.getElementById('defect-code-input').value='${p6}';renderDefectCodeChart();">
+          <td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400 font-semibold">${p6}</td>
+          <td class="px-3 py-2 text-slate-700 dark:text-slate-300">${desc}</td>
+          <td class="px-3 py-2 text-center text-slate-400">${codeCount}종</td>
+          <td class="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">${claim ? claim.toLocaleString()+'건' : '-'}</td>
+        </tr>`).join('');
+
+    } else {
+      // ── 개별 모드: 6~7자리 ──
+      const entries = allMatched.map(c => ({
+        c, desc: DEFECT_DESC[c] || '', claim: claimByCode[c] || 0
+      })).sort((a, b) => b.claim - a.claim);
+
+      if (descEl) descEl.textContent = `${entries.length}개 코드 매칭`;
+      body.innerHTML = entries.map(({ c, desc, claim }) => `
+        <tr class="border-b border-slate-100 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700/40 cursor-pointer"
+            onclick="document.getElementById('defect-code-input').value='${c}';renderDefectCodeChart();">
+          <td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">${c}</td>
+          <td class="px-3 py-2 text-slate-700 dark:text-slate-300">${desc}</td>
+          <td class="px-3 py-2 text-center text-slate-400">-</td>
+          <td class="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">${claim ? claim.toLocaleString()+'건' : '-'}</td>
+        </tr>`).join('');
+    }
+  }
+
   function renderDefectCodeChart() {
-    const input   = document.getElementById('defect-code-input');
-    const descEl  = document.getElementById('defect-code-desc');
-    const emptyEl = document.getElementById('defect-code-empty');
-    const canvasEl= document.getElementById('defect-code-chart');
+    const input     = document.getElementById('defect-code-input');
+    const descEl    = document.getElementById('defect-code-desc');
+    const emptyEl   = document.getElementById('defect-code-empty');
+    const canvasEl  = document.getElementById('defect-code-chart');
+    const listEl    = document.getElementById('defect-code-list');
+    const chartWrap = document.getElementById('defect-code-chart-wrap');
     if (!input || !canvasEl) return;
 
     const code = input.value.trim().toUpperCase();
     if (!code) {
-      if (descEl)  descEl.textContent = '';
-      if (emptyEl) emptyEl.classList.add('hidden');
+      if (descEl)    descEl.textContent = '';
+      if (emptyEl)   emptyEl.classList.add('hidden');
+      if (listEl)    listEl.classList.add('hidden');
+      if (chartWrap) chartWrap.style.display = '';
       if (dCodeChart) { dCodeChart.destroy(); dCodeChart = null; }
       return;
     }
+
+    // ── 목록 모드 (1~7자리) ──
+    if (code.length < 8) {
+      if (listEl)    listEl.classList.remove('hidden');
+      if (chartWrap) chartWrap.style.display = 'none';
+      if (emptyEl)   emptyEl.classList.add('hidden');
+      if (dCodeChart) { dCodeChart.destroy(); dCodeChart = null; }
+      renderDefectCodeList(code);
+      return;
+    }
+
+    // ── 차트 모드 (8자리 이상) ──
+    if (listEl)    listEl.classList.add('hidden');
+    if (chartWrap) chartWrap.style.display = '';
 
     // 코드 설명
     const matchedCode = Object.keys(DEFECT_DESC).find(k => k.startsWith(code));
