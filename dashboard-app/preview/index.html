@@ -2209,6 +2209,10 @@
               oninput="renderDefectCodeChart()"
               class="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 w-72 outline-none focus:ring-2 focus:ring-blue-500" />
             <span id="defect-code-desc" class="text-xs text-slate-400 italic flex-1"></span>
+            <button id="btn-dcode-compare" onclick="renderDefectMultiChart()"
+              class="hidden px-3 py-1 text-xs font-semibold rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white transition-colors">
+              비교 차트 <span id="dcode-compare-cnt" class="ml-1 bg-white/30 px-1.5 py-0.5 rounded-full text-[10px]"></span>
+            </button>
             <button onclick="toggleDefectCodeDetail()" id="btn-dcode-detail"
               class="px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
               상세
@@ -2222,6 +2226,7 @@
             <table class="w-full text-xs">
               <thead class="sticky top-0 bg-slate-50 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400">
                 <tr>
+                  <th class="px-3 py-2 w-8"><input type="checkbox" id="dcode-check-all" onchange="toggleDefectCodeSelectAll(this.checked)" /></th>
                   <th class="px-3 py-2 text-left w-32">코드</th>
                   <th class="px-3 py-2 text-left">설명</th>
                   <th class="px-3 py-2 text-center w-16">코드 수</th>
@@ -2234,6 +2239,9 @@
           <div id="defect-code-empty" class="hidden py-16 text-center text-slate-400 text-sm">데이터 없음</div>
           <div id="defect-code-chart-wrap" style="height:460px; position:relative;">
             <canvas id="defect-code-chart"></canvas>
+          </div>
+          <div id="defect-multi-chart-wrap" class="hidden" style="height:460px; position:relative;">
+            <canvas id="defect-multi-chart"></canvas>
           </div>
         </div>
 
@@ -4324,9 +4332,11 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
   let dMainTab        = 'topdefect'; // 'topdefect' | 'code'
   let dChartAmount    = null;
   let dChartCount     = null;
-  let dCodeMetric     = 'amount';
-  let dCodeChart      = null;
-  let dCodeDetail     = false;
+  let dCodeMetric        = 'amount';
+  let dCodeChart         = null;
+  let dCodeDetail        = false;
+  let dMultiChart        = null;
+  let selectedDefectCodes = new Set();
 
   function dGetVisibleMonths() {
     const DATA_MO = [...new Set(DEFECT_RAW.map(r => r[1]))].sort();
@@ -4419,6 +4429,18 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
       claimByCode[cd] = (claimByCode[cd] || 0) + cnt;
     }
 
+    const _isDark = document.body.classList.contains('dark');
+    const clrCode  = _isDark ? '#60a5fa' : '#2563eb';
+    const clrDesc  = _isDark ? '#e2e8f0' : '#1f2937';
+    const clrMuted = _isDark ? '#94a3b8' : '#6b7280';
+    const clrVal   = _isDark ? '#f1f5f9' : '#111827';
+    const clrBdr   = _isDark ? '#334155' : '#e2e8f0';
+    const clrHover = _isDark ? 'rgba(99,102,241,0.1)' : '#eff6ff';
+
+    // 전체선택 체크박스 동기화
+    const allCb = document.getElementById('dcode-check-all');
+    if (allCb) allCb.checked = false;
+
     if (code.length <= 5) {
       // ── 그룹 모드: 6자리 prefix 기준 ──
       const groups = {};
@@ -4437,12 +4459,16 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
 
       if (descEl) descEl.textContent = `${entries.length}개 부품 그룹 매칭`;
       body.innerHTML = entries.map(({ p6, desc, codeCount, claim }) => `
-        <tr class="border-b border-slate-100 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700/40 cursor-pointer"
+        <tr style="border-bottom:1px solid ${clrBdr}; cursor:pointer;"
+            onmouseover="this.style.background='${clrHover}'" onmouseout="this.style.background=''"
             onclick="document.getElementById('defect-code-input').value='${p6}';renderDefectCodeChart();">
-          <td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400 font-semibold">${p6}</td>
-          <td class="px-3 py-2 text-slate-700 dark:text-slate-300">${desc}</td>
-          <td class="px-3 py-2 text-center text-slate-400">${codeCount}종</td>
-          <td class="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">${claim ? claim.toLocaleString()+'건' : '-'}</td>
+          <td class="px-3 py-2" onclick="event.stopPropagation()">
+            <input type="checkbox" data-code="${p6}" onchange="toggleDefectCodeSelect('${p6}',this.checked)" />
+          </td>
+          <td class="px-3 py-2 font-mono font-semibold" style="color:${clrCode}">${p6}</td>
+          <td class="px-3 py-2" style="color:${clrDesc}">${desc}</td>
+          <td class="px-3 py-2 text-center" style="color:${clrMuted}">${codeCount}종</td>
+          <td class="px-3 py-2 text-right font-semibold" style="color:${clrVal}">${claim ? claim.toLocaleString()+'건' : '-'}</td>
         </tr>`).join('');
 
     } else {
@@ -4453,14 +4479,129 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
 
       if (descEl) descEl.textContent = `${entries.length}개 코드 매칭`;
       body.innerHTML = entries.map(({ c, desc, claim }) => `
-        <tr class="border-b border-slate-100 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700/40 cursor-pointer"
+        <tr style="border-bottom:1px solid ${clrBdr}; cursor:pointer;"
+            onmouseover="this.style.background='${clrHover}'" onmouseout="this.style.background=''"
             onclick="document.getElementById('defect-code-input').value='${c}';renderDefectCodeChart();">
-          <td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">${c}</td>
-          <td class="px-3 py-2 text-slate-700 dark:text-slate-300">${desc}</td>
-          <td class="px-3 py-2 text-center text-slate-400">-</td>
-          <td class="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-200">${claim ? claim.toLocaleString()+'건' : '-'}</td>
+          <td class="px-3 py-2" onclick="event.stopPropagation()">
+            <input type="checkbox" data-code="${c}" onchange="toggleDefectCodeSelect('${c}',this.checked)" />
+          </td>
+          <td class="px-3 py-2 font-mono" style="color:${clrCode}">${c}</td>
+          <td class="px-3 py-2" style="color:${clrDesc}">${desc}</td>
+          <td class="px-3 py-2 text-center" style="color:${clrMuted}">-</td>
+          <td class="px-3 py-2 text-right font-semibold" style="color:${clrVal}">${claim ? claim.toLocaleString()+'건' : '-'}</td>
         </tr>`).join('');
     }
+  }
+
+  function _updateCompareBtn() {
+    const btn = document.getElementById('btn-dcode-compare');
+    const cnt = document.getElementById('dcode-compare-cnt');
+    if (!btn) return;
+    btn.classList.toggle('hidden', selectedDefectCodes.size === 0);
+    if (cnt) cnt.textContent = selectedDefectCodes.size > 0 ? selectedDefectCodes.size : '';
+  }
+
+  function toggleDefectCodeSelect(code, checked) {
+    if (checked) selectedDefectCodes.add(code);
+    else selectedDefectCodes.delete(code);
+    _updateCompareBtn();
+  }
+
+  function toggleDefectCodeSelectAll(checked) {
+    document.querySelectorAll('#defect-code-list-body input[type=checkbox]').forEach(cb => {
+      cb.checked = checked;
+      const c = cb.getAttribute('data-code');
+      if (c) { if (checked) selectedDefectCodes.add(c); else selectedDefectCodes.delete(c); }
+    });
+    _updateCompareBtn();
+  }
+
+  function renderDefectMultiChart() {
+    const chartWrap  = document.getElementById('defect-code-chart-wrap');
+    const multiWrap  = document.getElementById('defect-multi-chart-wrap');
+    const canvasEl   = document.getElementById('defect-multi-chart');
+    const listEl     = document.getElementById('defect-code-list');
+    if (!canvasEl || selectedDefectCodes.size === 0) return;
+
+    if (chartWrap) chartWrap.style.display = 'none';
+    if (listEl)    listEl.classList.add('hidden');
+    if (multiWrap) multiWrap.classList.remove('hidden');
+
+    const metric  = dCodeMetric;
+    const codes   = [...selectedDefectCodes];
+    const _isDark = document.body.classList.contains('dark');
+    const gridCol = _isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const tickCol = _isDark ? '#cbd5e1' : '#374151';
+
+    // 전체 월 범위
+    const allRawMonths = [...new Set(DEFECT_RAW.map(r => r[1]))].sort();
+    const firstMonth   = allRawMonths[0];
+    const lastYear     = parseInt(allRawMonths[allRawMonths.length - 1].slice(0, 2));
+    const months = [];
+    let cy = parseInt(firstMonth.slice(0,2)), cm = parseInt(firstMonth.slice(3,5));
+    while (cy < lastYear || (cy === lastYear && cm <= 12)) {
+      months.push(`${String(cy).padStart(2,'0')}-${String(cm).padStart(2,'0')}`);
+      cm++; if (cm > 12) { cm = 1; cy++; }
+    }
+
+    const PALETTE = ['#3B82F6','#EF4444','#10B981','#F59E0B','#8B5CF6','#EC4899','#06B6D4','#F97316','#84CC16','#14B8A6'];
+
+    const datasets = codes.map((code, i) => {
+      const agg = {};
+      for (const row of DEFECT_RAW) {
+        const [br, mo, tp, cd, cnt, amt] = row;
+        if (!cd.startsWith(code)) continue;
+        if (!dActiveBranches.has(br)) continue;
+        agg[mo] = (agg[mo] || 0) + (metric === 'amount' ? amt : cnt);
+      }
+      const color = PALETTE[i % PALETTE.length];
+      const desc  = DEFECT_DESC[Object.keys(DEFECT_DESC).find(k => k.startsWith(code)) || ''] || code;
+      const label = desc.length > 20 ? desc.slice(0,20)+'…' : desc;
+      return {
+        label,
+        data: months.map(m => agg[m] || null),
+        borderColor: color, backgroundColor: color + '22',
+        borderWidth: 2, pointRadius: 3, pointHoverRadius: 5,
+        tension: 0.3, fill: false,
+        datalabels: { display: false }
+      };
+    });
+
+    if (dMultiChart) { dMultiChart.destroy(); dMultiChart = null; }
+    Chart.register(ChartDataLabels);
+    dMultiChart = new Chart(canvasEl, {
+      type: 'line',
+      data: { labels: months.map(getMonthLabel), datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          datalabels: { display: false },
+          legend: { position: 'top', labels: { color: tickCol, font: { size: 11 }, boxWidth: 12 } },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const v = ctx.parsed.y;
+                if (!v) return null;
+                return metric === 'amount'
+                  ? ` ${ctx.dataset.label}: ${Math.round(v/1000000).toLocaleString()}백만원`
+                  : ` ${ctx.dataset.label}: ${v.toLocaleString()}건`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { color: gridCol }, ticks: { color: tickCol, font: { size: 10 } } },
+          y: {
+            grid: { color: gridCol },
+            ticks: {
+              color: tickCol,
+              callback: v => metric === 'amount' ? Math.round(v/1000000).toLocaleString() : v.toLocaleString()
+            }
+          }
+        }
+      }
+    });
   }
 
   function renderDefectCodeChart() {
@@ -4473,12 +4614,16 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     if (!input || !canvasEl) return;
 
     const code = input.value.trim().toUpperCase();
+    const multiWrap = document.getElementById('defect-multi-chart-wrap');
     if (!code) {
-      if (descEl)    descEl.textContent = '';
-      if (emptyEl)   emptyEl.classList.add('hidden');
-      if (listEl)    listEl.classList.add('hidden');
-      if (chartWrap) chartWrap.style.display = '';
+      if (descEl)     descEl.textContent = '';
+      if (emptyEl)    emptyEl.classList.add('hidden');
+      if (listEl)     listEl.classList.add('hidden');
+      if (chartWrap)  chartWrap.style.display = '';
+      if (multiWrap)  multiWrap.classList.add('hidden');
       if (dCodeChart) { dCodeChart.destroy(); dCodeChart = null; }
+      // 선택 초기화
+      selectedDefectCodes.clear(); _updateCompareBtn();
       return;
     }
 
@@ -4486,8 +4631,11 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     if (code.length < 8) {
       if (listEl)    listEl.classList.remove('hidden');
       if (chartWrap) chartWrap.style.display = 'none';
+      if (multiWrap) multiWrap.classList.add('hidden');
       if (emptyEl)   emptyEl.classList.add('hidden');
       if (dCodeChart) { dCodeChart.destroy(); dCodeChart = null; }
+      // 검색어 바뀌면 선택 초기화
+      selectedDefectCodes.clear(); _updateCompareBtn();
       renderDefectCodeList(code);
       return;
     }
@@ -4495,6 +4643,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     // ── 차트 모드 (8자리 이상) ──
     if (listEl)    listEl.classList.add('hidden');
     if (chartWrap) chartWrap.style.display = '';
+    if (multiWrap) multiWrap.classList.add('hidden');
 
     // 코드 설명
     const matchedCode = Object.keys(DEFECT_DESC).find(k => k.startsWith(code));
