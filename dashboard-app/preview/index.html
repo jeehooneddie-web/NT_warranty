@@ -5012,7 +5012,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     });
     const allEl = document.getElementById('dbranch-all');
     if (allEl) allEl.className = 'sales-pill'+(dActiveBranches.size===D_ALL_BR.length?' active':'');
-    renderTopDefect();
+    if (dMainTab === 'code') renderDefectCodeChart(); else renderTopDefect();
   }
 
   function toggleDefectType(tp) {
@@ -5029,7 +5029,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     });
     const allEl = document.getElementById('dtype-all');
     if (allEl) allEl.className = 'sales-pill'+(dActiveTypes.size===D_ALL_TYPES.length?' active':'');
-    renderTopDefect();
+    if (dMainTab === 'code') renderDefectCodeChart(); else renderTopDefect();
   }
 
   function toggleDefectYear(yr) {
