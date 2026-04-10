@@ -4587,6 +4587,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     }
 
     if (dCodeChart) { dCodeChart.destroy(); dCodeChart = null; }
+    Chart.register(ChartDataLabels);
     dCodeChart = new Chart(canvasEl, {
       type: 'bar',
       data: { labels: months.map(getMonthLabel), datasets },
@@ -4594,7 +4595,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
         responsive: true, maintainAspectRatio: false,
         layout: { padding: { top: 28, right: 8 } },
         plugins: {
-          datalabels: {},
+          datalabels: { display: false },
           legend: { display: dCodeDetail, position: 'top', labels: { color: tickCol, font: { size: 11 }, boxWidth: 12 } },
           tooltip: {
             callbacks: {
