@@ -146,6 +146,38 @@ unmatched = [{'code':r[code_col],'count':int(r['count']),'amount':int(r['amount'
 
 ok(f'집계 행: {len(defect_raw):,}  /  미매칭: {len(unmatched)}개')
 
+# ── 5-1. DEFECT_PRICE_STAT 집계 (T/U/V열: 부품/공임/외주) ──────────
+step('DEFECT_PRICE_STAT 집계 중...')
+parts_col  = cols[19]  # T열: 부품
+labor_col  = cols[20]  # U열: 공임
+outsrc_col = cols[21]  # V열: 외주
+for c in [parts_col, labor_col, outsrc_col]:
+    df_c[c] = pd.to_numeric(df_c[c], errors='coerce').fillna(0)
+
+price_agg = df_c.groupby([code_col, city_col, type_col]).agg(
+    cnt       = (parts_col,  'count'),
+    p_max     = (parts_col,  'max'),
+    p_min     = (parts_col,  'min'),
+    p_sum     = (parts_col,  'sum'),
+    l_max     = (labor_col,  'max'),
+    l_min     = (labor_col,  'min'),
+    l_sum     = (labor_col,  'sum'),
+    o_max     = (outsrc_col, 'max'),
+    o_min     = (outsrc_col, 'min'),
+    o_sum     = (outsrc_col, 'sum'),
+).reset_index()
+
+price_stat = {}
+for _, r in price_agg.iterrows():
+    code = str(r[code_col])
+    price_stat.setdefault(code, []).append([
+        str(r[city_col]), str(r[type_col]), int(r['cnt']),
+        int(r['p_max']), int(r['p_min']), int(r['p_sum']),
+        int(r['l_max']), int(r['l_min']), int(r['l_sum']),
+        int(r['o_max']), int(r['o_min']), int(r['o_sum']),
+    ])
+ok(f'DEFECT_PRICE_STAT 코드 수: {len(price_stat):,}')
+
 # ── 6. 개인별 청구 현황 집계 (Task=1, 금액=클레임금액 cols[22]) ──────────
 step('개인별 청구 현황 집계 중...')
 task_col   = cols[8]
@@ -446,9 +478,10 @@ except Exception as _e:
 
 # ── 8-1. JS 문자열 생성 ───────────────────────────────────
 step('JS 데이터 문자열 생성 중...')
-desc_js     = 'const DEFECT_DESC='    + json.dumps(matched_desc, ensure_ascii=False, separators=(',',':')) + ';'
-raw_js      = 'const DEFECT_RAW='     + json.dumps(defect_raw,   ensure_ascii=False, separators=(',',':')) + ';'
-um_js       = 'const DEFECT_UNMATCHED=' + json.dumps(unmatched,  ensure_ascii=False, separators=(',',':')) + ';'
+desc_js     = 'const DEFECT_DESC='       + json.dumps(matched_desc, ensure_ascii=False, separators=(',',':')) + ';'
+raw_js      = 'const DEFECT_RAW='        + json.dumps(defect_raw,   ensure_ascii=False, separators=(',',':')) + ';'
+um_js       = 'const DEFECT_UNMATCHED='  + json.dumps(unmatched,    ensure_ascii=False, separators=(',',':')) + ';'
+price_js    = 'const DEFECT_PRICE_STAT=' + json.dumps(price_stat,   ensure_ascii=False, separators=(',',':')) + ';'
 person_js   = 'const PERSON_DATA='    + json.dumps(person_raw,   ensure_ascii=False, separators=(',',':')) + ';'
 daily_js    = 'const PERSON_DAILY='   + json.dumps(daily_raw,    ensure_ascii=False, separators=(',',':')) + ';'
 tc_js       = 'const TC_DATA='        + json.dumps(tc_data,      ensure_ascii=False, separators=(',',':')) + ';'
@@ -465,9 +498,10 @@ with open(HTML_PATH, 'r', encoding='utf-8') as f:
     html = f.read()
 
 html = re.sub(r'const BRANCH_DATA\s*=\s*\{.*?\};',  branch_js,  html, flags=re.DOTALL)
-html = re.sub(r'const DEFECT_DESC=\{.*?\};',         desc_js,    html, flags=re.DOTALL)
-html = re.sub(r'const DEFECT_RAW=\[.*?\];',          raw_js,     html, flags=re.DOTALL)
-html = re.sub(r'const DEFECT_UNMATCHED=\[.*?\];',    um_js,      html, flags=re.DOTALL)
+html = re.sub(r'const DEFECT_DESC=\{.*?\};',          desc_js,    html, flags=re.DOTALL)
+html = re.sub(r'const DEFECT_RAW=\[.*?\];',           raw_js,     html, flags=re.DOTALL)
+html = re.sub(r'const DEFECT_UNMATCHED=\[.*?\];',     um_js,      html, flags=re.DOTALL)
+html = re.sub(r'const DEFECT_PRICE_STAT=\{.*?\};',    price_js,   html, flags=re.DOTALL)
 html = re.sub(r'const PERSON_DATA=\[.*?\];',         person_js,  html, flags=re.DOTALL)
 html = re.sub(r'const PERSON_DAILY=\[.*?\];',        daily_js,   html, flags=re.DOTALL)
 html = re.sub(r'const TC_DATA=\{.*?\};',             tc_js,      html, flags=re.DOTALL)
