@@ -2956,6 +2956,17 @@
                 <button onclick="setWsMetric('count')"  id="ws-count"  class="sales-pill">건수</button>
               </div>
             </div>
+            <div>
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">지점</span>
+              <div class="pill-group">
+                <button onclick="setWsBranch('전체')" id="ws-branch-전체" class="sales-pill active">전체</button>
+                <button onclick="setWsBranch('전주')" id="ws-branch-전주" class="sales-pill">전주</button>
+                <button onclick="setWsBranch('군산')" id="ws-branch-군산" class="sales-pill">군산</button>
+                <button onclick="setWsBranch('목포')" id="ws-branch-목포" class="sales-pill">목포</button>
+                <button onclick="setWsBranch('서산')" id="ws-branch-서산" class="sales-pill">서산</button>
+                <button onclick="setWsBranch('평택')" id="ws-branch-평택" class="sales-pill">평택</button>
+              </div>
+            </div>
           </div>
         </div>
         <!-- 2025 매트릭스 카드 -->
@@ -6442,7 +6453,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   // ===================== /개인별 청구 현황 =====================
 
   // ===================== 클레임 볼륨 =====================
-  let wsStatus = 'charge', wsMetric = 'amount', wsBase = '보증마감';
+  let wsStatus = 'charge', wsMetric = 'amount', wsBase = '보증마감', wsActiveBranch = '전체';
 
   function setWsBase(b) {
     wsBase = b;
@@ -6469,9 +6480,17 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     });
     renderWholesale();
   }
+  function setWsBranch(br) {
+    wsActiveBranch = br;
+    ['전체','전주','군산','목포','서산','평택'].forEach(b => {
+      const el = document.getElementById('ws-branch-'+b);
+      if (el) el.className = 'sales-pill' + (b === br ? ' active' : '');
+    });
+    renderWholesale();
+  }
 
   function renderWholesale() {
-    const base = WHOLESALE_DATA?.[wsBase];
+    const base = WHOLESALE_DATA?.[wsBase]?.[wsActiveBranch];
     if (!base || Object.keys(base).length === 0) {
       ['25','26'].forEach(yr => {
         const h = document.getElementById('ws-head-'+yr);
@@ -6489,7 +6508,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     const tbody = document.getElementById('ws-body-'+yr);
     if (!thead || !tbody) return;
 
-    const base = WHOLESALE_DATA?.[wsBase] || {};
+    const base = WHOLESALE_DATA?.[wsBase]?.[wsActiveBranch] || {};
     const isCount = wsMetric === 'count';
     const months = Array.from({length:12}, (_,i) => `${yr}-${String(i+1).padStart(2,'0')}`);
     const fmt = v => v ? v.toLocaleString() : '-';
