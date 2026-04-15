@@ -2260,14 +2260,29 @@
             <div class="flex items-center gap-3 flex-wrap">
               <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">디펙트 코드</span>
               <input id="price-code-input" type="text"
-                placeholder="코드 입력 후 Enter (예: 11127510015)"
+                placeholder="디펙트코드 입력 (예: 243504 또는 11127510015)"
+                oninput="onPriceCodeInput()"
                 onkeydown="if(event.key==='Enter') renderDefectPriceStat()"
-                oninput="document.getElementById('price-code-desc').textContent=''"
                 class="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 w-72 outline-none focus:ring-2 focus:ring-blue-500" />
               <button onclick="renderDefectPriceStat()"
                 class="px-4 py-1.5 text-xs font-semibold rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors">조회</button>
               <span id="price-code-desc" class="text-xs text-slate-400 italic"></span>
             </div>
+          </div>
+
+          <!-- 검색 목록 -->
+          <div id="price-code-list" class="hidden overflow-auto rounded-xl border border-slate-200 dark:border-slate-700 mb-4" style="max-height:400px;">
+            <table class="w-full text-xs">
+              <thead class="sticky top-0 bg-slate-50 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400">
+                <tr>
+                  <th class="px-3 py-2 text-left w-40">코드</th>
+                  <th class="px-3 py-2 text-left">설명</th>
+                  <th class="px-3 py-2 text-center w-16">코드 수</th>
+                  <th class="px-3 py-2 text-right w-24">청구 건수</th>
+                </tr>
+              </thead>
+              <tbody id="price-code-list-body"></tbody>
+            </table>
           </div>
 
           <!-- 결과 영역 -->
@@ -4541,10 +4556,106 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     if (_priceCurrentData) _renderPriceBranchChart(_priceCurrentData);
   }
 
+  function onPriceCodeInput() {
+    const code    = (document.getElementById('price-code-input').value || '').trim().toUpperCase();
+    const listEl  = document.getElementById('price-code-list');
+    const resultEl = document.getElementById('price-result-area');
+    const descEl  = document.getElementById('price-code-desc');
+    if (!code) {
+      if (listEl)   listEl.classList.add('hidden');
+      if (resultEl) resultEl.classList.add('hidden');
+      if (descEl)   descEl.textContent = '';
+      return;
+    }
+    if (code.length >= 8) {
+      if (listEl) listEl.classList.add('hidden');
+      renderDefectPriceStat();
+      return;
+    }
+    if (resultEl) resultEl.classList.add('hidden');
+    if (listEl)   listEl.classList.remove('hidden');
+    renderPriceCodeList(code);
+  }
+
+  function renderPriceCodeList(code) {
+    const body  = document.getElementById('price-code-list-body');
+    const descEl = document.getElementById('price-code-desc');
+    if (!body) return;
+
+    const allMatched = Object.keys(DEFECT_DESC).filter(k => k.startsWith(code));
+    if (allMatched.length === 0) {
+      body.innerHTML = '<tr><td colspan="4" class="text-center py-10 text-slate-400">일치하는 코드 없음</td></tr>';
+      if (descEl) descEl.textContent = '';
+      return;
+    }
+
+    // DEFECT_PRICE_STAT 기준 청구 건수 집계
+    const claimByCode = {};
+    for (const [cd, rows] of Object.entries(DEFECT_PRICE_STAT)) {
+      if (!cd.startsWith(code)) continue;
+      claimByCode[cd] = rows.reduce((s, r) => s + r[2], 0);
+    }
+
+    const _isDark = document.body.classList.contains('dark');
+    const clrCode  = _isDark ? '#60a5fa' : '#2563eb';
+    const clrDesc  = _isDark ? '#e2e8f0' : '#1f2937';
+    const clrMuted = _isDark ? '#94a3b8' : '#6b7280';
+    const clrVal   = _isDark ? '#f1f5f9' : '#111827';
+    const clrBdr   = _isDark ? '#334155' : '#e2e8f0';
+    const clrHover = _isDark ? 'rgba(99,102,241,0.1)' : '#eff6ff';
+
+    if (code.length <= 5) {
+      // 그룹 모드: 6자리 prefix 기준
+      const groups = {};
+      for (const c of allMatched) {
+        const p6 = c.slice(0, 6);
+        if (!groups[p6]) groups[p6] = { codes: [], claim: 0 };
+        groups[p6].codes.push(c);
+        groups[p6].claim += claimByCode[c] || 0;
+      }
+      const entries = Object.entries(groups).map(([p6, g]) => {
+        const rep = g.codes.find(c => c === p6+'0000')
+                 || g.codes.find(c => c.endsWith('00'))
+                 || g.codes[0];
+        return { p6, desc: DEFECT_DESC[rep] || '', codeCount: g.codes.length, claim: g.claim };
+      }).sort((a, b) => b.claim - a.claim);
+
+      if (descEl) descEl.textContent = `${entries.length}개 부품 그룹 매칭`;
+      body.innerHTML = entries.map(({ p6, desc, codeCount, claim }) => `
+        <tr style="border-bottom:1px solid ${clrBdr}; cursor:pointer;"
+            onmouseover="this.style.background='${clrHover}'" onmouseout="this.style.background=''"
+            onclick="document.getElementById('price-code-input').value='${p6}';onPriceCodeInput();">
+          <td class="px-3 py-2 font-mono font-semibold" style="color:${clrCode}">${p6}</td>
+          <td class="px-3 py-2" style="color:${clrDesc}">${desc}</td>
+          <td class="px-3 py-2 text-center" style="color:${clrMuted}">${codeCount}종</td>
+          <td class="px-3 py-2 text-right font-semibold" style="color:${clrVal}">${claim ? claim.toLocaleString()+'건' : '-'}</td>
+        </tr>`).join('');
+    } else {
+      // 개별 모드: 6~7자리
+      const entries = allMatched.map(c => ({
+        c, desc: DEFECT_DESC[c] || '', claim: claimByCode[c] || 0
+      })).sort((a, b) => b.claim - a.claim);
+
+      if (descEl) descEl.textContent = `${entries.length}개 코드 매칭`;
+      body.innerHTML = entries.map(({ c, desc, claim }) => `
+        <tr style="border-bottom:1px solid ${clrBdr}; cursor:pointer;"
+            onmouseover="this.style.background='${clrHover}'" onmouseout="this.style.background=''"
+            onclick="document.getElementById('price-code-input').value='${c}';onPriceCodeInput();">
+          <td class="px-3 py-2 font-mono" style="color:${clrCode}">${c}</td>
+          <td class="px-3 py-2" style="color:${clrDesc}">${desc}</td>
+          <td class="px-3 py-2 text-center" style="color:${clrMuted}">-</td>
+          <td class="px-3 py-2 text-right font-semibold" style="color:${clrVal}">${claim ? claim.toLocaleString()+'건' : '-'}</td>
+        </tr>`).join('');
+    }
+  }
+
   function renderDefectPriceStat() {
     const code = (document.getElementById('price-code-input').value || '').trim();
     const descEl   = document.getElementById('price-code-desc');
     const resultEl = document.getElementById('price-result-area');
+    // 목록 숨기기
+    const listEl = document.getElementById('price-code-list');
+    if (listEl) listEl.classList.add('hidden');
     if (!code) { descEl.textContent = '코드를 입력해주세요.'; return; }
 
     const rows = DEFECT_PRICE_STAT[code];
