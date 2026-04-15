@@ -2271,28 +2271,51 @@
               <span id="price-summary-count" class="text-xs text-slate-400"></span>
             </div>
 
-            <!-- 통계 카드 3개 -->
-            <div class="grid grid-cols-3 gap-4 mb-4">
+            <!-- 통계 카드 4개 -->
+            <div class="grid grid-cols-2 gap-3 mb-4" style="grid-template-columns:repeat(4,1fr);">
+              <!-- 총클레임액 -->
+              <div class="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-600 p-4">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="text-base">💰</span>
+                  <span class="text-sm font-bold text-slate-800 dark:text-slate-100">총클레임액</span>
+                </div>
+                <div class="space-y-2 text-sm">
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-medium text-slate-600 dark:text-slate-400">최고</span>
+                    <span id="price-total-max" class="font-semibold text-red-600 dark:text-red-400"></span>
+                  </div>
+                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-medium text-slate-600 dark:text-slate-400">평균</span>
+                    <span id="price-total-avg" class="font-semibold text-blue-600 dark:text-blue-400"></span>
+                  </div>
+                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-medium text-slate-600 dark:text-slate-400">최저</span>
+                    <span id="price-total-min" class="font-semibold text-emerald-600 dark:text-emerald-400"></span>
+                  </div>
+                </div>
+              </div>
               <!-- 부품 -->
               <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                 <div class="flex items-center gap-2 mb-3">
                   <span class="text-base">🔧</span>
-                  <span class="text-sm font-bold text-slate-700 dark:text-slate-200">부품</span>
+                  <span class="text-sm font-bold text-slate-800 dark:text-slate-100">부품</span>
                 </div>
                 <div class="space-y-2 text-sm">
                   <div class="flex justify-between items-center">
-                    <span class="text-xs text-slate-400">최고</span>
-                    <span id="price-parts-max" class="font-semibold text-red-500 dark:text-red-400"></span>
+                    <span class="text-xs font-medium text-slate-600 dark:text-slate-400">최고</span>
+                    <span id="price-parts-max" class="font-semibold text-red-600 dark:text-red-400"></span>
                   </div>
-                  <div class="border-t border-slate-100 dark:border-slate-700"></div>
+                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
                   <div class="flex justify-between items-center">
-                    <span class="text-xs text-slate-400">평균</span>
-                    <span id="price-parts-avg" class="font-semibold text-blue-500 dark:text-blue-400"></span>
+                    <span class="text-xs font-medium text-slate-600 dark:text-slate-400">평균</span>
+                    <span id="price-parts-avg" class="font-semibold text-blue-600 dark:text-blue-400"></span>
                   </div>
-                  <div class="border-t border-slate-100 dark:border-slate-700"></div>
+                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
                   <div class="flex justify-between items-center">
-                    <span class="text-xs text-slate-400">최저</span>
-                    <span id="price-parts-min" class="font-semibold text-emerald-500 dark:text-emerald-400"></span>
+                    <span class="text-xs font-medium text-slate-600 dark:text-slate-400">최저</span>
+                    <span id="price-parts-min" class="font-semibold text-emerald-600 dark:text-emerald-400"></span>
                   </div>
                 </div>
               </div>
@@ -2300,22 +2323,22 @@
               <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                 <div class="flex items-center gap-2 mb-3">
                   <span class="text-base">🔨</span>
-                  <span class="text-sm font-bold text-slate-700 dark:text-slate-200">공임</span>
+                  <span class="text-sm font-bold text-slate-800 dark:text-slate-100">공임</span>
                 </div>
                 <div class="space-y-2 text-sm">
                   <div class="flex justify-between items-center">
-                    <span class="text-xs text-slate-400">최고</span>
-                    <span id="price-labor-max" class="font-semibold text-red-500 dark:text-red-400"></span>
+                    <span class="text-xs font-medium text-slate-600 dark:text-slate-400">최고</span>
+                    <span id="price-labor-max" class="font-semibold text-red-600 dark:text-red-400"></span>
                   </div>
-                  <div class="border-t border-slate-100 dark:border-slate-700"></div>
+                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
                   <div class="flex justify-between items-center">
-                    <span class="text-xs text-slate-400">평균</span>
-                    <span id="price-labor-avg" class="font-semibold text-blue-500 dark:text-blue-400"></span>
+                    <span class="text-xs font-medium text-slate-600 dark:text-slate-400">평균</span>
+                    <span id="price-labor-avg" class="font-semibold text-blue-600 dark:text-blue-400"></span>
                   </div>
-                  <div class="border-t border-slate-100 dark:border-slate-700"></div>
+                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
                   <div class="flex justify-between items-center">
-                    <span class="text-xs text-slate-400">최저</span>
-                    <span id="price-labor-min" class="font-semibold text-emerald-500 dark:text-emerald-400"></span>
+                    <span class="text-xs font-medium text-slate-600 dark:text-slate-400">최저</span>
+                    <span id="price-labor-min" class="font-semibold text-emerald-600 dark:text-emerald-400"></span>
                   </div>
                 </div>
               </div>
@@ -2323,22 +2346,22 @@
               <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                 <div class="flex items-center gap-2 mb-3">
                   <span class="text-base">🏭</span>
-                  <span class="text-sm font-bold text-slate-700 dark:text-slate-200">외주</span>
+                  <span class="text-sm font-bold text-slate-800 dark:text-slate-100">외주</span>
                 </div>
                 <div class="space-y-2 text-sm">
                   <div class="flex justify-between items-center">
-                    <span class="text-xs text-slate-400">최고</span>
-                    <span id="price-outsrc-max" class="font-semibold text-red-500 dark:text-red-400"></span>
+                    <span class="text-xs font-medium text-slate-600 dark:text-slate-400">최고</span>
+                    <span id="price-outsrc-max" class="font-semibold text-red-600 dark:text-red-400"></span>
                   </div>
-                  <div class="border-t border-slate-100 dark:border-slate-700"></div>
+                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
                   <div class="flex justify-between items-center">
-                    <span class="text-xs text-slate-400">평균</span>
-                    <span id="price-outsrc-avg" class="font-semibold text-blue-500 dark:text-blue-400"></span>
+                    <span class="text-xs font-medium text-slate-600 dark:text-slate-400">평균</span>
+                    <span id="price-outsrc-avg" class="font-semibold text-blue-600 dark:text-blue-400"></span>
                   </div>
-                  <div class="border-t border-slate-100 dark:border-slate-700"></div>
+                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
                   <div class="flex justify-between items-center">
-                    <span class="text-xs text-slate-400">최저</span>
-                    <span id="price-outsrc-min" class="font-semibold text-emerald-500 dark:text-emerald-400"></span>
+                    <span class="text-xs font-medium text-slate-600 dark:text-slate-400">최저</span>
+                    <span id="price-outsrc-min" class="font-semibold text-emerald-600 dark:text-emerald-400"></span>
                   </div>
                 </div>
               </div>
@@ -2349,7 +2372,8 @@
               <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">지점별 평균 비교</span>
                 <div class="flex gap-1">
-                  <button onclick="setPriceChartBasis('parts')"  id="pbasis-parts"  class="sales-pill active">부품</button>
+                  <button onclick="setPriceChartBasis('total')"  id="pbasis-total"  class="sales-pill active">총클레임액</button>
+                  <button onclick="setPriceChartBasis('parts')"  id="pbasis-parts"  class="sales-pill">부품</button>
                   <button onclick="setPriceChartBasis('labor')"  id="pbasis-labor"  class="sales-pill">공임</button>
                   <button onclick="setPriceChartBasis('outsrc')" id="pbasis-outsrc" class="sales-pill">외주</button>
                 </div>
@@ -4486,12 +4510,12 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
 
   // ── 청구견적 조회 ────────────────────────────────────────────────────
   let _priceChartInst = null;
-  let _priceBasis = 'parts';
+  let _priceBasis = 'total';
   let _priceCurrentData = null;
 
   function setPriceChartBasis(b) {
     _priceBasis = b;
-    ['parts','labor','outsrc'].forEach(k => {
+    ['total','parts','labor','outsrc'].forEach(k => {
       const el = document.getElementById('pbasis-'+k);
       if (el) el.className = 'sales-pill' + (k === b ? ' active' : '');
     });
@@ -4525,11 +4549,12 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     }
 
     // 전체 통계 계산 (건수 가중 평균)
-    // row: [지점, ClaimType, cnt, p_max, p_min, p_sum, l_max, l_min, l_sum, o_max, o_min, o_sum]
+    // row: [지점, ClaimType, cnt, p_max, p_min, p_sum, l_max, l_min, l_sum, o_max, o_min, o_sum, t_max, t_min, t_sum]
     const totalCnt = filtered.reduce((s, r) => s + r[2], 0);
     const stat = {
-      parts:  { max: Math.max(...filtered.map(r=>r[3])),  min: Math.min(...filtered.map(r=>r[4])),  avg: Math.round(filtered.reduce((s,r)=>s+r[5],0) / totalCnt) },
-      labor:  { max: Math.max(...filtered.map(r=>r[6])),  min: Math.min(...filtered.map(r=>r[7])),  avg: Math.round(filtered.reduce((s,r)=>s+r[8],0) / totalCnt) },
+      total:  { max: Math.max(...filtered.map(r=>r[12])), min: Math.min(...filtered.map(r=>r[13])), avg: Math.round(filtered.reduce((s,r)=>s+r[14],0) / totalCnt) },
+      parts:  { max: Math.max(...filtered.map(r=>r[3])),  min: Math.min(...filtered.map(r=>r[4])),  avg: Math.round(filtered.reduce((s,r)=>s+r[5],0)  / totalCnt) },
+      labor:  { max: Math.max(...filtered.map(r=>r[6])),  min: Math.min(...filtered.map(r=>r[7])),  avg: Math.round(filtered.reduce((s,r)=>s+r[8],0)  / totalCnt) },
       outsrc: { max: Math.max(...filtered.map(r=>r[9])),  min: Math.min(...filtered.map(r=>r[10])), avg: Math.round(filtered.reduce((s,r)=>s+r[11],0) / totalCnt) },
     };
 
@@ -4539,7 +4564,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     document.getElementById('price-summary-code').textContent  = code + (desc ? '  —  ' + desc : '');
     document.getElementById('price-summary-count').textContent = `총 ${totalCnt.toLocaleString()}건`;
 
-    ['parts','labor','outsrc'].forEach(k => {
+    ['total','parts','labor','outsrc'].forEach(k => {
       document.getElementById(`price-${k}-max`).textContent = fmt(stat[k].max);
       document.getElementById(`price-${k}-avg`).textContent = fmt(stat[k].avg);
       document.getElementById(`price-${k}-min`).textContent = fmt(stat[k].min);
@@ -4556,8 +4581,8 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     filtered.forEach(r => {
       const br = r[0];
       if (!bMap[br]) bMap[br] = { cnt:0, sum:0 };
-      // basis 인덱스: parts=5/2, labor=8/2, outsrc=11/2 → sum/cnt
-      const sumIdx = _priceBasis === 'parts' ? 5 : _priceBasis === 'labor' ? 8 : 11;
+      // basis 인덱스: total=14, parts=5, labor=8, outsrc=11 → sum/cnt
+      const sumIdx = _priceBasis === 'total' ? 14 : _priceBasis === 'parts' ? 5 : _priceBasis === 'labor' ? 8 : 11;
       bMap[br].cnt += r[2];
       bMap[br].sum += r[sumIdx];
     });
@@ -4565,7 +4590,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     const avgs = branches.map(b => bMap[b].cnt ? Math.round(bMap[b].sum / bMap[b].cnt) : 0);
     const counts = branches.map(b => bMap[b].cnt);
     const labels = branches.map((b,i) => `${b} (${counts[i]}건)`);
-    const basisLabel = _priceBasis === 'parts' ? '부품' : _priceBasis === 'labor' ? '공임' : '외주';
+    const basisLabel = _priceBasis === 'total' ? '총클레임액' : _priceBasis === 'parts' ? '부품' : _priceBasis === 'labor' ? '공임' : '외주';
 
     if (_priceChartInst) { _priceChartInst.destroy(); _priceChartInst = null; }
     const ctx = document.getElementById('price-branch-chart');

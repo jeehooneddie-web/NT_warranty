@@ -165,6 +165,9 @@ price_agg = df_c.groupby([code_col, city_col, type_col]).agg(
     o_max     = (outsrc_col, 'max'),
     o_min     = (outsrc_col, 'min'),
     o_sum     = (outsrc_col, 'sum'),
+    t_max     = (amount_col, 'max'),
+    t_min     = (amount_col, 'min'),
+    t_sum     = (amount_col, 'sum'),
 ).reset_index()
 
 price_stat = {}
@@ -175,6 +178,7 @@ for _, r in price_agg.iterrows():
         int(r['p_max']), int(r['p_min']), int(r['p_sum']),
         int(r['l_max']), int(r['l_min']), int(r['l_sum']),
         int(r['o_max']), int(r['o_min']), int(r['o_sum']),
+        int(r['t_max']), int(r['t_min']), int(r['t_sum']),
     ])
 ok(f'DEFECT_PRICE_STAT 코드 수: {len(price_stat):,}')
 
