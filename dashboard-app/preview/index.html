@@ -2294,106 +2294,57 @@
               <span id="price-summary-count" class="text-xs text-slate-600 dark:text-slate-400"></span>
             </div>
 
-            <!-- 통계 카드 4개 -->
-            <div class="grid grid-cols-2 gap-3 mb-4" style="grid-template-columns:repeat(4,1fr);">
-              <!-- 총클레임액 -->
-              <div class="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-600 p-4">
-                <div class="flex items-center gap-2 mb-3">
-                  <span class="text-base">💰</span>
-                  <span class="text-sm font-bold text-slate-900 dark:text-slate-100">총클레임액</span>
-                </div>
-                <div class="space-y-2 text-sm">
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-400">최고</span>
-                    <span id="price-total-max" class="font-semibold text-red-600 dark:text-red-400"></span>
-                  </div>
-                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-400">평균</span>
-                    <span id="price-total-avg" class="font-semibold text-blue-600 dark:text-blue-400"></span>
-                  </div>
-                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-400">최저</span>
-                    <span id="price-total-min" class="font-semibold text-emerald-600 dark:text-emerald-400"></span>
-                  </div>
-                </div>
-              </div>
-              <!-- 부품 -->
-              <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                <div class="flex items-center gap-2 mb-3">
-                  <span class="text-base">🔧</span>
-                  <span class="text-sm font-bold text-slate-900 dark:text-slate-100">부품</span>
-                </div>
-                <div class="space-y-2 text-sm">
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-400">최고</span>
-                    <span id="price-parts-max" class="font-semibold text-red-600 dark:text-red-400"></span>
-                  </div>
-                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-400">평균</span>
-                    <span id="price-parts-avg" class="font-semibold text-blue-600 dark:text-blue-400"></span>
-                  </div>
-                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-400">최저</span>
-                    <span id="price-parts-min" class="font-semibold text-emerald-600 dark:text-emerald-400"></span>
-                  </div>
-                </div>
-              </div>
-              <!-- 공임 -->
-              <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                <div class="flex items-center gap-2 mb-3">
-                  <span class="text-base">🔨</span>
-                  <span class="text-sm font-bold text-slate-900 dark:text-slate-100">공임</span>
-                </div>
-                <div class="space-y-2 text-sm">
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-400">최고</span>
-                    <span id="price-labor-max" class="font-semibold text-red-600 dark:text-red-400"></span>
-                  </div>
-                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-400">평균</span>
-                    <span id="price-labor-avg" class="font-semibold text-blue-600 dark:text-blue-400"></span>
-                  </div>
-                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-400">최저</span>
-                    <span id="price-labor-min" class="font-semibold text-emerald-600 dark:text-emerald-400"></span>
-                  </div>
-                </div>
-              </div>
-              <!-- 외주 -->
-              <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                <div class="flex items-center gap-2 mb-3">
-                  <span class="text-base">🏭</span>
-                  <span class="text-sm font-bold text-slate-900 dark:text-slate-100">외주</span>
-                </div>
-                <div class="space-y-2 text-sm">
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-400">최고</span>
-                    <span id="price-outsrc-max" class="font-semibold text-red-600 dark:text-red-400"></span>
-                  </div>
-                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-400">평균</span>
-                    <span id="price-outsrc-avg" class="font-semibold text-blue-600 dark:text-blue-400"></span>
-                  </div>
-                  <div class="border-t border-slate-200 dark:border-slate-700"></div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-400">최저</span>
-                    <span id="price-outsrc-min" class="font-semibold text-emerald-600 dark:text-emerald-400"></span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!-- 2×2 인사이트 그리드 -->
+            <div class="grid grid-cols-2 gap-3">
 
-            <!-- 인사이트 3분할 카드 -->
-            <div class="grid gap-3" style="grid-template-columns:repeat(3,1fr);">
+              <!-- 상단 좌: 통합 테이블 -->
+              <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-3">청구 통계</span>
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-slate-200 dark:border-slate-700">
+                      <th class="pb-2 text-left text-xs font-semibold text-slate-400 w-28"></th>
+                      <th class="pb-2 text-right text-xs font-semibold text-red-500">최고</th>
+                      <th class="pb-2 text-right text-xs font-semibold text-blue-500">평균</th>
+                      <th class="pb-2 text-right text-xs font-semibold text-emerald-500">최저</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                      <td class="py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300">💰 총클레임액</td>
+                      <td class="py-2.5 text-right font-semibold tabular-nums text-red-600 dark:text-red-400 text-xs"><span id="price-total-max"></span></td>
+                      <td class="py-2.5 text-right font-semibold tabular-nums text-blue-600 dark:text-blue-400 text-xs"><span id="price-total-avg"></span></td>
+                      <td class="py-2.5 text-right font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 text-xs"><span id="price-total-min"></span></td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                      <td class="py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300">🔧 부품</td>
+                      <td class="py-2.5 text-right font-semibold tabular-nums text-red-600 dark:text-red-400 text-xs"><span id="price-parts-max"></span></td>
+                      <td class="py-2.5 text-right font-semibold tabular-nums text-blue-600 dark:text-blue-400 text-xs"><span id="price-parts-avg"></span></td>
+                      <td class="py-2.5 text-right font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 text-xs"><span id="price-parts-min"></span></td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                      <td class="py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300">🔨 공임</td>
+                      <td class="py-2.5 text-right font-semibold tabular-nums text-red-600 dark:text-red-400 text-xs"><span id="price-labor-max"></span></td>
+                      <td class="py-2.5 text-right font-semibold tabular-nums text-blue-600 dark:text-blue-400 text-xs"><span id="price-labor-avg"></span></td>
+                      <td class="py-2.5 text-right font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 text-xs"><span id="price-labor-min"></span></td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                      <td class="py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300">🏭 외주</td>
+                      <td class="py-2.5 text-right font-semibold tabular-nums text-red-600 dark:text-red-400 text-xs"><span id="price-outsrc-max"></span></td>
+                      <td class="py-2.5 text-right font-semibold tabular-nums text-blue-600 dark:text-blue-400 text-xs"><span id="price-outsrc-avg"></span></td>
+                      <td class="py-2.5 text-right font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 text-xs"><span id="price-outsrc-min"></span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
-              <!-- A. 비용 구성비 -->
+              <!-- 상단 우: 유형별 평균 청구액 -->
+              <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-3">유형별 평균 청구액</span>
+                <div id="price-type-table"></div>
+              </div>
+
+              <!-- 하단 좌: 비용 구성비 -->
               <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                 <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-3">비용 구성비</span>
                 <div style="position:relative; height:150px;">
@@ -2402,13 +2353,7 @@
                 <div id="price-donut-legend" class="mt-3 space-y-1.5"></div>
               </div>
 
-              <!-- B. 유형별 평균 청구액 -->
-              <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-3">유형별 평균 청구액</span>
-                <div id="price-type-table"></div>
-              </div>
-
-              <!-- C. 청구 범위 Range Bar -->
+              <!-- 하단 우: 청구 범위 -->
               <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                 <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-3">청구 범위 (최저 — 평균 — 최고)</span>
                 <div id="price-range-bars" class="space-y-4"></div>
