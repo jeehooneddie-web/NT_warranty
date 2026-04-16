@@ -2125,7 +2125,7 @@
               <button onclick="toggleDefectBranch('서산')" id="dbranch-서산" class="sales-pill">서산</button>
             </div>
           </div>
-          <div class="flex items-center gap-3 mb-3">
+          <div id="defect-filter-type" class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">타입</span>
             <div class="pill-group">
               <button onclick="toggleDefectType('all')" id="dtype-all" class="sales-pill active">전체</button>
@@ -4488,11 +4488,13 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     const mainSec  = document.getElementById('defect-main-section');
     const codeSec  = document.getElementById('defect-code-section');
     const priceSec = document.getElementById('defect-price-section');
-    const ymFilter = document.getElementById('defect-filter-yearmonth');
-    if (mainSec)  mainSec.classList.toggle('hidden',  tab !== 'topdefect');
-    if (codeSec)  codeSec.classList.toggle('hidden',  tab !== 'code');
-    if (priceSec) priceSec.classList.toggle('hidden', tab !== 'price');
-    if (ymFilter) ymFilter.classList.toggle('hidden', tab !== 'topdefect');
+    const ymFilter   = document.getElementById('defect-filter-yearmonth');
+    const typeFilter = document.getElementById('defect-filter-type');
+    if (mainSec)    mainSec.classList.toggle('hidden',    tab !== 'topdefect');
+    if (codeSec)    codeSec.classList.toggle('hidden',    tab !== 'code');
+    if (priceSec)   priceSec.classList.toggle('hidden',   tab !== 'price');
+    if (ymFilter)   ymFilter.classList.toggle('hidden',   tab !== 'topdefect');
+    if (typeFilter) typeFilter.classList.toggle('hidden', tab === 'price');
     if (tab === 'code') renderDefectCodeChart();
     else if (tab === 'topdefect') renderTopDefect();
   }
@@ -5444,7 +5446,9 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     });
     const allEl = document.getElementById('dbranch-all');
     if (allEl) allEl.className = 'sales-pill'+(dActiveBranches.size===D_ALL_BR.length?' active':'');
-    if (dMainTab === 'code') renderDefectCodeChart(); else renderTopDefect();
+    if (dMainTab === 'price') { if (_priceCurrentData) renderDefectPriceStat(); }
+    else if (dMainTab === 'code') renderDefectCodeChart();
+    else renderTopDefect();
   }
 
   function toggleDefectType(tp) {
