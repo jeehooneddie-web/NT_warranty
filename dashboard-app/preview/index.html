@@ -2390,20 +2390,30 @@
               </div>
             </div>
 
-            <!-- 지점별 비교 차트 -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-              <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">지점별 평균 비교</span>
-                <div class="flex gap-1">
-                  <button onclick="setPriceChartBasis('total')"  id="pbasis-total"  class="sales-pill active">총클레임액</button>
-                  <button onclick="setPriceChartBasis('parts')"  id="pbasis-parts"  class="sales-pill">부품</button>
-                  <button onclick="setPriceChartBasis('labor')"  id="pbasis-labor"  class="sales-pill">공임</button>
-                  <button onclick="setPriceChartBasis('outsrc')" id="pbasis-outsrc" class="sales-pill">외주</button>
+            <!-- 인사이트 3분할 카드 -->
+            <div class="grid gap-3" style="grid-template-columns:repeat(3,1fr);">
+
+              <!-- A. 비용 구성비 -->
+              <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-3">비용 구성비</span>
+                <div style="position:relative; height:150px;">
+                  <canvas id="price-donut-chart"></canvas>
                 </div>
+                <div id="price-donut-legend" class="mt-3 space-y-1.5"></div>
               </div>
-              <div style="position:relative; height:220px;">
-                <canvas id="price-branch-chart"></canvas>
+
+              <!-- B. 유형별 평균 청구액 -->
+              <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-3">유형별 평균 청구액</span>
+                <div id="price-type-table"></div>
               </div>
+
+              <!-- C. 청구 범위 Range Bar -->
+              <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-3">청구 범위 (최저 — 평균 — 최고)</span>
+                <div id="price-range-bars" class="space-y-4"></div>
+              </div>
+
             </div>
 
           </div><!-- /price-result-area -->
@@ -4543,18 +4553,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
   }
 
   // ── 청구견적 조회 ────────────────────────────────────────────────────
-  let _priceChartInst = null;
-  let _priceBasis = 'total';
   let _priceCurrentData = null;
-
-  function setPriceChartBasis(b) {
-    _priceBasis = b;
-    ['total','parts','labor','outsrc'].forEach(k => {
-      const el = document.getElementById('pbasis-'+k);
-      if (el) el.className = 'sales-pill' + (k === b ? ' active' : '');
-    });
-    if (_priceCurrentData) _renderPriceBranchChart(_priceCurrentData);
-  }
 
   function onPriceCodeInput() {
     const code    = (document.getElementById('price-code-input').value || '').trim().toUpperCase();
@@ -4716,60 +4715,136 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
 
     _priceCurrentData = filtered;
     resultEl.classList.remove('hidden');
-    _renderPriceBranchChart(filtered);
+    _renderPriceInsightCards(filtered);
   }
 
-  function _renderPriceBranchChart(filtered) {
-    // 지점별 집계
-    const bMap = {};
-    filtered.forEach(r => {
-      const br = r[0];
-      if (!bMap[br]) bMap[br] = { cnt:0, sum:0 };
-      // basis 인덱스: total=14, parts=5, labor=8, outsrc=11 → sum/cnt
-      const hasTotalData = filtered[0] && filtered[0][14] !== undefined;
-      const basis = (_priceBasis === 'total' && !hasTotalData) ? 'parts' : _priceBasis;
-      const sumIdx = basis === 'total' ? 14 : basis === 'parts' ? 5 : basis === 'labor' ? 8 : 11;
-      bMap[br].cnt += r[2];
-      bMap[br].sum += r[sumIdx];
-    });
-    const branches = Object.keys(bMap).sort();
-    const avgs = branches.map(b => bMap[b].cnt ? Math.round(bMap[b].sum / bMap[b].cnt) : 0);
-    const counts = branches.map(b => bMap[b].cnt);
-    const labels = branches.map((b,i) => `${b} (${counts[i]}건)`);
-    const basisLabel = basis === 'total' ? '총클레임액' : basis === 'parts' ? '부품' : basis === 'labor' ? '공임' : '외주';
+  let _priceDonutInst = null;
 
-    if (_priceChartInst) { _priceChartInst.destroy(); _priceChartInst = null; }
-    const ctx = document.getElementById('price-branch-chart');
-    if (!ctx) return;
-    _priceChartInst = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: `${basisLabel} 평균`,
-          data: avgs,
-          backgroundColor: 'rgba(59,130,246,0.7)',
-          borderColor: 'rgba(59,130,246,1)',
-          borderWidth: 1,
-          borderRadius: 4,
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: { label: ctx => ctx.raw.toLocaleString('ko-KR') + '원' }
+  function _renderPriceInsightCards(filtered) {
+    const totalCnt = filtered.reduce((s,r) => s+r[2], 0);
+    if (!totalCnt) return;
+    const hasTotalData = filtered[0] && filtered[0][12] !== undefined;
+
+    // ── 공통 집계 ─────────────────────────────────────────────
+    const pSum = filtered.reduce((s,r)=>s+r[5],0);
+    const lSum = filtered.reduce((s,r)=>s+r[8],0);
+    const oSum = filtered.reduce((s,r)=>s+r[11],0);
+    const pAvg = Math.round(pSum/totalCnt);
+    const lAvg = Math.round(lSum/totalCnt);
+    const oAvg = Math.round(oSum/totalCnt);
+    const tAvg = hasTotalData ? Math.round(filtered.reduce((s,r)=>s+(r[14]||0),0)/totalCnt) : pAvg+lAvg+oAvg;
+    const tMin = hasTotalData ? Math.min(...filtered.map(r=>r[13])) : 0;
+    const tMax = hasTotalData ? Math.max(...filtered.map(r=>r[12])) : 0;
+
+    // ── A. 비용 구성비 도넛 ───────────────────────────────────
+    const tot3 = pAvg + lAvg + oAvg || 1;
+    const donutData = [pAvg, lAvg, oAvg];
+    const donutColors = ['#3b82f6','#f59e0b','#10b981'];
+    const donutLabels = ['부품','공임','외주'];
+    const fmt = n => n.toLocaleString('ko-KR')+'원';
+    const pct = v => ((v/tot3)*100).toFixed(1)+'%';
+    const _isDark = document.body.classList.contains('dark');
+    const legendEl = document.getElementById('price-donut-legend');
+    if (legendEl) {
+      legendEl.innerHTML = donutLabels.map((lb,i) => `
+        <div class="flex justify-between items-center text-xs">
+          <span class="flex items-center gap-1.5">
+            <span style="width:8px;height:8px;border-radius:2px;background:${donutColors[i]};display:inline-block;"></span>
+            <span style="color:${_isDark?'#cbd5e1':'#374151'}">${lb}</span>
+          </span>
+          <span class="font-semibold tabular-nums" style="color:${_isDark?'#f1f5f9':'#111827'}">
+            ${pct(donutData[i])} <span style="color:${_isDark?'#94a3b8':'#6b7280'};font-weight:400">(${fmt(donutData[i])})</span>
+          </span>
+        </div>`).join('');
+    }
+    if (_priceDonutInst) { _priceDonutInst.destroy(); _priceDonutInst = null; }
+    const ctx = document.getElementById('price-donut-chart');
+    if (ctx) {
+      _priceDonutInst = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: donutLabels, datasets: [{ data: donutData, backgroundColor: donutColors, borderWidth: 2 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '65%',
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: c => `${c.label}: ${pct(c.raw)} (${fmt(c.raw)})` } }
           }
-        },
-        scales: {
-          x: { ticks: { callback: v => (v/10000).toFixed(0)+'만' }, grid: { color: 'rgba(148,163,184,0.1)' } },
-          y: { ticks: { font: { size: 11 } } }
         }
-      }
+      });
+    }
+
+    // ── B. 유형별 평균 청구액 테이블 ─────────────────────────
+    const typeMap = {};
+    filtered.forEach(r => {
+      const tp = r[1];
+      if (!typeMap[tp]) typeMap[tp] = { cnt:0, tSum:0, pSum:0 };
+      typeMap[tp].cnt  += r[2];
+      typeMap[tp].tSum += hasTotalData ? (r[14]||0) : 0;
+      typeMap[tp].pSum += r[5];
     });
+    const typeEntries = Object.entries(typeMap).sort((a,b)=>b[1].cnt-a[1].cnt);
+    const typeColors = { BSI:'#3b82f6', Warranty:'#8b5cf6', 'TC/RECALL':'#f59e0b', Goodwill:'#10b981', WP:'#ec4899', 'LOCAL TC':'#6366f1' };
+    const typeEl = document.getElementById('price-type-table');
+    if (typeEl) {
+      typeEl.innerHTML = `<div class="space-y-2">${typeEntries.map(([tp, d]) => {
+        const avg = d.cnt ? Math.round((hasTotalData ? d.tSum : d.pSum) / d.cnt) : 0;
+        const maxAvg = Math.max(...typeEntries.map(([,x])=> x.cnt ? Math.round((hasTotalData?x.tSum:x.pSum)/x.cnt):0)) || 1;
+        const barW = Math.round((avg/maxAvg)*100);
+        const clr = typeColors[tp] || '#94a3b8';
+        return `<div>
+          <div class="flex justify-between items-center text-xs mb-1">
+            <span class="font-semibold" style="color:${clr}">${tp}</span>
+            <span style="color:${_isDark?'#f1f5f9':'#111827'}" class="tabular-nums">${fmt(avg)} <span style="color:${_isDark?'#94a3b8':'#6b7280'}">${d.cnt}건</span></span>
+          </div>
+          <div style="height:6px;border-radius:3px;background:${_isDark?'#334155':'#e2e8f0'}">
+            <div style="height:100%;border-radius:3px;width:${barW}%;background:${clr};opacity:0.8;transition:width 0.4s"></div>
+          </div>
+        </div>`;
+      }).join('')}</div>`;
+    }
+
+    // ── C. 청구 범위 Range Bar ────────────────────────────────
+    const ranges = [
+      { label:'총클레임액', color:'#0ea5e9',
+        min: hasTotalData ? tMin : 0,
+        max: hasTotalData ? tMax : 0,
+        avg: tAvg, has: hasTotalData },
+      { label:'부품', color:'#3b82f6',
+        min: Math.min(...filtered.map(r=>r[4])),
+        max: Math.max(...filtered.map(r=>r[3])),
+        avg: pAvg, has: true },
+      { label:'공임', color:'#f59e0b',
+        min: Math.min(...filtered.map(r=>r[7])),
+        max: Math.max(...filtered.map(r=>r[6])),
+        avg: lAvg, has: true },
+      { label:'외주', color:'#10b981',
+        min: Math.min(...filtered.map(r=>r[10])),
+        max: Math.max(...filtered.map(r=>r[9])),
+        avg: oAvg, has: true },
+    ];
+    const rangeEl = document.getElementById('price-range-bars');
+    if (rangeEl) {
+      rangeEl.innerHTML = ranges.map(({ label, color, min, max, avg, has }) => {
+        if (!has) return `<div class="text-xs" style="color:${_isDark?'#94a3b8':'#6b7280'}">${label} — 업데이트 후 표시</div>`;
+        const span = max - min || 1;
+        const pos = Math.round(((avg - min) / span) * 100);
+        const fmtS = n => n >= 10000 ? (n/10000).toFixed(0)+'만' : n.toLocaleString();
+        return `<div>
+          <div class="flex justify-between items-center text-xs mb-1">
+            <span class="font-semibold" style="color:${color}">${label}</span>
+            <span class="tabular-nums" style="color:${_isDark?'#f1f5f9':'#111827'}">평균 ${fmt(avg)}</span>
+          </div>
+          <div style="position:relative;height:8px;border-radius:4px;background:${_isDark?'#334155':'#e2e8f0'}">
+            <div style="position:absolute;left:0;top:0;height:100%;border-radius:4px;width:100%;background:linear-gradient(90deg,${color}22,${color}55)"></div>
+            <div style="position:absolute;top:-3px;left:calc(${pos}% - 7px);width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>
+          </div>
+          <div class="flex justify-between text-[10px] mt-1" style="color:${_isDark?'#94a3b8':'#6b7280'}">
+            <span>최저 ${fmtS(min)}</span>
+            <span>최고 ${fmtS(max)}</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
   }
 
   function setDefectTab(tab) {
