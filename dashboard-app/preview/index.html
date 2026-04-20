@@ -2912,17 +2912,12 @@
             <div class="flex items-center gap-3 mb-3">
               <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">비교 지점</span>
               <span class="text-[10px] nm-text-sub">(최대 3개)</span>
-              <div class="flex gap-2 flex-wrap">
-                <label id="cmp-lbl-전주" class="flex items-center gap-1.5 px-3 py-1 rounded-lg cursor-pointer text-xs font-semibold transition-all border-2 border-blue-500 text-blue-500" style="user-select:none;">
-                  <input type="checkbox" class="hidden" onchange="toggleCmpBranch('전주',this.checked)"> 전주</label>
-                <label id="cmp-lbl-평택" class="flex items-center gap-1.5 px-3 py-1 rounded-lg cursor-pointer text-xs font-semibold transition-all border-2 nm-text-sub" style="user-select:none;border-color:rgba(148,163,184,0.3)">
-                  <input type="checkbox" class="hidden" onchange="toggleCmpBranch('평택',this.checked)"> 평택</label>
-                <label id="cmp-lbl-군산" class="flex items-center gap-1.5 px-3 py-1 rounded-lg cursor-pointer text-xs font-semibold transition-all border-2 nm-text-sub" style="user-select:none;border-color:rgba(148,163,184,0.3)">
-                  <input type="checkbox" class="hidden" onchange="toggleCmpBranch('군산',this.checked)"> 군산</label>
-                <label id="cmp-lbl-목포" class="flex items-center gap-1.5 px-3 py-1 rounded-lg cursor-pointer text-xs font-semibold transition-all border-2 nm-text-sub" style="user-select:none;border-color:rgba(148,163,184,0.3)">
-                  <input type="checkbox" class="hidden" onchange="toggleCmpBranch('목포',this.checked)"> 목포</label>
-                <label id="cmp-lbl-서산" class="flex items-center gap-1.5 px-3 py-1 rounded-lg cursor-pointer text-xs font-semibold transition-all border-2 nm-text-sub" style="user-select:none;border-color:rgba(148,163,184,0.3)">
-                  <input type="checkbox" class="hidden" onchange="toggleCmpBranch('서산',this.checked)"> 서산</label>
+              <div class="pill-group">
+                <button id="cmp-lbl-전주" onclick="toggleCmpBranch('전주')" class="sales-pill active">전주</button>
+                <button id="cmp-lbl-평택" onclick="toggleCmpBranch('평택')" class="sales-pill">평택</button>
+                <button id="cmp-lbl-군산" onclick="toggleCmpBranch('군산')" class="sales-pill">군산</button>
+                <button id="cmp-lbl-목포" onclick="toggleCmpBranch('목포')" class="sales-pill">목포</button>
+                <button id="cmp-lbl-서산" onclick="toggleCmpBranch('서산')" class="sales-pill">서산</button>
               </div>
             </div>
             <!-- 타입 -->
@@ -4356,29 +4351,28 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     if (!isMain) renderSalesCompare();
   }
 
-  function toggleCmpBranch(branch, checked) {
-    if (checked) {
-      if (cmpBranches.length >= 3) {
-        // 최대 3개 초과 시 체크 해제
-        const lbl = document.getElementById('cmp-lbl-'+branch);
-        if (lbl) lbl.querySelector('input').checked = false;
-        return;
-      }
-      if (!cmpBranches.includes(branch)) cmpBranches.push(branch);
-    } else {
+  function toggleCmpBranch(branch) {
+    const isActive = cmpBranches.includes(branch);
+    if (isActive) {
       cmpBranches = cmpBranches.filter(b => b !== branch);
+    } else {
+      if (cmpBranches.length >= 3) return; // 최대 3개
+      cmpBranches.push(branch);
     }
-    // 라벨 스타일 업데이트
-    ALL_BRANCHES.forEach(b => {
-      const lbl = document.getElementById('cmp-lbl-'+b);
-      if (!lbl) return;
-      const active = cmpBranches.includes(b);
-      const col = CMP_COLORS[b];
-      lbl.style.borderColor = active ? col : 'rgba(148,163,184,0.3)';
-      lbl.style.color = active ? col : '';
-      lbl.className = 'flex items-center gap-1.5 px-3 py-1 rounded-lg cursor-pointer text-xs font-semibold transition-all border-2 ' + (active ? '' : 'nm-text-sub');
-    });
+    _updateCmpBranchPills();
     renderSalesCompare();
+  }
+
+  function _updateCmpBranchPills() {
+    ALL_BRANCHES.forEach(b => {
+      const btn = document.getElementById('cmp-lbl-'+b);
+      if (!btn) return;
+      const active = cmpBranches.includes(b);
+      btn.classList.toggle('active', active);
+      btn.style.background = active ? CMP_COLORS[b] : '';
+      btn.style.boxShadow  = active ? '0 0 12px '+CMP_COLORS[b]+'55' : '';
+      btn.style.color      = active ? '#fff' : '';
+    });
   }
 
   function setCmpFilter(id, prefix, val) {
@@ -4547,15 +4541,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
 
   // 초기 지점 선택 상태 설정 (전주 기본 선택)
   function initCmpBranchLabels() {
-    ALL_BRANCHES.forEach(b => {
-      const lbl = document.getElementById('cmp-lbl-'+b);
-      if (!lbl) return;
-      const active = cmpBranches.includes(b);
-      const col = CMP_COLORS[b];
-      lbl.style.borderColor = active ? col : 'rgba(148,163,184,0.3)';
-      lbl.style.color = active ? col : '';
-      if (active) lbl.querySelector('input').checked = true;
-    });
+    _updateCmpBranchPills();
   }
 
   function initSalesChart() {
