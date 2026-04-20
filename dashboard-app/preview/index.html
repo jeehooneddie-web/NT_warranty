@@ -4868,358 +4868,308 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
   let _dcCmpBranches = new Set(['전주','평택','군산','목포','서산']);
   let _dcCmpChart    = null;
   let _dcCmpSelected = new Set();
+  let _dcCmpDebounce = null;
   const DC_BRANCHES  = ['전주','평택','군산','목포','서산'];
 
   function switchDefectSubTab(tab) {
     const isTrend = tab === 'trend';
     const t = _tc();
-    document.getElementById('dcsub-trend').style.cssText   = isTrend  ? 'background:#3B82F6;color:#fff;' : 'background:rgba(148,163,184,0.12);color:'+t.textSub+';';
-    document.getElementById('dcsub-compare').style.cssText = !isTrend ? 'background:#3B82F6;color:#fff;' : 'background:rgba(148,163,184,0.12);color:'+t.textSub+';';
+    const activeStyle   = 'background:#3B82F6;color:#fff;padding:7px 16px;font-size:12px;font-weight:700;border:none;border-radius:8px;cursor:pointer;';
+    const inactiveStyle = 'background:rgba(148,163,184,0.12);color:'+t.textSub+';padding:7px 16px;font-size:12px;font-weight:700;border:none;border-radius:8px;cursor:pointer;';
+    document.getElementById('dcsub-trend').style.cssText   = isTrend  ? activeStyle : inactiveStyle;
+    document.getElementById('dcsub-compare').style.cssText = !isTrend ? activeStyle : inactiveStyle;
     document.getElementById('dcsub-trend-wrap').classList.toggle('hidden', !isTrend);
     document.getElementById('dcsub-compare-wrap').classList.toggle('hidden', isTrend);
-    if (!isTrend) { _initDcCmpPills(); renderDefectBranchCompare(); }
+    if (!isTrend) _buildDcCmpPills();
   }
 
-  function onDcCmpCodeInput() {
-    const code = (document.getElementById('dccmp-code-input').value || '').trim().toUpperCase();
-    const listEl = document.getElementById('dccmp-code-list');
-    if (!code) {
-      if (listEl) listEl.classList.add('hidden');
-      renderDefectBranchCompare();
-      return;
-    }
-    if (code.length >= 8) {
-      if (listEl) listEl.classList.add('hidden');
-      renderDefectBranchCompare();
-      return;
-    }
-    // 1~7자리: 목록 표시
-    if (listEl) listEl.classList.remove('hidden');
-    _renderDcCmpCodeList(code);
-  }
-
-  function _renderDcCmpCodeList(code) {
-    const body = document.getElementById('dccmp-code-list-body');
-    if (!body) return;
-    const allMatched = Object.keys(DEFECT_DESC).filter(k => k.startsWith(code));
-    if (allMatched.length === 0) {
-      body.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">일치하는 코드 없음</td></tr>';
-      return;
-    }
-    const claimByCode = {};
-    for (const row of DEFECT_RAW) {
-      const [br, mo, tp, cd, cnt] = row;
-      if (!cd.startsWith(code)) continue;
-      claimByCode[cd] = (claimByCode[cd] || 0) + cnt;
-    }
-    const _isDark = document.body.classList.contains('dark');
-    const clrCode  = _isDark ? '#60a5fa' : '#2563eb';
-    const clrDesc  = _isDark ? '#e2e8f0' : '#1f2937';
-    const clrMuted = _isDark ? '#94a3b8' : '#6b7280';
-    const clrVal   = _isDark ? '#f1f5f9' : '#111827';
-    const clrBdr   = _isDark ? '#334155' : '#e2e8f0';
-    const clrHover = _isDark ? 'rgba(99,102,241,0.1)' : '#eff6ff';
-    const allCb = document.getElementById('dccmp-check-all');
-    if (allCb) allCb.checked = false;
-
-    if (code.length <= 5) {
-      const groups = {};
-      for (const c of allMatched) {
-        const p6 = c.slice(0,6);
-        if (!groups[p6]) groups[p6] = { codes:[], claim:0 };
-        groups[p6].codes.push(c);
-        groups[p6].claim += claimByCode[c] || 0;
-      }
-      const entries = Object.entries(groups).map(([p6,g]) => {
-        const rep = g.codes.find(c=>c===p6+'0000') || g.codes.find(c=>c.endsWith('00')) || g.codes[0];
-        return { p6, desc: DEFECT_DESC[rep]||'', codeCount:g.codes.length, claim:g.claim };
-      }).sort((a,b)=>b.claim-a.claim);
-      body.innerHTML = entries.map(({p6,desc,codeCount,claim}) => {
-        const checked = _dcCmpSelected.has(p6) ? 'checked' : '';
-        return `<tr style="border-bottom:1px solid ${clrBdr};"
-            onmouseover="this.style.background='${clrHover}'" onmouseout="this.style.background=''">
-          <td class="px-3 py-2" onclick="event.stopPropagation()">
-            <input type="checkbox" data-code="${p6}" ${checked} onchange="toggleDcCmpCodeSelect('${p6}',this.checked)" />
-          </td>
-          <td class="px-3 py-2 font-mono font-semibold" style="color:${clrCode}">${p6}</td>
-          <td class="px-3 py-2" style="color:${clrDesc}">${desc}</td>
-          <td class="px-3 py-2 text-center" style="color:${clrMuted}">${codeCount}종</td>
-          <td class="px-3 py-2 text-right font-semibold" style="color:${clrVal}">${claim?claim.toLocaleString()+'건':'-'}</td>
-        </tr>`;
-      }).join('');
-    } else {
-      const entries = allMatched.map(c=>({c, desc:DEFECT_DESC[c]||'', claim:claimByCode[c]||0}))
-                                .sort((a,b)=>b.claim-a.claim);
-      body.innerHTML = entries.map(({c,desc,claim}) => {
-        const checked = _dcCmpSelected.has(c) ? 'checked' : '';
-        return `<tr style="border-bottom:1px solid ${clrBdr};"
-            onmouseover="this.style.background='${clrHover}'" onmouseout="this.style.background=''">
-          <td class="px-3 py-2" onclick="event.stopPropagation()">
-            <input type="checkbox" data-code="${c}" ${checked} onchange="toggleDcCmpCodeSelect('${c}',this.checked)" />
-          </td>
-          <td class="px-3 py-2 font-mono" style="color:${clrCode}">${c}</td>
-          <td class="px-3 py-2" style="color:${clrDesc}">${desc}</td>
-          <td class="px-3 py-2 text-center" style="color:${clrMuted}">-</td>
-          <td class="px-3 py-2 text-right font-semibold" style="color:${clrVal}">${claim?claim.toLocaleString()+'건':'-'}</td>
-        </tr>`;
-      }).join('');
-    }
-  }
-
-  function toggleDcCmpCodeSelect(code, checked) {
-    if (checked) _dcCmpSelected.add(code);
-    else _dcCmpSelected.delete(code);
-    _updateDcCmpSelectedBar();
-    renderDefectBranchCompare();
-  }
-
-  function toggleDcCmpCodeSelectAll(checked) {
-    document.querySelectorAll('#dccmp-code-list-body input[type=checkbox]').forEach(cb => {
-      const c = cb.dataset.code; if (!c) return;
-      cb.checked = checked;
-      if (checked) _dcCmpSelected.add(c); else _dcCmpSelected.delete(c);
-    });
-    _updateDcCmpSelectedBar();
-    renderDefectBranchCompare();
-  }
-
-  function clearDcCmpSelected() {
-    _dcCmpSelected.clear();
-    document.querySelectorAll('#dccmp-code-list-body input[type=checkbox]').forEach(cb => cb.checked = false);
-    const allCb = document.getElementById('dccmp-check-all'); if (allCb) allCb.checked = false;
-    _updateDcCmpSelectedBar();
-    renderDefectBranchCompare();
-  }
-
-  function _updateDcCmpSelectedBar() {
-    const bar  = document.getElementById('dccmp-selected-bar');
-    const info = document.getElementById('dccmp-selected-info');
-    const tags = document.getElementById('dccmp-selected-tags');
-    if (!bar) return;
-    if (_dcCmpSelected.size === 0) { bar.classList.add('hidden'); bar.classList.remove('flex'); return; }
-    bar.classList.remove('hidden'); bar.classList.add('flex');
-    if (info) info.textContent = `${_dcCmpSelected.size}개 선택`;
-    if (tags) {
-      const _isDark = document.body.classList.contains('dark');
-      tags.innerHTML = [..._dcCmpSelected].map(c => {
-        const short = c.length > 8 ? c.slice(0,8)+'…' : c;
-        return `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(59,130,246,0.15);color:#3b82f6;">
-          ${short}
-          <span onclick="toggleDcCmpCodeSelect('${c}',false)" style="cursor:pointer;opacity:.7;font-size:13px;line-height:1;">×</span>
-        </span>`;
-      }).join('');
-    }
-  }
-
-  function _initDcCmpPills() {
+  // ── 지점 pills (매번 재빌드 — 상태 동기화 보장) ──
+  function _buildDcCmpPills() {
     const wrap = document.getElementById('dccmp-branch-pills');
-    if (wrap.children.length) return;
+    if (!wrap) return;
     const t = _tc();
     wrap.innerHTML = DC_BRANCHES.map(b => {
       const active = _dcCmpBranches.has(b);
       const col    = CMP_COLORS[b];
       return `<button id="dccmp-pill-${b}" onclick="toggleDcCmpBranch('${b}')"
         style="padding:5px 14px;font-size:12px;font-weight:700;border-radius:20px;cursor:pointer;transition:all .2s;
-               border:1px solid ${active ? 'transparent' : t.border};
-               background:${active ? col : 'transparent'};
-               color:${active ? '#fff' : t.textSub};
-               box-shadow:${active ? '0 0 10px '+col+'55' : 'none'};">${b}</button>`;
+               border:1px solid ${active?'transparent':t.border};
+               background:${active?col:'transparent'};color:${active?'#fff':t.textSub};
+               box-shadow:${active?'0 0 10px '+col+'55':'none'};">${b}</button>`;
     }).join('');
   }
 
   function toggleDcCmpBranch(b) {
-    if (_dcCmpBranches.has(b)) {
-      if (_dcCmpBranches.size === 1) return;
-      _dcCmpBranches.delete(b);
-    } else {
-      _dcCmpBranches.add(b);
-    }
-    const t = _tc(); const col = CMP_COLORS[b]; const active = _dcCmpBranches.has(b);
+    if (_dcCmpBranches.has(b)) { if (_dcCmpBranches.size===1) return; _dcCmpBranches.delete(b); }
+    else _dcCmpBranches.add(b);
+    const t   = _tc(); const col = CMP_COLORS[b]; const active = _dcCmpBranches.has(b);
     const btn = document.getElementById('dccmp-pill-'+b);
     if (btn) {
-      btn.style.background  = active ? col : 'transparent';
-      btn.style.color       = active ? '#fff' : t.textSub;
-      btn.style.border      = '1px solid ' + (active ? 'transparent' : t.border);
-      btn.style.boxShadow   = active ? '0 0 10px '+col+'55' : 'none';
+      btn.style.cssText = `padding:5px 14px;font-size:12px;font-weight:700;border-radius:20px;cursor:pointer;transition:all .2s;
+        border:1px solid ${active?'transparent':t.border};background:${active?col:'transparent'};
+        color:${active?'#fff':t.textSub};box-shadow:${active?'0 0 10px '+col+'55':'none'};`;
     }
-    renderDefectBranchCompare();
+    _dcCmpRender();
   }
 
   function setDcCmpMetric(m) {
     _dcCmpMetric = m;
-    const t = _tc();
     ['amount','count'].forEach(k => {
       const el = document.getElementById('dccmp-'+k);
-      if (!el) return;
-      el.classList.toggle('active', k === m);
+      if (el) el.classList.toggle('active', k===m);
     });
-    renderDefectBranchCompare();
+    _dcCmpRender();
   }
 
-  function renderDefectBranchCompare() {
+  // ── 코드 입력 핸들러 (추이 차트와 동일 방식) ──
+  function onDcCmpCodeInput() {
+    const code = (document.getElementById('dccmp-code-input')?.value||'').trim().toUpperCase();
+    const listEl = document.getElementById('dccmp-code-list');
+    if (!code) {
+      if (listEl) listEl.classList.add('hidden');
+      _dcCmpRender(); return;
+    }
+    if (code.length >= 8) {
+      if (listEl) listEl.classList.add('hidden');
+      _dcCmpRender(); return;
+    }
+    if (listEl) listEl.classList.remove('hidden');
+    _renderDcCmpList(code);
+  }
+
+  function _renderDcCmpList(code) {
+    const body = document.getElementById('dccmp-code-list-body');
+    if (!body) return;
+    const allMatched = Object.keys(DEFECT_DESC).filter(k => k.startsWith(code));
+    if (!allMatched.length) {
+      body.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">일치하는 코드 없음</td></tr>';
+      return;
+    }
+    const claimByCode = {};
+    for (const [br,mo,tp,cd,cnt] of DEFECT_RAW) {
+      if (cd.startsWith(code)) claimByCode[cd] = (claimByCode[cd]||0) + cnt;
+    }
+    const d = document.body.classList.contains('dark');
+    const cc = d?'#60a5fa':'#2563eb', cd2=d?'#e2e8f0':'#1f2937',
+          cm2=d?'#94a3b8':'#6b7280', cv=d?'#f1f5f9':'#111827',
+          cb=d?'#334155':'#e2e8f0', ch=d?'rgba(99,102,241,.1)':'#eff6ff';
+    const allCb = document.getElementById('dccmp-check-all');
+    if (allCb) allCb.checked = false;
+
+    let rows;
+    if (code.length <= 5) {
+      const groups = {};
+      for (const c of allMatched) {
+        const p6 = c.slice(0,6);
+        if (!groups[p6]) groups[p6] = {codes:[],claim:0};
+        groups[p6].codes.push(c); groups[p6].claim += claimByCode[c]||0;
+      }
+      rows = Object.entries(groups).map(([p6,g]) => {
+        const rep = g.codes.find(c=>c===p6+'0000')||g.codes.find(c=>c.endsWith('00'))||g.codes[0];
+        return {key:p6, desc:DEFECT_DESC[rep]||'', sub:g.codes.length+'종', claim:g.claim};
+      }).sort((a,b)=>b.claim-a.claim);
+    } else {
+      rows = allMatched.map(c=>({key:c,desc:DEFECT_DESC[c]||'',sub:'-',claim:claimByCode[c]||0}))
+                       .sort((a,b)=>b.claim-a.claim);
+    }
+    body.innerHTML = rows.map(({key,desc,sub,claim})=>{
+      const chk = _dcCmpSelected.has(key)?'checked':'';
+      return `<tr style="border-bottom:1px solid ${cb};" onmouseover="this.style.background='${ch}'" onmouseout="this.style.background=''">
+        <td class="px-3 py-2" onclick="event.stopPropagation()"><input type="checkbox" data-code="${key}" ${chk} onchange="toggleDcCmpCode('${key}',this.checked)"/></td>
+        <td class="px-3 py-2 font-mono font-semibold" style="color:${cc}">${key}</td>
+        <td class="px-3 py-2" style="color:${cd2}">${desc}</td>
+        <td class="px-3 py-2 text-center" style="color:${cm2}">${sub}</td>
+        <td class="px-3 py-2 text-right font-semibold" style="color:${cv}">${claim?claim.toLocaleString()+'건':'-'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function toggleDcCmpCode(code, checked) {
+    if (checked) _dcCmpSelected.add(code); else _dcCmpSelected.delete(code);
+    _updateDcCmpBar();
+    _dcCmpRender();
+  }
+
+  function toggleDcCmpCodeSelectAll(checked) {
+    document.querySelectorAll('#dccmp-code-list-body input[type=checkbox]').forEach(cb=>{
+      if (!cb.dataset.code) return;
+      cb.checked = checked;
+      if (checked) _dcCmpSelected.add(cb.dataset.code); else _dcCmpSelected.delete(cb.dataset.code);
+    });
+    _updateDcCmpBar(); _dcCmpRender();
+  }
+
+  function clearDcCmpSelected() {
+    _dcCmpSelected.clear();
+    document.querySelectorAll('#dccmp-code-list-body input[type=checkbox]').forEach(cb=>cb.checked=false);
+    const a=document.getElementById('dccmp-check-all'); if(a) a.checked=false;
+    _updateDcCmpBar(); _dcCmpRender();
+  }
+
+  function _updateDcCmpBar() {
+    const bar=document.getElementById('dccmp-selected-bar');
+    const info=document.getElementById('dccmp-selected-info');
+    const tags=document.getElementById('dccmp-selected-tags');
+    if (!bar) return;
+    if (_dcCmpSelected.size===0){ bar.classList.add('hidden'); bar.classList.remove('flex'); return; }
+    bar.classList.remove('hidden'); bar.classList.add('flex');
+    if (info) info.textContent = `${_dcCmpSelected.size}개 선택`;
+    if (tags) tags.innerHTML = [..._dcCmpSelected].map(c=>{
+      const s = c.length>8?c.slice(0,8)+'…':c;
+      return `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(59,130,246,.15);color:#3b82f6;">${s}<span onclick="toggleDcCmpCode('${c}',false)" style="cursor:pointer;opacity:.7;">×</span></span>`;
+    }).join('');
+  }
+
+  // ── 핵심 렌더 (debounce 적용) ──
+  function _dcCmpRender() {
+    clearTimeout(_dcCmpDebounce);
+    _dcCmpDebounce = setTimeout(_dcCmpRenderNow, 80);
+  }
+
+  function _dcCmpRenderNow() {
     const input   = document.getElementById('dccmp-code-input');
     const descEl  = document.getElementById('dccmp-code-desc');
     const emptyEl = document.getElementById('dccmp-empty');
     const tblWrap = document.getElementById('dccmp-table-wrap');
     if (!input) return;
 
-    const code = (input.value || '').trim().toUpperCase();
-    // 유효 코드 집합: 체크박스 선택 우선, 없으면 단일 입력(8자 이상)
-    const activeCodes = _dcCmpSelected.size > 0
-      ? [..._dcCmpSelected]
-      : (code.length >= 8 ? [code] : []);
+    const code = (input.value||'').trim().toUpperCase();
+    const activeCodes = _dcCmpSelected.size > 0 ? [..._dcCmpSelected]
+                      : (code.length >= 8 ? [code] : []);
 
-    if (activeCodes.length === 0) {
+    if (!activeCodes.length) {
       if (descEl) descEl.textContent = '';
       if (emptyEl) emptyEl.classList.add('hidden');
       if (tblWrap) tblWrap.classList.add('hidden');
       if (_dcCmpChart) { _dcCmpChart.destroy(); _dcCmpChart = null; }
-      document.getElementById('dccmp-stat-cards').innerHTML = '';
+      const sc = document.getElementById('dccmp-stat-cards'); if(sc) sc.innerHTML='';
       return;
     }
 
-    // 설명 표시
-    if (activeCodes.length === 1) {
-      const matchedCode = Object.keys(DEFECT_DESC).find(k => k.startsWith(activeCodes[0]));
-      if (descEl) descEl.textContent = matchedCode ? (matchedCode + ': ' + DEFECT_DESC[matchedCode]) : '(설명 없음)';
+    if (activeCodes.length===1) {
+      const mk = Object.keys(DEFECT_DESC).find(k=>k.startsWith(activeCodes[0]));
+      if (descEl) descEl.textContent = mk ? mk+': '+DEFECT_DESC[mk] : '(설명 없음)';
     } else {
-      if (descEl) descEl.textContent = `${activeCodes.length}개 코드 합산`;
+      if (descEl) descEl.textContent = activeCodes.length+'개 코드 합산';
     }
 
     // 전체 월 범위
-    const allMonths = [...new Set(DEFECT_RAW.map(r => r[1]))].sort();
-    const firstM = allMonths[0];
-    const lastY  = parseInt(allMonths[allMonths.length-1].slice(0,2));
-    const months = [];
-    let cy = parseInt(firstM.slice(0,2)), cm = parseInt(firstM.slice(3,5));
-    while (cy < lastY || (cy === lastY && cm <= 12)) {
+    const allM = [...new Set(DEFECT_RAW.map(r=>r[1]))].sort();
+    const months=[], lastY=parseInt(allM[allM.length-1].slice(0,2));
+    let cy=parseInt(allM[0].slice(0,2)), cm=parseInt(allM[0].slice(3,5));
+    while(cy<lastY||(cy===lastY&&cm<=12)){
       months.push(`${String(cy).padStart(2,'0')}-${String(cm).padStart(2,'0')}`);
-      cm++; if (cm > 12) { cm = 1; cy++; }
+      cm++; if(cm>12){cm=1;cy++;}
     }
+
+    // 코드 prefix 집합 (빠른 매칭)
+    const prefixSet = new Set(activeCodes);
 
     // 지점 × 월 집계
-    const agg = {}; // { branch: { month: value } }
-    for (const row of DEFECT_RAW) {
-      const [br, mo, tp, cd, cnt, amt] = row;
-      if (!activeCodes.some(c => cd.startsWith(c))) continue;
+    const agg = {};
+    for (const [br,mo,tp,cd,cnt,amt] of DEFECT_RAW) {
+      let match = false;
+      for (const p of prefixSet) { if (cd.startsWith(p)){ match=true; break; } }
+      if (!match) continue;
       if (!dActiveTypes.has(tp)) continue;
-      if (!agg[br]) agg[br] = {};
-      if (!agg[br][mo]) agg[br][mo] = { count: 0, amount: 0 };
-      agg[br][mo].count  += cnt;
-      agg[br][mo].amount += amt;
+      if (!agg[br]) agg[br]={};
+      if (!agg[br][mo]) agg[br][mo]={count:0,amount:0};
+      agg[br][mo].count+=cnt; agg[br][mo].amount+=amt;
     }
 
-    const activeBr = DC_BRANCHES.filter(b => _dcCmpBranches.has(b));
+    const activeBr = DC_BRANCHES.filter(b=>_dcCmpBranches.has(b));
     const metric   = _dcCmpMetric;
-    const hasData  = activeBr.some(b => months.some(m => agg[b]?.[m]?.[metric] > 0));
+    const hasData  = activeBr.some(b=>months.some(m=>(agg[b]?.[m]?.[metric]||0)>0));
     if (emptyEl) emptyEl.classList.toggle('hidden', hasData);
     if (!hasData) {
-      if (_dcCmpChart) { _dcCmpChart.destroy(); _dcCmpChart = null; }
+      if (_dcCmpChart){_dcCmpChart.destroy();_dcCmpChart=null;}
       if (tblWrap) tblWrap.classList.add('hidden');
-      document.getElementById('dccmp-stat-cards').innerHTML = '';
+      const sc=document.getElementById('dccmp-stat-cards'); if(sc) sc.innerHTML='';
       return;
     }
 
-    const _isDark = document.body.classList.contains('dark');
-    const gridCol = _isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
-    const tickCol = _isDark ? '#cbd5e1' : '#374151';
-    const unitSuffix = metric === 'amount' ? '백만' : '건';
+    const dk    = document.body.classList.contains('dark');
+    const gridC = dk?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
+    const tickC = dk?'#cbd5e1':'#374151';
+    const unit  = metric==='amount'?'백만':'건';
+    const t     = _tc();
 
     // 누계 카드
     const cardsEl = document.getElementById('dccmp-stat-cards');
-    cardsEl.innerHTML = DC_BRANCHES.map(b => {
-      const active = _dcCmpBranches.has(b);
-      const total  = active ? months.reduce((s,m) => s + (agg[b]?.[m]?.[metric] || 0), 0) : 0;
-      const dispVal = metric === 'amount' ? Math.round(total/1000000).toLocaleString() + '백만' : total.toLocaleString() + '건';
-      const t = _tc();
-      return `<div style="background:${t.cardAlt};border:1px solid ${t.border};border-radius:10px;padding:12px 16px;flex:1;min-width:90px;opacity:${active?1:0.3};">
+    if (cardsEl) cardsEl.innerHTML = DC_BRANCHES.map(b=>{
+      const on = _dcCmpBranches.has(b);
+      const tot = on ? months.reduce((s,m)=>s+(agg[b]?.[m]?.[metric]||0),0) : 0;
+      const dv  = metric==='amount'?Math.round(tot/1000000).toLocaleString()+'백만':tot.toLocaleString()+'건';
+      return `<div style="background:${t.cardAlt};border:1px solid ${t.border};border-radius:10px;padding:12px 16px;flex:1;min-width:90px;opacity:${on?1:.3};">
         <div style="font-size:11px;color:${t.textSub};margin-bottom:4px;">${b} 누계</div>
-        <div style="font-size:17px;font-weight:800;color:${CMP_COLORS[b]};">${active ? dispVal : '—'}</div>
+        <div style="font-size:17px;font-weight:800;color:${CMP_COLORS[b]};">${on?dv:'—'}</div>
       </div>`;
     }).join('');
 
-    // 그룹 바 datasets
-    const datasets = activeBr.map(b => ({
-      label: b,
-      data: months.map(m => {
-        const v = agg[b]?.[m]?.[metric] || 0;
-        return metric === 'amount' ? (v > 0 ? Math.round(v/1000000) : null) : (v > 0 ? v : null);
-      }),
-      backgroundColor: CMP_COLORS[b] + 'bb',
-      borderColor: CMP_COLORS[b],
-      borderWidth: 1.5,
-      borderRadius: 4,
-      maxBarThickness: 28,
-      datalabels: {
-        display: ctx => (ctx.parsed.y || 0) > 0,
-        anchor: 'end', align: 'end',
-        color: CMP_COLORS[b],
-        font: { size: 10, weight: '700' },
-        formatter: v => v + unitSuffix,
-      }
+    // datasets
+    const datasets = activeBr.map(b=>({
+      label:b,
+      data: months.map(m=>{ const v=agg[b]?.[m]?.[metric]||0; return metric==='amount'?(v>0?Math.round(v/1000000):null):(v>0?v:null); }),
+      backgroundColor: CMP_COLORS[b]+'bb', borderColor:CMP_COLORS[b],
+      borderWidth:1.5, borderRadius:4, maxBarThickness:28,
+      datalabels:{ display:ctx=>(ctx.parsed.y||0)>0, anchor:'end', align:'end',
+                   color:CMP_COLORS[b], font:{size:10,weight:'700'},
+                   formatter:v=>v+unit }
     }));
 
-    if (_dcCmpChart) { _dcCmpChart.destroy(); _dcCmpChart = null; }
-    Chart.register(ChartDataLabels);
-    const _cmpWrap = document.getElementById('dccmp-chart-wrap');
-    const _oldC = document.getElementById('dccmp-chart');
-    if (_oldC) _oldC.remove();
-    const _newC = document.createElement('canvas'); _newC.id = 'dccmp-chart';
-    _cmpWrap.appendChild(_newC);
-    _dcCmpChart = new Chart(_newC.getContext('2d'), {
-      type: 'bar',
-      data: { labels: months.map(getMonthLabel), datasets },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        layout: { padding: { top: 28, right: 8 } },
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { labels: { color: tickCol, font: { size: 12, weight: '700' }, boxWidth: 12, padding: 14 } },
-          tooltip: {
-            backgroundColor: _isDark ? '#0f172a' : '#fff',
-            borderColor: _isDark ? '#334155' : '#e2e8f0', borderWidth: 1,
-            titleColor: tickCol, bodyColor: _isDark ? '#94a3b8' : '#374151',
-            callbacks: { label: ctx => {
-              const v = ctx.parsed.y; if (!v) return null;
-              return ` ${ctx.dataset.label}: ${metric==='amount' ? v+'백만원' : v+'건'}`;
-            }}
+    // 차트 생성
+    if (_dcCmpChart){_dcCmpChart.destroy();_dcCmpChart=null;}
+    const wrap=document.getElementById('dccmp-chart-wrap');
+    const old=document.getElementById('dccmp-chart'); if(old) old.remove();
+    const cv2=document.createElement('canvas'); cv2.id='dccmp-chart'; wrap.appendChild(cv2);
+    _dcCmpChart = new Chart(cv2.getContext('2d'),{
+      type:'bar',
+      data:{ labels:months.map(getMonthLabel), datasets },
+      plugins:[ChartDataLabels],
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        layout:{ padding:{top:28,right:8} },
+        interaction:{ mode:'index', intersect:false },
+        plugins:{
+          legend:{ labels:{ color:tickC, font:{size:12,weight:'700'}, boxWidth:12, padding:14 } },
+          tooltip:{
+            backgroundColor:dk?'#0f172a':'#fff', borderColor:dk?'#334155':'#e2e8f0', borderWidth:1,
+            titleColor:tickC, bodyColor:dk?'#94a3b8':'#374151',
+            callbacks:{ label:ctx=>{ const v=ctx.parsed.y; if(!v) return null;
+              return ` ${ctx.dataset.label}: ${metric==='amount'?v+'백만원':v+'건'}`; }}
           }
         },
-        scales: {
-          x: { ticks: { color: tickCol, font: { size: 11 } }, grid: { color: gridCol } },
-          y: { ticks: { color: tickCol, font: { size: 11 }, callback: v => v + unitSuffix }, grid: { color: gridCol } }
+        scales:{
+          x:{ ticks:{color:tickC,font:{size:11}}, grid:{color:gridC} },
+          y:{ ticks:{color:tickC,font:{size:11},callback:v=>v+unit}, grid:{color:gridC} }
         }
       }
     });
 
     // 하단 테이블
-    const unitEl = document.getElementById('dccmp-tbl-unit');
-    if (unitEl) unitEl.textContent = '단위: ' + (metric === 'amount' ? '백만원' : '건');
-    const thead = document.querySelector('#dccmp-table thead');
-    const tbody = document.querySelector('#dccmp-table tbody');
-    if (thead && tbody) {
-      const t = _tc();
-      thead.innerHTML = `<tr style="background:${t.cardAlt};">
+    const unitEl=document.getElementById('dccmp-tbl-unit');
+    if(unitEl) unitEl.textContent='단위: '+(metric==='amount'?'백만원':'건');
+    const thead=document.querySelector('#dccmp-table thead');
+    const tbody=document.querySelector('#dccmp-table tbody');
+    if(thead&&tbody){
+      thead.innerHTML=`<tr style="background:${t.cardAlt};">
         <th style="padding:8px 14px;text-align:left;color:${t.textSub};font-size:11px;font-weight:700;border-bottom:1px solid ${t.border};">지점</th>
         ${months.map(m=>`<th style="padding:8px 10px;text-align:center;color:${t.textSub};font-size:11px;font-weight:700;border-bottom:1px solid ${t.border};white-space:nowrap;">${m}</th>`).join('')}
-        <th style="padding:8px 14px;text-align:right;color:${t.textSub};font-size:11px;font-weight:700;border-bottom:1px solid ${t.border};">합계</th>
-      </tr>`;
-      const monthTotals = months.map(m => activeBr.reduce((s,b)=>s+(agg[b]?.[m]?.[metric]||0),0));
-      const grand = monthTotals.reduce((s,v)=>s+v,0);
-      const fmt = v => metric==='amount' ? (v>0?Math.round(v/1000000):0) : v;
-      tbody.innerHTML = activeBr.map(b => {
-        const vals  = months.map(m => agg[b]?.[m]?.[metric] || 0);
-        const total = vals.reduce((s,v)=>s+v,0);
+        <th style="padding:8px 14px;text-align:right;color:${t.textSub};font-size:11px;font-weight:700;border-bottom:1px solid ${t.border};">합계</th></tr>`;
+      const mTot=months.map(m=>activeBr.reduce((s,b)=>s+(agg[b]?.[m]?.[metric]||0),0));
+      const grand=mTot.reduce((s,v)=>s+v,0);
+      const fmt=v=>metric==='amount'?(v>0?Math.round(v/1000000):0):v;
+      tbody.innerHTML=activeBr.map(b=>{
+        const vals=months.map(m=>agg[b]?.[m]?.[metric]||0);
+        const tot=vals.reduce((s,v)=>s+v,0);
         return `<tr style="border-bottom:1px solid ${t.border};">
           <td style="padding:8px 14px;font-weight:700;color:${CMP_COLORS[b]};font-size:12px;">${b}</td>
           ${vals.map(v=>`<td style="padding:8px 10px;text-align:center;font-size:12px;color:${t.textSub};">${fmt(v)||'—'}</td>`).join('')}
-          <td style="padding:8px 14px;text-align:right;font-weight:700;color:${t.text};font-size:12px;">${fmt(total)}</td>
-        </tr>`;
-      }).join('') + `<tr style="background:${t.cardAlt};border-top:1px solid ${t.border};">
+          <td style="padding:8px 14px;text-align:right;font-weight:700;color:${t.text};font-size:12px;">${fmt(tot)}</td></tr>`;
+      }).join('')+`<tr style="background:${t.cardAlt};border-top:1px solid ${t.border};">
         <td style="padding:8px 14px;font-weight:700;font-size:12px;color:${t.text};">합계</td>
-        ${monthTotals.map(v=>`<td style="padding:8px 10px;text-align:center;font-weight:700;font-size:12px;color:${t.text};">${fmt(v)||'—'}</td>`).join('')}
-        <td style="padding:8px 14px;text-align:right;font-weight:700;font-size:12px;color:${t.text};">${fmt(grand)}</td>
-      </tr>`;
+        ${mTot.map(v=>`<td style="padding:8px 10px;text-align:center;font-weight:700;font-size:12px;color:${t.text};">${fmt(v)||'—'}</td>`).join('')}
+        <td style="padding:8px 14px;text-align:right;font-weight:700;font-size:12px;color:${t.text};">${fmt(grand)}</td></tr>`;
       tblWrap.classList.remove('hidden');
     }
   }
