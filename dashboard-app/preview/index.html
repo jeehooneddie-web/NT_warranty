@@ -2213,43 +2213,98 @@
 
         <!-- 디펙트별 추이 섹션 -->
         <div id="defect-code-section" class="hidden bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-          <div class="flex items-center gap-3 mb-4 flex-wrap">
-            <input id="defect-code-input" type="text"
-              placeholder="디펙트코드 입력 (예: 243504 또는 2435040200)"
-              oninput="renderDefectCodeChart()"
-              class="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 w-72 outline-none focus:ring-2 focus:ring-blue-500" />
-            <span id="defect-code-desc" class="text-xs text-slate-400 italic flex-1"></span>
-            <button id="btn-dcode-compare" onclick="renderDefectSumChart()"
-              class="hidden px-3 py-1 text-xs font-semibold rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white transition-colors">
-              합계 차트 <span id="dcode-compare-cnt" class="ml-1 bg-white/30 px-1.5 py-0.5 rounded-full text-[10px]"></span>
-            </button>
-            <button onclick="toggleDefectCodeDetail()" id="btn-dcode-detail"
-              class="px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              상세
-            </button>
-            <div class="pill-group">
-              <button onclick="setDefectCodeMetric('amount')" id="dcmetric-amount" class="sales-pill active">금액</button>
-              <button onclick="setDefectCodeMetric('count')"  id="dcmetric-count"  class="sales-pill">건수</button>
+
+          <!-- 서브 탭 -->
+          <div class="flex gap-2 mb-4">
+            <button id="dcsub-trend"   onclick="switchDefectSubTab('trend')"
+              class="px-4 py-1.5 text-xs font-bold rounded-lg transition-all"
+              style="background:#3B82F6;color:#fff;">추이 차트</button>
+            <button id="dcsub-compare" onclick="switchDefectSubTab('compare')"
+              class="px-4 py-1.5 text-xs font-bold rounded-lg transition-all"
+              style="background:rgba(148,163,184,0.12);color:#94a3b8;">지점 비교</button>
+          </div>
+
+          <!-- ── 추이 차트 탭 (기존) ── -->
+          <div id="dcsub-trend-wrap">
+            <div class="flex items-center gap-3 mb-4 flex-wrap">
+              <input id="defect-code-input" type="text"
+                placeholder="디펙트코드 입력 (예: 243504 또는 2435040200)"
+                oninput="renderDefectCodeChart()"
+                class="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 w-72 outline-none focus:ring-2 focus:ring-blue-500" />
+              <span id="defect-code-desc" class="text-xs text-slate-400 italic flex-1"></span>
+              <button id="btn-dcode-compare" onclick="renderDefectSumChart()"
+                class="hidden px-3 py-1 text-xs font-semibold rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white transition-colors">
+                합계 차트 <span id="dcode-compare-cnt" class="ml-1 bg-white/30 px-1.5 py-0.5 rounded-full text-[10px]"></span>
+              </button>
+              <button onclick="toggleDefectCodeDetail()" id="btn-dcode-detail"
+                class="px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                상세
+              </button>
+              <div class="pill-group">
+                <button onclick="setDefectCodeMetric('amount')" id="dcmetric-amount" class="sales-pill active">금액</button>
+                <button onclick="setDefectCodeMetric('count')"  id="dcmetric-count"  class="sales-pill">건수</button>
+              </div>
+            </div>
+            <div id="defect-code-list" class="hidden overflow-auto rounded-lg border border-slate-200 dark:border-slate-700" style="max-height:460px;">
+              <table class="w-full text-xs">
+                <thead class="sticky top-0 bg-slate-50 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400">
+                  <tr>
+                    <th class="px-3 py-2 w-8"><input type="checkbox" id="dcode-check-all" onchange="toggleDefectCodeSelectAll(this.checked)" /></th>
+                    <th class="px-3 py-2 text-left w-32">코드</th>
+                    <th class="px-3 py-2 text-left">설명</th>
+                    <th class="px-3 py-2 text-center w-16">코드 수</th>
+                    <th class="px-3 py-2 text-right w-20">클레임</th>
+                  </tr>
+                </thead>
+                <tbody id="defect-code-list-body"></tbody>
+              </table>
+            </div>
+            <div id="defect-code-empty" class="hidden py-16 text-center text-slate-400 text-sm">데이터 없음</div>
+            <div id="defect-code-chart-wrap" style="height:460px; position:relative;">
+              <canvas id="defect-code-chart"></canvas>
             </div>
           </div>
-          <div id="defect-code-list" class="hidden overflow-auto rounded-lg border border-slate-200 dark:border-slate-700" style="max-height:460px;">
-            <table class="w-full text-xs">
-              <thead class="sticky top-0 bg-slate-50 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400">
-                <tr>
-                  <th class="px-3 py-2 w-8"><input type="checkbox" id="dcode-check-all" onchange="toggleDefectCodeSelectAll(this.checked)" /></th>
-                  <th class="px-3 py-2 text-left w-32">코드</th>
-                  <th class="px-3 py-2 text-left">설명</th>
-                  <th class="px-3 py-2 text-center w-16">코드 수</th>
-                  <th class="px-3 py-2 text-right w-20">클레임</th>
-                </tr>
-              </thead>
-              <tbody id="defect-code-list-body"></tbody>
-            </table>
+
+          <!-- ── 지점 비교 탭 ── -->
+          <div id="dcsub-compare-wrap" class="hidden">
+            <!-- 코드 입력 + 지표 -->
+            <div class="flex items-center gap-3 mb-4 flex-wrap">
+              <input id="dccmp-code-input" type="text"
+                placeholder="디펙트코드 입력 (8자리 이상)"
+                oninput="renderDefectBranchCompare()"
+                class="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 w-72 outline-none focus:ring-2 focus:ring-blue-500" />
+              <span id="dccmp-code-desc" class="text-xs text-slate-400 italic flex-1"></span>
+              <div class="pill-group">
+                <button onclick="setDcCmpMetric('amount')" id="dccmp-amount" class="sales-pill active">금액</button>
+                <button onclick="setDcCmpMetric('count')"  id="dccmp-count"  class="sales-pill">건수</button>
+              </div>
+            </div>
+            <!-- 비교 지점 선택 -->
+            <div class="flex items-center gap-3 mb-4 flex-wrap">
+              <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider shrink-0">비교 지점</span>
+              <div id="dccmp-branch-pills" class="pill-group flex gap-2 flex-wrap"></div>
+            </div>
+            <!-- 누계 카드 -->
+            <div id="dccmp-stat-cards" class="flex gap-3 mb-4 flex-wrap"></div>
+            <!-- 그룹 바 차트 -->
+            <div id="dccmp-chart-wrap" style="height:380px;position:relative;" class="mb-4">
+              <canvas id="dccmp-chart"></canvas>
+            </div>
+            <!-- 데이터 테이블 -->
+            <div id="dccmp-table-wrap" class="hidden rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+              <div class="px-4 py-2 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-700/50">
+                <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">월별 상세</span>
+                <span id="dccmp-tbl-unit" class="text-xs text-slate-400">단위: 백만원</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs" id="dccmp-table">
+                  <thead></thead><tbody></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="dccmp-empty" class="hidden py-16 text-center text-slate-400 text-sm">데이터 없음</div>
           </div>
-          <div id="defect-code-empty" class="hidden py-16 text-center text-slate-400 text-sm">데이터 없음</div>
-          <div id="defect-code-chart-wrap" style="height:460px; position:relative;">
-            <canvas id="defect-code-chart"></canvas>
-          </div>
+
         </div>
 
         <!-- 청구견적 조회 섹션 -->
@@ -4785,6 +4840,221 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
   function dGetVisibleMonths() {
     const DATA_MO = [...new Set(DEFECT_RAW.map(r => r[1]))].sort();
     return DATA_MO.filter(m => dActiveYears.has(m.slice(0,2)) && dActiveMonths.has(m.slice(3,5)));
+  }
+
+  // ── 디펙트 지점 비교 ────────────────────────────────────────────
+  let _dcCmpMetric   = 'amount';
+  let _dcCmpBranches = new Set(['전주','평택','군산','목포','서산']);
+  let _dcCmpChart    = null;
+  const DC_BRANCHES  = ['전주','평택','군산','목포','서산'];
+
+  function switchDefectSubTab(tab) {
+    const isTrend = tab === 'trend';
+    const t = _tc();
+    document.getElementById('dcsub-trend').style.cssText   = isTrend  ? 'background:#3B82F6;color:#fff;' : 'background:rgba(148,163,184,0.12);color:'+t.textSub+';';
+    document.getElementById('dcsub-compare').style.cssText = !isTrend ? 'background:#3B82F6;color:#fff;' : 'background:rgba(148,163,184,0.12);color:'+t.textSub+';';
+    document.getElementById('dcsub-trend-wrap').classList.toggle('hidden', !isTrend);
+    document.getElementById('dcsub-compare-wrap').classList.toggle('hidden', isTrend);
+    if (!isTrend) { _initDcCmpPills(); renderDefectBranchCompare(); }
+  }
+
+  function _initDcCmpPills() {
+    const wrap = document.getElementById('dccmp-branch-pills');
+    if (wrap.children.length) return;
+    const t = _tc();
+    wrap.innerHTML = DC_BRANCHES.map(b => {
+      const active = _dcCmpBranches.has(b);
+      const col    = CMP_COLORS[b];
+      return `<button id="dccmp-pill-${b}" onclick="toggleDcCmpBranch('${b}')"
+        style="padding:5px 14px;font-size:12px;font-weight:700;border-radius:20px;cursor:pointer;transition:all .2s;
+               border:1px solid ${active ? 'transparent' : t.border};
+               background:${active ? col : 'transparent'};
+               color:${active ? '#fff' : t.textSub};
+               box-shadow:${active ? '0 0 10px '+col+'55' : 'none'};">${b}</button>`;
+    }).join('');
+  }
+
+  function toggleDcCmpBranch(b) {
+    if (_dcCmpBranches.has(b)) {
+      if (_dcCmpBranches.size === 1) return;
+      _dcCmpBranches.delete(b);
+    } else {
+      _dcCmpBranches.add(b);
+    }
+    const t = _tc(); const col = CMP_COLORS[b]; const active = _dcCmpBranches.has(b);
+    const btn = document.getElementById('dccmp-pill-'+b);
+    if (btn) {
+      btn.style.background  = active ? col : 'transparent';
+      btn.style.color       = active ? '#fff' : t.textSub;
+      btn.style.border      = '1px solid ' + (active ? 'transparent' : t.border);
+      btn.style.boxShadow   = active ? '0 0 10px '+col+'55' : 'none';
+    }
+    renderDefectBranchCompare();
+  }
+
+  function setDcCmpMetric(m) {
+    _dcCmpMetric = m;
+    const t = _tc();
+    ['amount','count'].forEach(k => {
+      const el = document.getElementById('dccmp-'+k);
+      if (!el) return;
+      el.classList.toggle('active', k === m);
+    });
+    renderDefectBranchCompare();
+  }
+
+  function renderDefectBranchCompare() {
+    const input  = document.getElementById('dccmp-code-input');
+    const descEl = document.getElementById('dccmp-code-desc');
+    const emptyEl = document.getElementById('dccmp-empty');
+    const tblWrap = document.getElementById('dccmp-table-wrap');
+    if (!input) return;
+
+    const code = (input.value || '').trim().toUpperCase();
+    if (!code || code.length < 8) {
+      if (descEl) descEl.textContent = code.length > 0 ? '8자리 이상 입력해주세요' : '';
+      if (emptyEl) emptyEl.classList.add('hidden');
+      if (tblWrap) tblWrap.classList.add('hidden');
+      if (_dcCmpChart) { _dcCmpChart.destroy(); _dcCmpChart = null; }
+      document.getElementById('dccmp-stat-cards').innerHTML = '';
+      return;
+    }
+
+    const matchedCode = Object.keys(DEFECT_DESC).find(k => k.startsWith(code));
+    if (descEl) descEl.textContent = matchedCode ? (matchedCode + ': ' + DEFECT_DESC[matchedCode]) : '(설명 없음)';
+
+    // 전체 월 범위
+    const allMonths = [...new Set(DEFECT_RAW.map(r => r[1]))].sort();
+    const firstM = allMonths[0];
+    const lastY  = parseInt(allMonths[allMonths.length-1].slice(0,2));
+    const months = [];
+    let cy = parseInt(firstM.slice(0,2)), cm = parseInt(firstM.slice(3,5));
+    while (cy < lastY || (cy === lastY && cm <= 12)) {
+      months.push(`${String(cy).padStart(2,'0')}-${String(cm).padStart(2,'0')}`);
+      cm++; if (cm > 12) { cm = 1; cy++; }
+    }
+
+    // 지점 × 월 집계
+    const agg = {}; // { branch: { month: value } }
+    for (const row of DEFECT_RAW) {
+      const [br, mo, tp, cd, cnt, amt] = row;
+      if (!cd.startsWith(code)) continue;
+      if (!dActiveTypes.has(tp)) continue;
+      if (!agg[br]) agg[br] = {};
+      if (!agg[br][mo]) agg[br][mo] = { count: 0, amount: 0 };
+      agg[br][mo].count  += cnt;
+      agg[br][mo].amount += amt;
+    }
+
+    const activeBr = DC_BRANCHES.filter(b => _dcCmpBranches.has(b));
+    const metric   = _dcCmpMetric;
+    const hasData  = activeBr.some(b => months.some(m => agg[b]?.[m]?.[metric] > 0));
+    if (emptyEl) emptyEl.classList.toggle('hidden', hasData);
+    if (!hasData) {
+      if (_dcCmpChart) { _dcCmpChart.destroy(); _dcCmpChart = null; }
+      if (tblWrap) tblWrap.classList.add('hidden');
+      document.getElementById('dccmp-stat-cards').innerHTML = '';
+      return;
+    }
+
+    const _isDark = document.body.classList.contains('dark');
+    const gridCol = _isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+    const tickCol = _isDark ? '#cbd5e1' : '#374151';
+    const unitSuffix = metric === 'amount' ? '백만' : '건';
+
+    // 누계 카드
+    const cardsEl = document.getElementById('dccmp-stat-cards');
+    cardsEl.innerHTML = DC_BRANCHES.map(b => {
+      const active = _dcCmpBranches.has(b);
+      const total  = active ? months.reduce((s,m) => s + (agg[b]?.[m]?.[metric] || 0), 0) : 0;
+      const dispVal = metric === 'amount' ? Math.round(total/1000000).toLocaleString() + '백만' : total.toLocaleString() + '건';
+      const t = _tc();
+      return `<div style="background:${t.cardAlt};border:1px solid ${t.border};border-radius:10px;padding:12px 16px;flex:1;min-width:90px;opacity:${active?1:0.3};">
+        <div style="font-size:11px;color:${t.textSub};margin-bottom:4px;">${b} 누계</div>
+        <div style="font-size:17px;font-weight:800;color:${CMP_COLORS[b]};">${active ? dispVal : '—'}</div>
+      </div>`;
+    }).join('');
+
+    // 그룹 바 datasets
+    const datasets = activeBr.map(b => ({
+      label: b,
+      data: months.map(m => {
+        const v = agg[b]?.[m]?.[metric] || 0;
+        return metric === 'amount' ? (v > 0 ? Math.round(v/1000000) : null) : (v > 0 ? v : null);
+      }),
+      backgroundColor: CMP_COLORS[b] + 'bb',
+      borderColor: CMP_COLORS[b],
+      borderWidth: 1.5,
+      borderRadius: 4,
+      maxBarThickness: 28,
+      datalabels: {
+        display: ctx => (ctx.parsed.y || 0) > 0,
+        anchor: 'end', align: 'end',
+        color: CMP_COLORS[b],
+        font: { size: 10, weight: '700' },
+        formatter: v => v + unitSuffix,
+      }
+    }));
+
+    if (_dcCmpChart) _dcCmpChart.destroy();
+    Chart.register(ChartDataLabels);
+    _dcCmpChart = new Chart(document.getElementById('dccmp-chart'), {
+      type: 'bar',
+      data: { labels: months.map(getMonthLabel), datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 24, right: 8 } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          datalabels: { display: false },
+          legend: { labels: { color: tickCol, font: { size: 12, weight: '700' }, boxWidth: 12, padding: 14 } },
+          tooltip: {
+            backgroundColor: _isDark ? '#0f172a' : '#fff',
+            borderColor: _isDark ? '#334155' : '#e2e8f0', borderWidth: 1,
+            titleColor: tickCol, bodyColor: _isDark ? '#94a3b8' : '#374151',
+            callbacks: { label: ctx => {
+              const v = ctx.parsed.y; if (!v) return null;
+              return ` ${ctx.dataset.label}: ${metric==='amount' ? v+'백만원' : v+'건'}`;
+            }}
+          }
+        },
+        scales: {
+          x: { ticks: { color: tickCol, font: { size: 11 } }, grid: { color: gridCol } },
+          y: { ticks: { color: tickCol, font: { size: 11 }, callback: v => v + unitSuffix }, grid: { color: gridCol } }
+        }
+      }
+    });
+
+    // 하단 테이블
+    const unitEl = document.getElementById('dccmp-tbl-unit');
+    if (unitEl) unitEl.textContent = '단위: ' + (metric === 'amount' ? '백만원' : '건');
+    const thead = document.querySelector('#dccmp-table thead');
+    const tbody = document.querySelector('#dccmp-table tbody');
+    if (thead && tbody) {
+      const t = _tc();
+      thead.innerHTML = `<tr style="background:${t.cardAlt};">
+        <th style="padding:8px 14px;text-align:left;color:${t.textSub};font-size:11px;font-weight:700;border-bottom:1px solid ${t.border};">지점</th>
+        ${months.map(m=>`<th style="padding:8px 10px;text-align:center;color:${t.textSub};font-size:11px;font-weight:700;border-bottom:1px solid ${t.border};white-space:nowrap;">${m}</th>`).join('')}
+        <th style="padding:8px 14px;text-align:right;color:${t.textSub};font-size:11px;font-weight:700;border-bottom:1px solid ${t.border};">합계</th>
+      </tr>`;
+      const monthTotals = months.map(m => activeBr.reduce((s,b)=>s+(agg[b]?.[m]?.[metric]||0),0));
+      const grand = monthTotals.reduce((s,v)=>s+v,0);
+      const fmt = v => metric==='amount' ? (v>0?Math.round(v/1000000):0) : v;
+      tbody.innerHTML = activeBr.map(b => {
+        const vals  = months.map(m => agg[b]?.[m]?.[metric] || 0);
+        const total = vals.reduce((s,v)=>s+v,0);
+        return `<tr style="border-bottom:1px solid ${t.border};">
+          <td style="padding:8px 14px;font-weight:700;color:${CMP_COLORS[b]};font-size:12px;">${b}</td>
+          ${vals.map(v=>`<td style="padding:8px 10px;text-align:center;font-size:12px;color:${t.textSub};">${fmt(v)||'—'}</td>`).join('')}
+          <td style="padding:8px 14px;text-align:right;font-weight:700;color:${t.text};font-size:12px;">${fmt(total)}</td>
+        </tr>`;
+      }).join('') + `<tr style="background:${t.cardAlt};border-top:1px solid ${t.border};">
+        <td style="padding:8px 14px;font-weight:700;font-size:12px;color:${t.text};">합계</td>
+        ${monthTotals.map(v=>`<td style="padding:8px 10px;text-align:center;font-weight:700;font-size:12px;color:${t.text};">${fmt(v)||'—'}</td>`).join('')}
+        <td style="padding:8px 14px;text-align:right;font-weight:700;font-size:12px;color:${t.text};">${fmt(grand)}</td>
+      </tr>`;
+      tblWrap.classList.remove('hidden');
+    }
   }
 
   function setDefectMainTab(tab) {
