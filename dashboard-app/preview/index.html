@@ -4444,15 +4444,17 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     const isDark = document.body.classList.contains('dark');
     const container = document.getElementById('cmp-cards');
     container.innerHTML = '';
+    const n = cmpBranches.length;
+    // 지점 수에 따라 그리드 열 수 조정
+    container.style.gridTemplateColumns = n === 1 ? '1fr' : n === 2 ? 'repeat(2,1fr)' : 'repeat(3,1fr)';
+    const donutH = n === 1 ? 220 : n === 2 ? 200 : 170;
+    const typeColorMap = {'BSI':'#3B82F6','Warranty':'#6366F1','TC/RECALL':'#F97316','Goodwill':'#EC4899','WP':'#14B8A6','LOCAL TC':'#EAB308'};
+
     cmpBranches.forEach(branch => {
       const stats = calcBranchStats(branch);
       const col = CMP_COLORS[branch];
-      const colBg = CMP_COLORS_BG[branch];
-      const fmt = v => v >= 1e8 ? (v/1e8).toFixed(1)+'억' : v >= 1e4 ? Math.round(v/1e4)+'만' : v.toLocaleString();
-      const totalFmt = stats.total >= 1e8 ? '₩'+(stats.total/1e8).toFixed(1)+'억' : '₩'+Math.round(stats.total/1e4).toLocaleString()+'만';
-      // 도넛 데이터
+      const totalFmt = stats.total >= 1e8 ? '₩'+(stats.total/1e8).toFixed(1)+'억' : '₩'+Math.round(stats.total/1e6).toLocaleString()+'M';
       const donutLabels = [], donutData = [], donutColors = [];
-      const typeColorMap = {'BSI':'#3B82F6','Warranty':'#6366F1','TC/RECALL':'#F97316','Goodwill':'#EC4899','WP':'#14B8A6','LOCAL TC':'#EAB308'};
       SALES_TYPES.forEach(t => {
         const v = cmpMode==='amount' ? (stats.byType[t]?.total||0) : (stats.byType[t]?.count||0);
         if (v > 0) { donutLabels.push(t); donutData.push(v); donutColors.push(typeColorMap[t]||'#6B7280'); }
@@ -4468,29 +4470,54 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
             <div class="text-xs nm-text-sub mt-0.5">${stats.count.toLocaleString()}건</div>
           </div>
         </div>
-        <div style="height:140px;position:relative;"><canvas id="cmp-donut-${branch}"></canvas></div>
+        <div style="height:${donutH}px;position:relative;"><canvas id="cmp-donut-${branch}"></canvas></div>
       `;
       container.appendChild(card);
-      // 도넛 차트
       setTimeout(() => {
         const ctx = document.getElementById('cmp-donut-'+branch);
         if (!ctx) return;
         new Chart(ctx, {
           type: 'doughnut',
           data: { labels: donutLabels, datasets: [{ data: donutData, backgroundColor: donutColors, borderWidth: 2, borderColor: isDark ? '#1e2433' : '#fff' }] },
-          options: { responsive:true, maintainAspectRatio:true, cutout:'65%',
-            plugins:{ legend:{ position:'bottom', labels:{ color: isDark?'#9CA3AF':'#6B7280', font:{size:10}, boxWidth:10, padding:8 }}}
+          options: { responsive:true, maintainAspectRatio:false, cutout:'62%',
+            plugins:{
+              datalabels: {
+                display: true,
+                formatter: (val, ctx2) => {
+                  const total = ctx2.dataset.data.reduce((a,b) => a+b, 0);
+                  const pct = total > 0 ? Math.round(val/total*100) : 0;
+                  return pct >= 5 ? pct+'%' : '';
+                },
+                color: '#fff', font: { size: n===3?9:10, weight:'bold' }
+              },
+              legend: { position:'bottom', labels:{ color: isDark?'#9CA3AF':'#6B7280', font:{size: n===3?9:10}, boxWidth:10, padding:6 }}
+            }
           }
         });
       }, 0);
     });
   }
 
+  function _cmpBarOptions(isDark) {
+    const gridCol = isDark ? '#2a3448' : '#e5e7eb';
+    const tickCol = isDark ? '#6B7280' : '#9CA3AF';
+    return {
+      responsive: true, maintainAspectRatio: false,
+      maxBarThickness: 60,
+      plugins: {
+        datalabels: { display: false },
+        legend: { labels: { color: isDark?'#9CA3AF':'#6B7280', font:{size:11} }}
+      },
+      scales: {
+        x: { ticks:{color:tickCol}, grid:{color:gridCol} },
+        y: { ticks:{ color:tickCol, callback: v => cmpMode==='amount' ? Math.round(v/1e6).toLocaleString()+'M' : v.toLocaleString() }, grid:{color:gridCol} }
+      }
+    };
+  }
+
   function renderCmpMonthly() {
     const months = getCmpMonths();
     const isDark = document.body.classList.contains('dark');
-    const gridCol = isDark ? '#2a3448' : '#e5e7eb';
-    const tickCol = isDark ? '#6B7280' : '#9CA3AF';
     const datasets = cmpBranches.map(branch => {
       const bd = BRANCH_DATA[branch] || {};
       const types = getCmpTypes();
@@ -4500,24 +4527,12 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     if (cmpMonthlyChart) { cmpMonthlyChart.destroy(); cmpMonthlyChart = null; }
     const ctx = document.getElementById('cmp-monthly-chart');
     if (!ctx) return;
-    cmpMonthlyChart = new Chart(ctx, {
-      type: 'bar',
-      data: { labels: months.map(m=>`'${m}`), datasets },
-      options: { responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{ labels:{ color: isDark?'#9CA3AF':'#6B7280', font:{size:11} }}},
-        scales:{
-          x:{ ticks:{color:tickCol}, grid:{color:gridCol} },
-          y:{ ticks:{ color:tickCol, callback: v => cmpMode==='amount' ? Math.round(v/1e6).toLocaleString()+'M' : v.toLocaleString() }, grid:{color:gridCol} }
-        }
-      }
-    });
+    cmpMonthlyChart = new Chart(ctx, { type:'bar', data:{ labels: months.map(m=>`'${m}`), datasets }, options: _cmpBarOptions(isDark) });
   }
 
   function renderCmpType() {
     const months = getCmpMonths();
     const isDark = document.body.classList.contains('dark');
-    const gridCol = isDark ? '#2a3448' : '#e5e7eb';
-    const tickCol = isDark ? '#6B7280' : '#9CA3AF';
     const types = cmpType === 'all' ? SALES_TYPES : [cmpType];
     const datasets = cmpBranches.map(branch => {
       const bd = BRANCH_DATA[branch] || {};
@@ -4527,17 +4542,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     if (cmpTypeChart) { cmpTypeChart.destroy(); cmpTypeChart = null; }
     const ctx = document.getElementById('cmp-type-chart');
     if (!ctx) return;
-    cmpTypeChart = new Chart(ctx, {
-      type: 'bar',
-      data: { labels: types, datasets },
-      options: { responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{ labels:{ color: isDark?'#9CA3AF':'#6B7280', font:{size:11} }}},
-        scales:{
-          x:{ ticks:{color:tickCol}, grid:{color:gridCol} },
-          y:{ ticks:{ color:tickCol, callback: v => cmpMode==='amount' ? Math.round(v/1e6).toLocaleString()+'M' : v.toLocaleString() }, grid:{color:gridCol} }
-        }
-      }
-    });
+    cmpTypeChart = new Chart(ctx, { type:'bar', data:{ labels: types, datasets }, options: _cmpBarOptions(isDark) });
   }
 
   // 초기 지점 선택 상태 설정 (전주 기본 선택)
