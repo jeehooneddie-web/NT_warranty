@@ -2784,10 +2784,17 @@
            뷰: 보증 매출 현황
            ============================================= -->
       <div id="view-sales" class="view hidden">
-        <!-- 뷰 전체 캡쳐 -->
-        <div class="flex justify-end mb-3">
+
+        <!-- ── 메인 탭바 ── -->
+        <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid rgba(148,163,184,0.2);">
+          <button id="stab-main" onclick="switchSalesTab('main')"
+            style="padding:10px 22px;font-size:13px;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid #3B82F6;margin-bottom:-2px;transition:all 0.25s ease;" class="nm-text">보증 매출</button>
+          <button id="stab-compare" onclick="switchSalesTab('compare')"
+            style="padding:10px 22px;font-size:13px;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.25s ease;" class="nm-text-sub">지점 비교</button>
         </div>
 
+        <!-- ── 보증 매출 탭 (기존) ── -->
+        <div id="sales-tab-main">
         <!-- 상단 필터 카드 -->
         <div class="sales-card p-5 mb-4">
           <!-- 지점 필터 -->
@@ -2893,6 +2900,96 @@
           </div>
         </div>
 
+
+        </div><!-- /sales-tab-main -->
+
+        <!-- ── 지점 비교 탭 ── -->
+        <div id="sales-tab-compare" style="display:none;">
+
+          <!-- 비교 필터 카드 -->
+          <div class="sales-card p-5 mb-4">
+            <!-- 지점 선택 (최대 3개) -->
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">비교 지점</span>
+              <span class="text-[10px] nm-text-sub">(최대 3개)</span>
+              <div class="flex gap-2 flex-wrap">
+                <label id="cmp-lbl-전주" class="flex items-center gap-1.5 px-3 py-1 rounded-lg cursor-pointer text-xs font-semibold transition-all border-2 border-blue-500 text-blue-500" style="user-select:none;">
+                  <input type="checkbox" class="hidden" onchange="toggleCmpBranch('전주',this.checked)"> 전주</label>
+                <label id="cmp-lbl-평택" class="flex items-center gap-1.5 px-3 py-1 rounded-lg cursor-pointer text-xs font-semibold transition-all border-2 nm-text-sub" style="user-select:none;border-color:rgba(148,163,184,0.3)">
+                  <input type="checkbox" class="hidden" onchange="toggleCmpBranch('평택',this.checked)"> 평택</label>
+                <label id="cmp-lbl-군산" class="flex items-center gap-1.5 px-3 py-1 rounded-lg cursor-pointer text-xs font-semibold transition-all border-2 nm-text-sub" style="user-select:none;border-color:rgba(148,163,184,0.3)">
+                  <input type="checkbox" class="hidden" onchange="toggleCmpBranch('군산',this.checked)"> 군산</label>
+                <label id="cmp-lbl-목포" class="flex items-center gap-1.5 px-3 py-1 rounded-lg cursor-pointer text-xs font-semibold transition-all border-2 nm-text-sub" style="user-select:none;border-color:rgba(148,163,184,0.3)">
+                  <input type="checkbox" class="hidden" onchange="toggleCmpBranch('목포',this.checked)"> 목포</label>
+                <label id="cmp-lbl-서산" class="flex items-center gap-1.5 px-3 py-1 rounded-lg cursor-pointer text-xs font-semibold transition-all border-2 nm-text-sub" style="user-select:none;border-color:rgba(148,163,184,0.3)">
+                  <input type="checkbox" class="hidden" onchange="toggleCmpBranch('서산',this.checked)"> 서산</label>
+              </div>
+            </div>
+            <!-- 타입 -->
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">타입</span>
+              <div class="pill-group">
+                <button onclick="setCmpType('all')" id="ctype-all" class="sales-pill active">전체</button>
+                <button onclick="setCmpType('BSI')" id="ctype-BSI" class="sales-pill">BSI</button>
+                <button onclick="setCmpType('Warranty')" id="ctype-Warranty" class="sales-pill">Warranty</button>
+                <button onclick="setCmpType('TC/RECALL')" id="ctype-TCRECALL" class="sales-pill">TC/RECALL</button>
+                <button onclick="setCmpType('Goodwill')" id="ctype-Goodwill" class="sales-pill">Goodwill</button>
+                <button onclick="setCmpType('WP')" id="ctype-WP" class="sales-pill">WP</button>
+                <button onclick="setCmpType('LOCAL TC')" id="ctype-LOCALTC" class="sales-pill">LOCAL TC</button>
+              </div>
+            </div>
+            <!-- 년도 -->
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">년도</span>
+              <div class="pill-group">
+                <button onclick="setCmpYear('all')" id="cyear-all" class="sales-pill active">전체</button>
+                <button onclick="setCmpYear('25')" id="cyear-25" class="sales-pill">2025</button>
+                <button onclick="setCmpYear('26')" id="cyear-26" class="sales-pill">2026</button>
+              </div>
+            </div>
+            <!-- 월별 -->
+            <div class="flex items-center gap-3">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">월별</span>
+              <div class="pill-group">
+                <button onclick="setCmpMonth('all')" id="cmonth-all" class="sales-pill active">전체</button>
+                <button onclick="setCmpMonth('01')" id="cmonth-01" class="sales-pill">1월</button>
+                <button onclick="setCmpMonth('02')" id="cmonth-02" class="sales-pill">2월</button>
+                <button onclick="setCmpMonth('03')" id="cmonth-03" class="sales-pill">3월</button>
+                <button onclick="setCmpMonth('04')" id="cmonth-04" class="sales-pill">4월</button>
+                <button onclick="setCmpMonth('05')" id="cmonth-05" class="sales-pill">5월</button>
+                <button onclick="setCmpMonth('06')" id="cmonth-06" class="sales-pill">6월</button>
+                <button onclick="setCmpMonth('07')" id="cmonth-07" class="sales-pill">7월</button>
+                <button onclick="setCmpMonth('08')" id="cmonth-08" class="sales-pill">8월</button>
+                <button onclick="setCmpMonth('09')" id="cmonth-09" class="sales-pill">9월</button>
+                <button onclick="setCmpMonth('10')" id="cmonth-10" class="sales-pill">10월</button>
+                <button onclick="setCmpMonth('11')" id="cmonth-11" class="sales-pill">11월</button>
+                <button onclick="setCmpMonth('12')" id="cmonth-12" class="sales-pill">12월</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 지점 요약 카드 (최대 3개) -->
+          <div id="cmp-cards" class="grid gap-4 mb-4" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));"></div>
+
+          <!-- 월별 비교 차트 -->
+          <div class="nm-card p-5 mb-4" style="border-radius:16px;">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-semibold nm-text">월별 매출 비교</h3>
+              <div class="pill-group">
+                <button onclick="setCmpMode('amount')" id="cmpmode-amount" class="sales-pill active">금액</button>
+                <button onclick="setCmpMode('count')" id="cmpmode-count" class="sales-pill">건수</button>
+              </div>
+            </div>
+            <div style="height:260px;position:relative;"><canvas id="cmp-monthly-chart"></canvas></div>
+          </div>
+
+          <!-- 타입별 비교 차트 -->
+          <div class="nm-card p-5" style="border-radius:16px;">
+            <h3 class="text-sm font-semibold nm-text mb-4">타입별 매출 비교</h3>
+            <div style="height:240px;position:relative;"><canvas id="cmp-type-chart"></canvas></div>
+          </div>
+
+        </div><!-- /sales-tab-compare -->
 
       </div><!-- /view-sales -->
 
@@ -4233,7 +4330,231 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
+  // ═══════════════════════════════════════════════════
+  // 지점 비교 탭
+  // ═══════════════════════════════════════════════════
+  const CMP_COLORS = { '전주':'#3B82F6','평택':'#EC4899','군산':'#10B981','목포':'#F97316','서산':'#A855F7' };
+  const CMP_COLORS_BG = { '전주':'rgba(59,130,246,0.15)','평택':'rgba(236,72,153,0.15)','군산':'rgba(16,185,129,0.15)','목포':'rgba(249,115,22,0.15)','서산':'rgba(168,85,247,0.15)' };
+  let cmpBranches = ['전주'];
+  let cmpType = 'all';
+  let cmpYear = 'all';
+  let cmpMonth = 'all';
+  let cmpMode = 'amount';
+  let cmpMonthlyChart = null;
+  let cmpTypeChart = null;
+
+  function switchSalesTab(tab) {
+    const isMain = tab === 'main';
+    document.getElementById('sales-tab-main').style.display = isMain ? '' : 'none';
+    document.getElementById('sales-tab-compare').style.display = isMain ? 'none' : '';
+    const activeStyle = 'border-bottom:3px solid #3B82F6;margin-bottom:-2px;';
+    const inactiveStyle = 'border-bottom:3px solid transparent;margin-bottom:-2px;';
+    document.getElementById('stab-main').style.cssText += isMain ? activeStyle : inactiveStyle;
+    document.getElementById('stab-compare').style.cssText += isMain ? inactiveStyle : activeStyle;
+    document.getElementById('stab-main').className = isMain ? 'nm-text' : 'nm-text-sub';
+    document.getElementById('stab-compare').className = isMain ? 'nm-text-sub' : 'nm-text';
+    if (!isMain) renderSalesCompare();
+  }
+
+  function toggleCmpBranch(branch, checked) {
+    if (checked) {
+      if (cmpBranches.length >= 3) {
+        // 최대 3개 초과 시 체크 해제
+        const lbl = document.getElementById('cmp-lbl-'+branch);
+        if (lbl) lbl.querySelector('input').checked = false;
+        return;
+      }
+      if (!cmpBranches.includes(branch)) cmpBranches.push(branch);
+    } else {
+      cmpBranches = cmpBranches.filter(b => b !== branch);
+    }
+    // 라벨 스타일 업데이트
+    ALL_BRANCHES.forEach(b => {
+      const lbl = document.getElementById('cmp-lbl-'+b);
+      if (!lbl) return;
+      const active = cmpBranches.includes(b);
+      const col = CMP_COLORS[b];
+      lbl.style.borderColor = active ? col : 'rgba(148,163,184,0.3)';
+      lbl.style.color = active ? col : '';
+      lbl.className = 'flex items-center gap-1.5 px-3 py-1 rounded-lg cursor-pointer text-xs font-semibold transition-all border-2 ' + (active ? '' : 'nm-text-sub');
+    });
+    renderSalesCompare();
+  }
+
+  function setCmpFilter(id, prefix, val) {
+    document.querySelectorAll('[id^="'+prefix+'"]').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (prefix === 'ctype-') cmpType = val;
+    else if (prefix === 'cyear-') cmpYear = val;
+    else if (prefix === 'cmonth-') cmpMonth = val;
+    renderSalesCompare();
+  }
+  function setCmpType(v)  { setCmpFilter('ctype-'+(v==='all'?'all':v==='TC/RECALL'?'TCRECALL':v==='LOCAL TC'?'LOCALTC':v), 'ctype-', v); }
+  function setCmpYear(v)  { setCmpFilter('cyear-'+v, 'cyear-', v); }
+  function setCmpMonth(v) { setCmpFilter('cmonth-'+v, 'cmonth-', v); }
+  function setCmpMode(v)  {
+    cmpMode = v;
+    document.getElementById('cmpmode-amount').classList.toggle('active', v==='amount');
+    document.getElementById('cmpmode-count').classList.toggle('active', v==='count');
+    renderSalesCompare();
+  }
+
+  function getCmpMonths() {
+    return DATA_MONTHS.filter(m => {
+      const yr = m.slice(0,2), mo = m.slice(3,5);
+      return (cmpYear==='all' || cmpYear===yr) && (cmpMonth==='all' || cmpMonth===mo);
+    });
+  }
+
+  function getCmpTypes() {
+    return cmpType === 'all' ? SALES_TYPES : [cmpType];
+  }
+
+  function calcBranchStats(branch) {
+    const months = getCmpMonths();
+    const types = getCmpTypes();
+    const bd = BRANCH_DATA[branch] || {};
+    let total = 0, count = 0;
+    const byType = {};
+    months.forEach(m => {
+      types.forEach(t => {
+        const d = bd[m]?.[t];
+        if (!d) return;
+        total += d.total || 0;
+        count += d.count || 0;
+        byType[t] = (byType[t] || {total:0,count:0});
+        byType[t].total += d.total || 0;
+        byType[t].count += d.count || 0;
+      });
+    });
+    return { total, count, byType };
+  }
+
+  function renderSalesCompare() {
+    if (cmpBranches.length === 0) {
+      document.getElementById('cmp-cards').innerHTML = '<p class="nm-text-sub text-sm p-4">지점을 1개 이상 선택하세요.</p>';
+      return;
+    }
+    renderCmpCards();
+    renderCmpMonthly();
+    renderCmpType();
+  }
+
+  function renderCmpCards() {
+    const isDark = document.body.classList.contains('dark');
+    const container = document.getElementById('cmp-cards');
+    container.innerHTML = '';
+    cmpBranches.forEach(branch => {
+      const stats = calcBranchStats(branch);
+      const col = CMP_COLORS[branch];
+      const colBg = CMP_COLORS_BG[branch];
+      const fmt = v => v >= 1e8 ? (v/1e8).toFixed(1)+'억' : v >= 1e4 ? Math.round(v/1e4)+'만' : v.toLocaleString();
+      const totalFmt = stats.total >= 1e8 ? '₩'+(stats.total/1e8).toFixed(1)+'억' : '₩'+Math.round(stats.total/1e4).toLocaleString()+'만';
+      // 도넛 데이터
+      const donutLabels = [], donutData = [], donutColors = [];
+      const typeColorMap = {'BSI':'#3B82F6','Warranty':'#6366F1','TC/RECALL':'#F97316','Goodwill':'#EC4899','WP':'#14B8A6','LOCAL TC':'#EAB308'};
+      SALES_TYPES.forEach(t => {
+        const v = cmpMode==='amount' ? (stats.byType[t]?.total||0) : (stats.byType[t]?.count||0);
+        if (v > 0) { donutLabels.push(t); donutData.push(v); donutColors.push(typeColorMap[t]||'#6B7280'); }
+      });
+      const card = document.createElement('div');
+      card.className = 'sales-card p-5';
+      card.style.borderLeft = '4px solid '+col;
+      card.innerHTML = `
+        <div class="flex justify-between items-start mb-3">
+          <div>
+            <div class="text-base font-bold" style="color:${col}">${branch}</div>
+            <div class="text-xl font-bold nm-text mt-1">${totalFmt}</div>
+            <div class="text-xs nm-text-sub mt-0.5">${stats.count.toLocaleString()}건</div>
+          </div>
+        </div>
+        <div style="height:140px;position:relative;"><canvas id="cmp-donut-${branch}"></canvas></div>
+      `;
+      container.appendChild(card);
+      // 도넛 차트
+      setTimeout(() => {
+        const ctx = document.getElementById('cmp-donut-'+branch);
+        if (!ctx) return;
+        new Chart(ctx, {
+          type: 'doughnut',
+          data: { labels: donutLabels, datasets: [{ data: donutData, backgroundColor: donutColors, borderWidth: 2, borderColor: isDark ? '#1e2433' : '#fff' }] },
+          options: { responsive:true, maintainAspectRatio:true, cutout:'65%',
+            plugins:{ legend:{ position:'bottom', labels:{ color: isDark?'#9CA3AF':'#6B7280', font:{size:10}, boxWidth:10, padding:8 }}}
+          }
+        });
+      }, 0);
+    });
+  }
+
+  function renderCmpMonthly() {
+    const months = getCmpMonths();
+    const isDark = document.body.classList.contains('dark');
+    const gridCol = isDark ? '#2a3448' : '#e5e7eb';
+    const tickCol = isDark ? '#6B7280' : '#9CA3AF';
+    const datasets = cmpBranches.map(branch => {
+      const bd = BRANCH_DATA[branch] || {};
+      const types = getCmpTypes();
+      const data = months.map(m => types.reduce((s,t) => s + (cmpMode==='amount' ? (bd[m]?.[t]?.total||0) : (bd[m]?.[t]?.count||0)), 0));
+      return { label: branch, data, backgroundColor: CMP_COLORS[branch]+'cc', borderColor: CMP_COLORS[branch], borderWidth: 1 };
+    });
+    if (cmpMonthlyChart) { cmpMonthlyChart.destroy(); cmpMonthlyChart = null; }
+    const ctx = document.getElementById('cmp-monthly-chart');
+    if (!ctx) return;
+    cmpMonthlyChart = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: months.map(m=>`'${m}`), datasets },
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ labels:{ color: isDark?'#9CA3AF':'#6B7280', font:{size:11} }}},
+        scales:{
+          x:{ ticks:{color:tickCol}, grid:{color:gridCol} },
+          y:{ ticks:{ color:tickCol, callback: v => cmpMode==='amount' ? Math.round(v/1e6).toLocaleString()+'M' : v.toLocaleString() }, grid:{color:gridCol} }
+        }
+      }
+    });
+  }
+
+  function renderCmpType() {
+    const months = getCmpMonths();
+    const isDark = document.body.classList.contains('dark');
+    const gridCol = isDark ? '#2a3448' : '#e5e7eb';
+    const tickCol = isDark ? '#6B7280' : '#9CA3AF';
+    const types = cmpType === 'all' ? SALES_TYPES : [cmpType];
+    const datasets = cmpBranches.map(branch => {
+      const bd = BRANCH_DATA[branch] || {};
+      const data = types.map(t => months.reduce((s,m) => s + (cmpMode==='amount' ? (bd[m]?.[t]?.total||0) : (bd[m]?.[t]?.count||0)), 0));
+      return { label: branch, data, backgroundColor: CMP_COLORS[branch]+'cc', borderColor: CMP_COLORS[branch], borderWidth: 1 };
+    });
+    if (cmpTypeChart) { cmpTypeChart.destroy(); cmpTypeChart = null; }
+    const ctx = document.getElementById('cmp-type-chart');
+    if (!ctx) return;
+    cmpTypeChart = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: types, datasets },
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ labels:{ color: isDark?'#9CA3AF':'#6B7280', font:{size:11} }}},
+        scales:{
+          x:{ ticks:{color:tickCol}, grid:{color:gridCol} },
+          y:{ ticks:{ color:tickCol, callback: v => cmpMode==='amount' ? Math.round(v/1e6).toLocaleString()+'M' : v.toLocaleString() }, grid:{color:gridCol} }
+        }
+      }
+    });
+  }
+
+  // 초기 지점 선택 상태 설정 (전주 기본 선택)
+  function initCmpBranchLabels() {
+    ALL_BRANCHES.forEach(b => {
+      const lbl = document.getElementById('cmp-lbl-'+b);
+      if (!lbl) return;
+      const active = cmpBranches.includes(b);
+      const col = CMP_COLORS[b];
+      lbl.style.borderColor = active ? col : 'rgba(148,163,184,0.3)';
+      lbl.style.color = active ? col : '';
+      if (active) lbl.querySelector('input').checked = true;
+    });
+  }
+
   function initSalesChart() {
+    initCmpBranchLabels();
     const ctx = document.getElementById('sales-chart');
     if (!ctx) return;
     if (salesChart) { salesChart.destroy(); salesChart=null; }
