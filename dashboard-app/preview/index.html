@@ -5160,6 +5160,7 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     }));
 
     if (_dcCmpChart) { _dcCmpChart.destroy(); _dcCmpChart = null; }
+    Chart.register(ChartDataLabels);
     const _cmpWrap = document.getElementById('dccmp-chart-wrap');
     const _oldC = document.getElementById('dccmp-chart');
     if (_oldC) _oldC.remove();
@@ -5170,10 +5171,9 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
       data: { labels: months.map(getMonthLabel), datasets },
       options: {
         responsive: true, maintainAspectRatio: false,
-        layout: { padding: { top: 24, right: 8 } },
+        layout: { padding: { top: 28, right: 8 } },
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          datalabels: { display: false },
           legend: { labels: { color: tickCol, font: { size: 12, weight: '700' }, boxWidth: 12, padding: 14 } },
           tooltip: {
             backgroundColor: _isDark ? '#0f172a' : '#fff',
