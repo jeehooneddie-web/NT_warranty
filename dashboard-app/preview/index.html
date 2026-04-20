@@ -4996,9 +4996,13 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
       }
     }));
 
-    if (_dcCmpChart) _dcCmpChart.destroy();
-    Chart.register(ChartDataLabels);
-    _dcCmpChart = new Chart(document.getElementById('dccmp-chart'), {
+    if (_dcCmpChart) { _dcCmpChart.destroy(); _dcCmpChart = null; }
+    const _cmpWrap = document.getElementById('dccmp-chart-wrap');
+    const _oldC = document.getElementById('dccmp-chart');
+    if (_oldC) _oldC.remove();
+    const _newC = document.createElement('canvas'); _newC.id = 'dccmp-chart';
+    _cmpWrap.appendChild(_newC);
+    _dcCmpChart = new Chart(_newC.getContext('2d'), {
       type: 'bar',
       data: { labels: months.map(getMonthLabel), datasets },
       options: {
