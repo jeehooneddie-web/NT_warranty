@@ -8265,12 +8265,13 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   let _exemptPending = null;   // 모달 대기 중인 row 데이터
 
   function initQRMatch() {
-    // 날짜 기본값: 오늘
-    const today = new Date().toISOString().slice(0,10);
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0,10);
+    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0,10);
     const fromEl = document.getElementById('qm-date-from');
     const toEl   = document.getElementById('qm-date-to');
-    if (!fromEl.value) fromEl.value = today;
-    if (!toEl.value)   toEl.value   = today;
+    if (!fromEl.value) fromEl.value = firstOfMonth;
+    if (!toEl.value)   toEl.value   = todayStr;
   }
 
   async function runQRMatch() {
