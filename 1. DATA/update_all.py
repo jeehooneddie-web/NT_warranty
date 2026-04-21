@@ -388,11 +388,13 @@ try:
     for col in [kh_T, kh_W, kh_S, kh_U, kh_Y]:
         df_kh[col] = df_kh[col].astype(str).str.strip()
 
-    def _agg_basis(df_base, mo_col):
-        """mo_col 기준으로 charge/approve/pending 집계 → {ClaimType: {month: {...}}}
-        승인대기: 아직 정산일 없음 → kh_S(클레임확정월) 기준으로 별도 집계
-        """
-        df_v = df_base[df_base[mo_col].str.match(r'\d{2}-\d{2}', na=False)]
+    kh_branch = kc[0]  # 지점 컬럼 (index 0)
+    df_kh[kh_branch] = df_kh[kh_branch].astype(str).str.strip().str.replace('AS_','', regex=False)
+    WS_BRANCHES = ['전주', '군산', '목포', '서산', '평택']
+
+    def _agg_claimtype(df_sub, mo_col):
+        """단일 데이터프레임 → {ClaimType: {month: {charge/approve/pending}}}"""
+        df_v = df_sub[df_sub[mo_col].str.match(r'\d{2}-\d{2}', na=False)]
         out = {}
         for _, r in df_v.groupby([kh_T, mo_col]).agg(
             amount=(kh_M,'sum'), parts=(kh_J,'sum'), count=(kh_M,'count')
@@ -408,10 +410,9 @@ try:
             out.setdefault(ct, {}).setdefault(mo, {})['approve'] = {
                 'amount': int(r['amount']), 'parts': int(r['parts']), 'count': int(r['count'])
             }
-        # 승인대기: 정산일 없으므로 전체 df_base에서 kh_S(클레임확정월) 기준으로 집계
-        df_pend = df_base[
-            (df_base[kh_W] == '승인대기') &
-            (df_base[kh_S].str.match(r'\d{2}-\d{2}', na=False))
+        df_pend = df_sub[
+            (df_sub[kh_W] == '승인대기') &
+            (df_sub[kh_S].str.match(r'\d{2}-\d{2}', na=False))
         ]
         for _, r in df_pend.groupby([kh_T, kh_S]).agg(
             amount=(kh_M,'sum'), parts=(kh_J,'sum'), count=(kh_M,'count')
@@ -422,11 +423,20 @@ try:
             }
         return out
 
+    def _agg_basis(df_base, mo_col):
+        """전체 + 지점별 집계 → {지점: {ClaimType: {month: {...}}}}"""
+        result = {'전체': _agg_claimtype(df_base, mo_col)}
+        for br in WS_BRANCHES:
+            df_br = df_base[df_base[kh_branch] == br]
+            if len(df_br) > 0:
+                result[br] = _agg_claimtype(df_br, mo_col)
+        return result
+
     wholesale_data = {
         '보증마감': _agg_basis(df_kh, kh_U),
         '회계마감': _agg_basis(df_kh, kh_Y),
     }
-    ok(f'보증마감 Claim Type: {len(wholesale_data["보증마감"])}종  /  회계마감: {len(wholesale_data["회계마감"])}종  /  총 행: {len(df_kh):,}')
+    ok(f'보증마감 지점 수: {len(wholesale_data["보증마감"])}  /  회계마감: {len(wholesale_data["회계마감"])}  /  총 행: {len(df_kh):,}')
 except Exception as _e:
     ok(f'클레임현황 시트 없음 또는 오류 → WHOLESALE_DATA 빈값 ({_e})')
 
@@ -459,13 +469,15 @@ try:
         (df_cl['_cdate'].dt.year >= 2026) &
         df_cl[cc_status].astype(str).str.contains('청구', na=False)
     ].copy()
-    qr_seen = {}
+    qr_seen = set()
     qr_claim_rows = []
     for _, r in df_cl_2026.iterrows():
         cn = str(r[cc_claim]).strip()[2:]
         defect = r[cc_defect]
-        if cn in qr_seen or pd.isna(defect): continue
-        qr_seen[cn] = True
+        if pd.isna(defect): continue
+        key = (cn, str(defect).strip())
+        if key in qr_seen: continue
+        qr_seen.add(key)
         vin = str(r[cc_vin]).strip() if pd.notna(r[cc_vin]) else ''
         vin7 = vin[-7:] if len(vin) >= 7 else vin
         branch = str(r[cc_branch]).replace('AS_','').strip()

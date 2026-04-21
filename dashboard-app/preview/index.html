@@ -8726,11 +8726,16 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       status.textContent = `Sheets 연결 실패: ${e.message}`;
     }
 
-    // 3. 스캔 딕셔너리 (클레임번호 → 최초 수거일자)
+    // 3. 스캔 딕셔너리 (클레임번호|디펙트코드 → 최초 수거일자)
     const scanMap = {};
     for (const s of scans) {
-      const no = normNo(s[3]);   // r[3] = 클레임번호
-      if (no && !scanMap[no]) scanMap[no] = String(s[0] || '').slice(0, 10); // r[0] = 스캔시간
+      const no  = normNo(s[3]);              // r[3] = 클레임번호
+      const dc  = String(s[6] || '').trim(); // r[6] = 디펙트코드
+      if (!no) continue;
+      const key = no + '|' + dc;
+      if (!scanMap[key]) scanMap[key] = String(s[0] || '').slice(0, 10); // r[0] = 스캔시간
+      // 클레임번호만 키로도 유지 (디펙트코드 없는 구형 스캔 호환)
+      if (!scanMap[no]) scanMap[no] = String(s[0] || '').slice(0, 10);
     }
 
     // 4. 매칭 결과 생성
@@ -8742,8 +8747,10 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     };
     _qmResults = claims.filter(r => r[5] !== 'BSI').map(r => {
       const no       = r[0];
-      const matched  = no in scanMap;
-      const scanDate = matched ? scanMap[no] : '';
+      const dc       = String(r[1] || '').trim();
+      const key      = no + '|' + dc;
+      const matched  = (key in scanMap) || (no in scanMap);
+      const scanDate = scanMap[key] || scanMap[no] || '';
       const type     = r[5] || _jsType(r[1]);
       const exempt   = _exemptSet.has(no);
       return { no, defect: r[1], vin7: r[2], branch: r[3], date: r[4], type, matched, scanDate, exempt };
