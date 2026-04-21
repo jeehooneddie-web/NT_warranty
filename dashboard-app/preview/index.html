@@ -8632,12 +8632,29 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     cnt.textContent = `(${scans.length}건)`;
     if (scans.length === 0) { el.innerHTML = '<div style="color:#6B7280; font-size:13px; text-align:center; padding:24px 0;">등록된 로케이션이 없습니다</div>'; return; }
     const _t = _tc();
-    el.innerHTML = [...scans].reverse().map(s => `
-      <div style="background:${_t.card}; border-radius:12px; padding:12px 14px; border:1px solid ${_t.border};">
-        <div style="margin-bottom:4px;"><span style="background:#0d2b1a; color:#4ade80; font-size:11px; padding:2px 8px; border-radius:6px; font-weight:700;">📍 ${s.location}</span></div>
-        <div style="color:${_t.text}; font-size:13px; font-weight:700; font-family:monospace;">${s.claimNo} <span style="color:${_t.textSub}; font-weight:400; font-size:12px;">/ ${s.portNo}</span></div>
-        <div style="color:${_t.textSub}; font-size:12px; margin-top:3px;">${s.branch} · ${s.partDesc}</div>
-      </div>`).join('');
+    el.innerHTML = [...scans].reverse().map((s, i) => {
+      const scanNo = scans.length - i;
+      const timeStr = s.scanTime ? new Date(s.scanTime).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : '';
+      return `
+      <div style="background:${_t.card}; border-radius:14px; padding:14px 16px; border:1px solid ${_t.border}; display:flex; flex-direction:column; gap:8px;">
+        <!-- 상단: 로케이션 배지 + 번호/시간 -->
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <span style="background:#052e16; color:#4ade80; font-size:13px; padding:5px 12px; border-radius:20px; font-weight:800; letter-spacing:0.5px; white-space:nowrap;">📍 ${s.location || '—'}</span>
+          <span style="color:#6B7280; font-size:11px; white-space:nowrap;">#${scanNo}${timeStr ? ' · ' + timeStr : ''}</span>
+        </div>
+        <!-- 중단: 클레임번호 + Part -->
+        <div style="display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;">
+          <span style="color:${_t.text}; font-size:15px; font-weight:800; font-family:monospace; letter-spacing:0.5px;">${s.claimNo}</span>
+          <span style="color:#7C3AED; font-size:12px; font-weight:700; background:rgba(124,58,237,0.1); padding:2px 8px; border-radius:6px;">Part ${s.partIndex}/${s.totalParts}</span>
+        </div>
+        <!-- 하단: 지점 · 부품명 · 차대번호 -->
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+          <span style="color:#fff; background:#374151; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px;">${s.branch}</span>
+          <span style="color:${_t.textSub}; font-size:12px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.partDesc}</span>
+        </div>
+        <div style="color:#6B7280; font-size:11px; font-family:monospace;">${s.chassisNo || ''}</div>
+      </div>`;
+    }).join('');
   }
 
   function clearLocScans() {
