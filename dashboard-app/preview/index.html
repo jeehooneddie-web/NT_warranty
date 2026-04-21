@@ -5107,15 +5107,16 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
       </div>`;
     }).join('');
 
-    // datasets
+    // datasets (0값도 bar 표시 — 데이터 없는 지점은 '-' 레이블)
+    const toVal = v => metric==='amount' ? Math.round(v/1000000) : v;
     const datasets = activeBr.map(b=>({
       label:b,
-      data: months.map(m=>{ const v=agg[b]?.[m]?.[metric]||0; return metric==='amount'?(v>0?Math.round(v/1000000):null):(v>0?v:null); }),
+      data: months.map(m=>toVal(agg[b]?.[m]?.[metric]||0)),
       backgroundColor: CMP_COLORS[b]+'bb', borderColor:CMP_COLORS[b],
       borderWidth:1.5, borderRadius:4, maxBarThickness:28,
-      datalabels:{ display:ctx=>(ctx.parsed.y||0)>0, anchor:'end', align:'end',
+      datalabels:{ display:true, anchor:'end', align:'end',
                    color:CMP_COLORS[b], font:{size:10,weight:'700'},
-                   formatter:v=>v+unit }
+                   formatter:v=>v>0?v+unit:'-' }
     }));
 
     // 차트 생성
@@ -5136,8 +5137,8 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
           tooltip:{
             backgroundColor:dk?'#0f172a':'#fff', borderColor:dk?'#334155':'#e2e8f0', borderWidth:1,
             titleColor:tickC, bodyColor:dk?'#94a3b8':'#374151',
-            callbacks:{ label:ctx=>{ const v=ctx.parsed.y; if(!v) return null;
-              return ` ${ctx.dataset.label}: ${metric==='amount'?v+'백만원':v+'건'}`; }}
+            callbacks:{ label:ctx=>{ const v=ctx.parsed.y;
+              return ` ${ctx.dataset.label}: ${v>0?(metric==='amount'?v+'백만원':v+'건'):'-'}`; }}
           }
         },
         scales:{
@@ -5159,17 +5160,17 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
         <th style="padding:8px 14px;text-align:right;color:${t.textSub};font-size:11px;font-weight:700;border-bottom:1px solid ${t.border};">합계</th></tr>`;
       const mTot=months.map(m=>activeBr.reduce((s,b)=>s+(agg[b]?.[m]?.[metric]||0),0));
       const grand=mTot.reduce((s,v)=>s+v,0);
-      const fmt=v=>metric==='amount'?(v>0?Math.round(v/1000000):0):v;
+      const fmt=v=>{ const r=metric==='amount'?Math.round(v/1000000):v; return r>0?r:'-'; };
       tbody.innerHTML=activeBr.map(b=>{
         const vals=months.map(m=>agg[b]?.[m]?.[metric]||0);
         const tot=vals.reduce((s,v)=>s+v,0);
         return `<tr style="border-bottom:1px solid ${t.border};">
           <td style="padding:8px 14px;font-weight:700;color:${CMP_COLORS[b]};font-size:12px;">${b}</td>
-          ${vals.map(v=>`<td style="padding:8px 10px;text-align:center;font-size:12px;color:${t.textSub};">${fmt(v)||'—'}</td>`).join('')}
+          ${vals.map(v=>`<td style="padding:8px 10px;text-align:center;font-size:12px;color:${v>0?t.text:t.textSub};">${fmt(v)}</td>`).join('')}
           <td style="padding:8px 14px;text-align:right;font-weight:700;color:${t.text};font-size:12px;">${fmt(tot)}</td></tr>`;
       }).join('')+`<tr style="background:${t.cardAlt};border-top:1px solid ${t.border};">
         <td style="padding:8px 14px;font-weight:700;font-size:12px;color:${t.text};">합계</td>
-        ${mTot.map(v=>`<td style="padding:8px 10px;text-align:center;font-weight:700;font-size:12px;color:${t.text};">${fmt(v)||'—'}</td>`).join('')}
+        ${mTot.map(v=>`<td style="padding:8px 10px;text-align:center;font-weight:700;font-size:12px;color:${t.text};">${fmt(v)}</td>`).join('')}
         <td style="padding:8px 14px;text-align:right;font-weight:700;font-size:12px;color:${t.text};">${fmt(grand)}</td></tr>`;
       tblWrap.classList.remove('hidden');
     }
