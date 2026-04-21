@@ -8411,8 +8411,11 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     if (!data.claimNo) { showQRToast('QR 파싱 실패. 다시 시도해주세요', '#dc2626'); _resumeQRCamera(); return; }
     locPendingScans.push(data);
     renderLocPendingList();
-    showQRToast(`✓ 추가됨 (${locPendingScans.length}건) — 계속 스캔하세요`, '#3B82F6');
-    _resumeQRCamera();
+    showQRToast(`✓ ${locPendingScans.length}건 추가 완료`, '#059669');
+    // 자동 재개 없음 — 카메라 멈춤 상태 유지, 사용자가 수동으로 다음 스캔 시작
+    document.getElementById('qr-cam-msg').textContent = `✓ ${locPendingScans.length}건 추가됨 — 다음 항목은 시작 버튼을 눌러 스캔하세요`;
+    document.getElementById('qr-start-btn').style.display = 'block';
+    document.getElementById('qr-stop-btn').style.display = 'none';
   }
 
   function resetQRResult() {
