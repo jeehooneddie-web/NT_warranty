@@ -2309,7 +2309,6 @@
             <div id="dccmp-stat-cards" class="flex gap-3 mb-4 flex-wrap"></div>
             <!-- 그룹 바 차트 -->
             <div id="dccmp-chart-wrap" style="height:380px;position:relative;" class="mb-4">
-              <canvas id="dccmp-chart"></canvas>
             </div>
             <!-- 데이터 테이블 -->
             <div id="dccmp-table-wrap" class="hidden rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
@@ -5053,11 +5052,14 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
       if (descEl) descEl.textContent = activeCodes.length+'개 코드 합산';
     }
 
-    // 전체 월 범위
+    // 전체 월 범위 (데이터 최초~최종 월까지만)
     const allM = [...new Set(DEFECT_RAW.map(r=>r[1]))].sort();
-    const months=[], lastY=parseInt(allM[allM.length-1].slice(0,2));
+    const lastMStr = allM[allM.length-1];
+    const lastY  = parseInt(lastMStr.slice(0,2));
+    const lastMo = parseInt(lastMStr.slice(3,5));
+    const months=[];
     let cy=parseInt(allM[0].slice(0,2)), cm=parseInt(allM[0].slice(3,5));
-    while(cy<lastY||(cy===lastY&&cm<=12)){
+    while(cy<lastY||(cy===lastY&&cm<=lastMo)){
       months.push(`${String(cy).padStart(2,'0')}-${String(cm).padStart(2,'0')}`);
       cm++; if(cm>12){cm=1;cy++;}
     }
@@ -5065,13 +5067,12 @@ const BRANCH_DATA = {"군산":{"25-01":{"BSI":{"count":117,"total":45383974},"Go
     // 코드 prefix 집합 (빠른 매칭)
     const prefixSet = new Set(activeCodes);
 
-    // 지점 × 월 집계
+    // 지점 × 월 집계 (타입 필터는 전체 적용 — 추이 차트 필터 상태 무관)
     const agg = {};
     for (const [br,mo,tp,cd,cnt,amt] of DEFECT_RAW) {
       let match = false;
       for (const p of prefixSet) { if (cd.startsWith(p)){ match=true; break; } }
       if (!match) continue;
-      if (!dActiveTypes.has(tp)) continue;
       if (!agg[br]) agg[br]={};
       if (!agg[br][mo]) agg[br][mo]={count:0,amount:0};
       agg[br][mo].count+=cnt; agg[br][mo].amount+=amt;
