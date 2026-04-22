@@ -1825,15 +1825,25 @@
               </div>
             </div>
 
-            <!-- ── 로케이션 스캔 목록 ── -->
-            <div id="qr-loc-list-section" style="display:none; flex:1;">
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                <span style="color:#9CA3AF; font-size:13px; font-weight:600;">로케이션 목록 <span id="qr-loc-count" style="color:#6B7280; font-weight:400;">(0건)</span></span>
-                <button onclick="clearLocScans()" style="font-size:12px; color:#6B7280; background:none; border:none; cursor:pointer;">초기화</button>
+            <!-- ── 로케이션 저장 목록 ── -->
+            <div id="qr-loc-list-section" style="display:none;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; padding-top:10px; border-top:1px solid #1e2433;">
+                <span style="color:#4B5563; font-size:11px; font-weight:600;">지정 완료 <span id="qr-loc-count" style="color:#6B7280; font-weight:400;"></span></span>
+                <button onclick="clearLocScans()" style="font-size:11px; color:#6B7280; background:none; border:none; cursor:pointer;">초기화</button>
               </div>
-              <div id="qr-loc-list" style="display:flex; flex-direction:column; gap:8px;">
-                <div style="color:#6B7280; font-size:13px; text-align:center; padding:24px 0;">등록된 로케이션이 없습니다</div>
+              <div id="qr-loc-list" style="display:flex; flex-direction:column; gap:6px;">
+                <div style="color:#6B7280; font-size:12px; text-align:center; padding:14px 0;">등록된 로케이션이 없습니다</div>
               </div>
+            </div>
+
+            <!-- 로케이션 상세 화면 -->
+            <div id="loc-detail-screen" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#000; z-index:9999; overflow-y:auto;">
+              <div style="background:#1e2433; border-bottom:1px solid #222222; padding:14px 16px; display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:10;">
+                <button onclick="hideLocDetail()" style="background:rgba(255,255,255,0.1); border:none; border-radius:8px; padding:8px 14px; color:#fff; font-size:13px; font-weight:600; cursor:pointer;">← 뒤로</button>
+                <span id="loc-detail-title" style="background:#052e16; color:#4ade80; font-size:13px; padding:4px 14px; border-radius:20px; font-weight:800;">📍 —</span>
+                <span id="loc-detail-count" style="color:#6B7280; font-size:12px; margin-left:auto;"></span>
+              </div>
+              <div id="loc-detail-body" style="padding:14px 16px; display:flex; flex-direction:column; gap:6px;"></div>
             </div>
 
             <!-- Google Sheets 연동 설정 -->
@@ -8548,7 +8558,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     document.getElementById('qr-inv-result-box').style.display = 'none';
     document.getElementById('qr-goopum-list-section').style.display = mode === 'goopum'    ? 'flex' : 'none';
     document.getElementById('qr-inv-list-section').style.display    = mode === 'inventory' ? 'flex' : 'none';
-    document.getElementById('qr-loc-list-section').style.display    = mode === 'location'  ? 'flex' : 'none';
+    document.getElementById('qr-loc-list-section').style.display    = mode === 'location'  ? 'block' : 'none';
     const locBox = document.getElementById('qr-loc-result-box');
     locBox.style.display = mode === 'location' ? 'block' : 'none';
     if (mode === 'location') renderLocPendingList();
@@ -8664,26 +8674,46 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     const el  = document.getElementById('qr-loc-list');
     const cnt = document.getElementById('qr-loc-count');
     if (!el) return;
-    cnt.textContent = `(${scans.length}건)`;
-    if (scans.length === 0) { el.innerHTML = '<div style="color:#6B7280; font-size:13px; text-align:center; padding:24px 0;">등록된 로케이션이 없습니다</div>'; return; }
+    cnt.textContent = scans.length ? `${scans.length}건` : '';
+    if (!scans.length) { el.innerHTML = '<div style="color:#6B7280; font-size:12px; text-align:center; padding:14px 0;">등록된 로케이션이 없습니다</div>'; return; }
+    const groups = {}, order = [];
+    scans.forEach(s => {
+      const loc = s.location || '—';
+      if (!groups[loc]) { groups[loc] = []; order.push(loc); }
+      groups[loc].push(s);
+    });
     const _t = _tc();
-    el.innerHTML = [...scans].reverse().map((s, i) => {
-      const scanNo = scans.length - i;
-      const timeStr = s.scanTime ? new Date(s.scanTime).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : '';
-      return `
-      <div style="background:${_t.card};border-radius:10px;padding:8px 10px;border:1px solid ${_t.border};">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-          <span style="background:#052e16;color:#4ade80;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;white-space:nowrap;">📍 ${s.location || '—'}</span>
-          <span style="color:#4B5563;font-size:10px;margin-left:auto;white-space:nowrap;">${timeStr}</span>
+    el.innerHTML = order.map(loc => `
+      <div onclick="showLocDetail(${JSON.stringify(loc)})"
+           style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:${_t.card}; border-radius:10px; border:1px solid ${_t.border}; cursor:pointer; user-select:none;">
+        <span style="background:#052e16; color:#4ade80; font-size:12px; padding:4px 10px; border-radius:12px; font-weight:800; white-space:nowrap;">📍 ${loc}</span>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:10px; flex-shrink:0;">
+          <span style="color:#9CA3AF; font-size:12px; font-weight:600;">${groups[loc].length}건</span>
+          <span style="background:#1d4ed8; color:#fff; font-size:15px; font-weight:900; width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center;">›</span>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;min-width:0;">
-          <span style="background:#374151;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;">${s.branch}</span>
-          <span style="color:${_t.text};font-size:12px;font-weight:700;font-family:monospace;white-space:nowrap;flex-shrink:0;">${s.claimNo}</span>
-          <span style="color:#4B5563;font-size:10px;font-family:monospace;white-space:nowrap;flex-shrink:0;">${s.portNo}</span>
-          <span style="color:${_t.textSub};font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.partDesc}</span>
-        </div>
-      </div>`;
-    }).join('');
+      </div>`).join('');
+  }
+
+  function showLocDetail(loc) {
+    const LOC_KEY = 'qr_location_scans';
+    const scans = JSON.parse(localStorage.getItem(LOC_KEY) || '[]');
+    const items = scans.filter(s => (s.location || '—') === loc);
+    const _t = _tc();
+    document.getElementById('loc-detail-title').textContent = '📍 ' + loc;
+    document.getElementById('loc-detail-count').textContent = `${items.length}건`;
+    document.getElementById('loc-detail-body').innerHTML = items.length ? items.map(s => `
+      <div style="display:flex; align-items:center; gap:6px; background:${_t.card}; border-radius:8px; padding:10px 12px; border:1px solid ${_t.border};">
+        <span style="background:#374151; color:#fff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; white-space:nowrap; flex-shrink:0;">${s.branch}</span>
+        <span style="color:${_t.text}; font-size:13px; font-weight:700; font-family:monospace; white-space:nowrap; flex-shrink:0;">${s.claimNo}</span>
+        <span style="color:#4B5563; font-size:10px; font-family:monospace; white-space:nowrap; flex-shrink:0;">${s.portNo}</span>
+        <span style="color:${_t.textSub}; font-size:11px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.partDesc}</span>
+      </div>`).join('') :
+      '<div style="color:#6B7280; font-size:12px; text-align:center; padding:40px 0;">항목이 없습니다</div>';
+    document.getElementById('loc-detail-screen').style.display = 'block';
+  }
+
+  function hideLocDetail() {
+    document.getElementById('loc-detail-screen').style.display = 'none';
   }
 
   function clearLocScans() {
