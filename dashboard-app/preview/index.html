@@ -1677,7 +1677,10 @@
 
           <!-- 좌: 카메라 영역 -->
           <div class="qr-left">
-            <div id="qr-reader" style="width:100%; background:#000;"></div>
+            <div style="position:relative; width:100%;">
+              <div id="qr-reader" style="width:100%; background:#000;"></div>
+              <div id="qr-loc-overlay" style="display:none; position:absolute; bottom:10px; left:10px; right:10px; z-index:100;"></div>
+            </div>
             <div id="qr-cam-msg" style="text-align:center; color:#9CA3AF; font-size:13px; padding:8px 16px; background:#0A0A0A;">카메라 시작 버튼을 눌러주세요</div>
             <div style="display:flex; gap:10px; padding:12px 16px;">
               <button id="qr-start-btn" onclick="startQRCamera()" style="flex:1; padding:14px; border-radius:12px; background:#3B82F6; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer; transition:all 0.25s ease;">📷 카메라 시작</button>
@@ -8404,20 +8407,50 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
 
   function handleLocResult(data) {
     if (data._type === 'location') {
-      // 위치 QR → 입력창 자동 채우기
       document.getElementById('qr-loc-input').value = data.raw;
       showQRToast('📍 위치 자동입력: ' + data.raw, '#7C3AED');
       _resumeQRCamera();
       return;
     }
     if (!data.claimNo) { showQRToast('QR 파싱 실패. 다시 시도해주세요', '#dc2626'); _resumeQRCamera(); return; }
+    // 임시 목록 중복 검증
+    if (locPendingScans.some(s => s.claimNo === data.claimNo && s.portNo === data.portNo)) {
+      showQRToast('⚠ 이미 스캔 목록에 있는 항목입니다', '#d97706');
+      _locCooldown(); return;
+    }
+    // 저장된 목록 중복 검증
+    const _locSaved = JSON.parse(localStorage.getItem('qr_location_scans') || '[]');
+    if (_locSaved.some(s => s.claimNo === data.claimNo && s.portNo === data.portNo)) {
+      showQRToast('⚠ 이미 저장된 항목입니다', '#d97706');
+      _locCooldown(); return;
+    }
     locPendingScans.push(data);
     renderLocPendingList();
-    showQRToast(`✓ ${locPendingScans.length}건 추가 완료`, '#059669');
-    // 자동 재개 없음 — 카메라 멈춤 상태 유지, 사용자가 수동으로 다음 스캔 시작
-    document.getElementById('qr-cam-msg').textContent = `✓ ${locPendingScans.length}건 추가됨 — 다음 항목은 시작 버튼을 눌러 스캔하세요`;
-    document.getElementById('qr-start-btn').style.display = 'block';
-    document.getElementById('qr-stop-btn').style.display = 'none';
+    _showLocOverlay(data);
+    _locCooldown();
+  }
+
+  let _locCooldownTimer = null;
+  function _locCooldown() {
+    clearTimeout(_locCooldownTimer);
+    document.getElementById('qr-cam-msg').textContent = '✓ 추가됨 — 잠시 후 자동 재개';
+    _locCooldownTimer = setTimeout(() => { _hideLocOverlay(); _resumeQRCamera(); }, 1500);
+  }
+
+  function _showLocOverlay(data) {
+    const ov = document.getElementById('qr-loc-overlay');
+    if (!ov) return;
+    ov.style.display = 'block';
+    ov.innerHTML = `
+      <div style="background:rgba(5,150,105,0.92);border-radius:12px;padding:10px 14px;backdrop-filter:blur(4px);">
+        <div style="color:#fff;font-size:13px;font-weight:800;font-family:monospace;">✓ ${data.claimNo} <span style="color:rgba(255,255,255,0.65);font-weight:400;font-size:12px;">/ ${data.portNo}</span></div>
+        <div style="color:rgba(255,255,255,0.8);font-size:12px;margin-top:3px;">${data.branch} · ${data.partDesc} · Part ${data.partIndex}/${data.totalParts}</div>
+      </div>`;
+  }
+
+  function _hideLocOverlay() {
+    const ov = document.getElementById('qr-loc-overlay');
+    if (ov) ov.style.display = 'none';
   }
 
   function resetQRResult() {
