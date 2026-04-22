@@ -604,6 +604,11 @@
         <i data-lucide="refresh-cw"></i>
         <span>데이터 업데이트</span>
       </div>
+
+      <div class="nav-item admin-only" data-view="view-dms-trigger" onclick="showView('view-dms-trigger')">
+        <i data-lucide="monitor-play"></i>
+        <span>DMS 자동화</span>
+      </div>
     </nav>
 
     <!-- 사용자 정보 -->
@@ -1139,6 +1144,132 @@
           </table>
         </div>
       </div><!-- /view-admin-menus -->
+
+      <!-- DMS 자동화 ────────────────────────────────────────────── -->
+      <div id="view-dms-trigger" class="view hidden p-4 max-w-lg mx-auto" style="padding-bottom:60px;">
+
+        <!-- 서버 URL 설정 -->
+        <div id="dms-url-section" class="mb-4 rounded-xl p-4 border" style="background:var(--card-bg,#1e2433);border-color:#2a3347;">
+          <div class="text-xs font-semibold mb-2" style="color:#9CA3AF;">서버 URL</div>
+          <div class="flex gap-2">
+            <input id="dms-server-url" type="url" placeholder="https://xxxx.trycloudflare.com"
+              class="flex-1 rounded-lg px-3 py-2 text-sm border"
+              style="background:#0d1117;border-color:#2a3347;color:#e2e8f0;" />
+            <button onclick="dmsUrlSave()" class="px-3 py-2 rounded-lg text-sm font-semibold"
+              style="background:#1d4ed8;color:#fff;">저장</button>
+          </div>
+          <div class="flex gap-2 mt-2">
+            <input id="dms-token" type="password" placeholder="토큰 (기본: nm-dms-2026)"
+              class="flex-1 rounded-lg px-3 py-2 text-sm border"
+              style="background:#0d1117;border-color:#2a3347;color:#e2e8f0;" />
+          </div>
+          <div id="dms-url-msg" class="text-xs mt-2" style="color:#6B7280;"></div>
+        </div>
+
+        <!-- 상태 카드 -->
+        <div id="dms-status-card" class="mb-4 rounded-xl p-4 border" style="background:var(--card-bg,#1e2433);border-color:#2a3347;">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-semibold" style="color:#e2e8f0;">서버 상태</span>
+            <button onclick="dmsCheckStatus()" class="text-xs px-2 py-1 rounded-lg" style="background:#374151;color:#9CA3AF;">새로고침</button>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-2 text-sm">
+              <span id="dms-dot-server" style="font-size:10px;">⚫</span>
+              <span style="color:#9CA3AF;">PC 서버 연결</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+              <span id="dms-dot-chrome" style="font-size:10px;">⚫</span>
+              <span style="color:#9CA3AF;">Chrome (9222)</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+              <span id="dms-dot-login" style="font-size:10px;">⚫</span>
+              <span style="color:#9CA3AF;">DMS 로그인</span>
+            </div>
+          </div>
+          <div id="dms-status-msg" class="text-xs mt-3 px-3 py-2 rounded-lg" style="background:#0d1117;color:#6B7280;min-height:28px;"></div>
+        </div>
+
+        <!-- 로그인 섹션 (DMS 미로그인 시) -->
+        <div id="dms-login-section" class="hidden mb-4 rounded-xl p-4 border" style="background:#0f1629;border-color:#1e3a5f;">
+          <div class="text-sm font-semibold mb-3" style="color:#60a5fa;">🔐 DMS 로그인</div>
+
+          <!-- 로그인 시작 버튼 -->
+          <div id="dms-login-btn-wrap">
+            <button onclick="dmsStartLogin()" class="w-full py-2 rounded-lg text-sm font-semibold"
+              style="background:#1d4ed8;color:#fff;">로그인 시작</button>
+            <p class="text-xs mt-2" style="color:#6B7280;">Chrome에 저장된 ID/PW로 자동 입력 → SMS OTP 발송</p>
+          </div>
+
+          <!-- OTP 입력 (waiting_otp 상태) -->
+          <div id="dms-otp-wrap" class="hidden">
+            <p class="text-xs mb-2" style="color:#f59e0b;">📱 SMS 인증번호가 발송되었습니다</p>
+            <div class="flex gap-2">
+              <input id="dms-otp-input" type="number" maxlength="6" placeholder="6자리 인증번호"
+                class="flex-1 rounded-lg px-3 py-2 text-sm border text-center font-mono tracking-widest"
+                style="background:#0d1117;border-color:#f59e0b;color:#f59e0b;font-size:18px;" />
+              <button onclick="dmsSubmitOtp()" class="px-4 py-2 rounded-lg text-sm font-semibold"
+                style="background:#d97706;color:#fff;">확인</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 옵션 선택 -->
+        <div id="dms-option-section" class="mb-4 rounded-xl p-4 border" style="background:var(--card-bg,#1e2433);border-color:#2a3347;">
+          <div class="text-sm font-semibold mb-3" style="color:#e2e8f0;">실행 옵션</div>
+          <div class="flex flex-col gap-2" id="dms-options">
+            <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background:#0d1117;border:1px solid #2a3347;">
+              <input type="radio" name="dms-opt" value="0" checked class="accent-blue-500" />
+              <div>
+                <div class="text-sm font-semibold" style="color:#e2e8f0;">[0] All DMS</div>
+                <div class="text-xs" style="color:#6B7280;">Claim Detail + Status + TC RawData → 대시보드 업데이트</div>
+              </div>
+            </label>
+            <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background:#0d1117;border:1px solid #2a3347;">
+              <input type="radio" name="dms-opt" value="1" class="accent-blue-500" />
+              <div>
+                <div class="text-sm font-semibold" style="color:#e2e8f0;">[1] Warranty Claim Detail</div>
+                <div class="text-xs" style="color:#6B7280;">클레임 상세 다운로드 → 대시보드 업데이트</div>
+              </div>
+            </label>
+            <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background:#0d1117;border:1px solid #2a3347;">
+              <input type="radio" name="dms-opt" value="2" class="accent-blue-500" />
+              <div>
+                <div class="text-sm font-semibold" style="color:#e2e8f0;">[2] Warranty Claim Status</div>
+                <div class="text-xs" style="color:#6B7280;">5개 지점 클레임 현황 → 대시보드 업데이트</div>
+              </div>
+            </label>
+            <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background:#0d1117;border:1px solid #2a3347;">
+              <input type="radio" name="dms-opt" value="3" class="accent-blue-500" />
+              <div>
+                <div class="text-sm font-semibold" style="color:#e2e8f0;">[3] TC Non-execution RawData</div>
+                <div class="text-xs" style="color:#6B7280;">TC 미실시 데이터 → 대시보드 업데이트</div>
+              </div>
+            </label>
+            <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background:#0d1117;border:1px solid #2a3347;">
+              <input type="radio" name="dms-opt" value="4" class="accent-blue-500" />
+              <div>
+                <div class="text-sm font-semibold" style="color:#e2e8f0;">[4] TC Verify Files</div>
+                <div class="text-xs" style="color:#6B7280;">TC 검증 파일 생성 (Chrome 불필요)</div>
+              </div>
+            </label>
+          </div>
+          <button id="dms-run-btn" onclick="dmsRun()" class="w-full mt-4 py-3 rounded-xl text-sm font-bold disabled:opacity-40"
+            style="background:#16a34a;color:#fff;" disabled>
+            ▶ 실행
+          </button>
+        </div>
+
+        <!-- 실행 로그 -->
+        <div id="dms-log-section" class="hidden rounded-xl p-4 border" style="background:#0d1117;border-color:#2a3347;">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold" style="color:#9CA3AF;">실행 로그</span>
+            <button onclick="document.getElementById('dms-log-box').innerHTML=''" class="text-xs" style="color:#6B7280;">지우기</button>
+          </div>
+          <div id="dms-log-box" class="text-xs font-mono overflow-y-auto"
+            style="max-height:260px;color:#4ade80;line-height:1.6;white-space:pre-wrap;word-break:break-all;"></div>
+        </div>
+
+      </div><!-- /view-dms-trigger -->
 
       <!-- =============================================
            뷰 7: 보증번역기
@@ -3422,6 +3553,7 @@
       'view-qr-match':         '고품 반납 현황',
       'view-qr-location':      '고품 로케이션 조회',
       'view-wholesale':        '클레임 볼륨',
+      'view-dms-trigger':      'DMS 자동화',
     };
     document.getElementById('page-title').textContent = titles[viewId] || '';
 
@@ -3438,6 +3570,7 @@
     if (viewId === 'view-qr-location') initQRLocation();
     if (viewId === 'view-wholesale') renderWholesale();
     if (viewId === 'view-admin-menus') renderMenuCfgTable();
+    if (viewId === 'view-dms-trigger') initDmsTrigger();
     if (viewId === 'view-user-mgmt')  loadUserList();
     // 대시보드 드래그 초기화
     if (viewId === 'view-dashboard') setTimeout(initDashboard, 50);
@@ -9132,6 +9265,169 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     );
     closeExemptModal();
     renderQMTable();
+  }
+
+  // ── DMS 자동화 ────────────────────────────────────────────────────────────
+  const DMS_URL_KEY   = 'dms_server_url';
+  const DMS_TOKEN_KEY = 'dms_token';
+  let _dmsEvt = null;
+
+  function initDmsTrigger() {
+    const savedUrl   = localStorage.getItem(DMS_URL_KEY) || '';
+    const savedToken = localStorage.getItem(DMS_TOKEN_KEY) || '';
+    document.getElementById('dms-server-url').value = savedUrl;
+    document.getElementById('dms-token').value       = savedToken;
+    if (savedUrl) dmsCheckStatus();
+  }
+
+  function _dmsUrl()   { return (localStorage.getItem(DMS_URL_KEY) || '').replace(/\/$/, ''); }
+  function _dmsToken() { return localStorage.getItem(DMS_TOKEN_KEY) || 'nm-dms-2026'; }
+
+  function dmsUrlSave() {
+    const url   = document.getElementById('dms-server-url').value.trim();
+    const token = document.getElementById('dms-token').value.trim();
+    localStorage.setItem(DMS_URL_KEY, url);
+    if (token) localStorage.setItem(DMS_TOKEN_KEY, token);
+    document.getElementById('dms-url-msg').textContent = '저장됨';
+    if (url) dmsCheckStatus();
+  }
+
+  async function _dmsFetch(path, opts = {}) {
+    const base = _dmsUrl();
+    if (!base) { alert('서버 URL을 먼저 입력하세요.'); return null; }
+    const res = await fetch(base + path, {
+      ...opts,
+      headers: { 'Content-Type': 'application/json', 'X-Token': _dmsToken(), ...(opts.headers || {}) }
+    });
+    return res.json();
+  }
+
+  function _dmsSetDot(id, on, color) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = on ? '🟢' : '🔴';
+  }
+
+  async function dmsCheckStatus() {
+    const msg = document.getElementById('dms-status-msg');
+    msg.textContent = '확인 중...';
+    msg.style.color = '#6B7280';
+    try {
+      const data = await _dmsFetch('/status');
+      if (!data) return;
+      _dmsSetDot('dms-dot-server', true);
+      _dmsSetDot('dms-dot-chrome', data.chrome_ok);
+      _dmsSetDot('dms-dot-login',  data.dms_logged_in);
+      msg.textContent = data.msg || (data.status === 'idle' ? '대기 중' : data.status);
+      msg.style.color = data.dms_logged_in ? '#4ade80' : '#f59e0b';
+      _dmsUpdateUI(data);
+    } catch(e) {
+      _dmsSetDot('dms-dot-server', false);
+      _dmsSetDot('dms-dot-chrome', false);
+      _dmsSetDot('dms-dot-login',  false);
+      msg.textContent = '서버 연결 실패 — URL/터널 확인';
+      msg.style.color = '#ef4444';
+    }
+  }
+
+  function _dmsUpdateUI(data) {
+    const loginSec = document.getElementById('dms-login-section');
+    const runBtn   = document.getElementById('dms-run-btn');
+    const btnWrap  = document.getElementById('dms-login-btn-wrap');
+    const otpWrap  = document.getElementById('dms-otp-wrap');
+
+    // 로그인 섹션 표시 여부
+    const needLogin = data.chrome_ok && !data.dms_logged_in &&
+                      ['idle','error','waiting_otp','logging_in'].includes(data.status);
+    loginSec.classList.toggle('hidden', !needLogin);
+
+    if (data.status === 'waiting_otp') {
+      btnWrap.classList.add('hidden');
+      otpWrap.classList.remove('hidden');
+      document.getElementById('dms-otp-input').focus();
+    } else {
+      btnWrap.classList.remove('hidden');
+      otpWrap.classList.add('hidden');
+    }
+
+    // 실행 버튼 활성화 조건
+    const selectedOpt = parseInt(document.querySelector('input[name="dms-opt"]:checked')?.value ?? '-1');
+    const canRun = data.status === 'idle' &&
+                   (selectedOpt === 4 || data.dms_logged_in);
+    runBtn.disabled = !canRun;
+    runBtn.textContent = data.status === 'running' ? '⏳ 실행 중...' : '▶ 실행';
+  }
+
+  async function dmsStartLogin() {
+    const data = await _dmsFetch('/login', { method: 'POST' });
+    if (!data) return;
+    document.getElementById('dms-status-msg').textContent = data.status === 'login_started'
+      ? '로그인 시도 중...' : (data.error || '오류');
+    // 0.5초마다 상태 폴링 (로그인 완료 or 오류 시 멈춤)
+    _dmsPollStatus(['logging_in', 'waiting_otp']);
+  }
+
+  async function dmsSubmitOtp() {
+    const otp = document.getElementById('dms-otp-input').value.trim();
+    if (otp.length < 4) { alert('인증번호를 입력하세요'); return; }
+    const data = await _dmsFetch('/otp', { method: 'POST', body: JSON.stringify({ otp }) });
+    if (!data) return;
+    document.getElementById('dms-status-msg').textContent = 'OTP 전송됨...';
+    _dmsPollStatus(['waiting_otp', 'logging_in']);
+  }
+
+  function _dmsPollStatus(waitStates, ms = 1500, maxTry = 40) {
+    let count = 0;
+    const t = setInterval(async () => {
+      count++;
+      if (count > maxTry) { clearInterval(t); return; }
+      try {
+        const data = await _dmsFetch('/status');
+        if (!data) { clearInterval(t); return; }
+        _dmsSetDot('dms-dot-login', data.dms_logged_in);
+        document.getElementById('dms-status-msg').textContent = data.msg || data.status;
+        _dmsUpdateUI(data);
+        if (!waitStates.includes(data.status)) clearInterval(t);
+      } catch(e) { clearInterval(t); }
+    }, ms);
+  }
+
+  async function dmsRun() {
+    const opt = parseInt(document.querySelector('input[name="dms-opt"]:checked')?.value ?? '0');
+    const data = await _dmsFetch('/run', { method: 'POST', body: JSON.stringify({ option: opt }) });
+    if (!data) return;
+    if (data.error) { alert(data.error === 'dms_login_required' ? 'DMS 로그인이 필요합니다' : data.error); return; }
+    // 로그 스트리밍 시작
+    const logSec = document.getElementById('dms-log-section');
+    const logBox = document.getElementById('dms-log-box');
+    logSec.classList.remove('hidden');
+    logBox.textContent = '';
+    document.getElementById('dms-run-btn').disabled = true;
+    document.getElementById('dms-run-btn').textContent = '⏳ 실행 중...';
+    if (_dmsEvt) _dmsEvt.close();
+    const base = _dmsUrl();
+    _dmsEvt = new EventSource(`${base}/logs?token=${_dmsToken()}`);
+    _dmsEvt.onmessage = e => {
+      const d = JSON.parse(e.data);
+      if (d.ping) return;
+      if (d.msg === '__DONE__') {
+        logBox.textContent += '\n✅ 완료 — 대시보드를 새로고침하세요';
+        logBox.scrollTop = logBox.scrollHeight;
+        _dmsEvt.close();
+        dmsCheckStatus();
+        return;
+      }
+      if (d.msg?.startsWith('__ERROR__')) {
+        logBox.textContent += '\n❌ ' + d.msg.replace('__ERROR__ ', '');
+        logBox.scrollTop = logBox.scrollHeight;
+        _dmsEvt.close();
+        dmsCheckStatus();
+        return;
+      }
+      logBox.textContent += d.msg + '\n';
+      logBox.scrollTop = logBox.scrollHeight;
+    };
+    _dmsEvt.onerror = () => { _dmsEvt.close(); dmsCheckStatus(); };
   }
 </script>
 </body>
