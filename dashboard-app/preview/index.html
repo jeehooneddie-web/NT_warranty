@@ -8567,12 +8567,12 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     }
     area.style.display = 'block';
     el.innerHTML = locPendingScans.map((s, i) => `
-      <div style="display:flex; align-items:center; gap:8px; background:#0A0A0A; border-radius:10px; padding:10px 12px; border:1px solid #222222;">
-        <div style="flex:1; min-width:0;">
-          <div style="color:#FFFFFF; font-size:12px; font-weight:700; font-family:monospace;">${s.claimNo} <span style="color:#6B7280; font-weight:400;">/ ${s.portNo}</span></div>
-          <div style="color:#6B7280; font-size:11px; margin-top:2px;">${s.branch} · ${s.partDesc} · Part ${s.partIndex}/${s.totalParts}</div>
-        </div>
-        <button onclick="removeLocPending(${i})" style="font-size:16px; color:#6B7280; background:none; border:none; cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0;">×</button>
+      <div style="display:flex;align-items:center;gap:6px;background:#0A0A0A;border-radius:8px;padding:8px 10px;border:1px solid #222222;">
+        <span style="background:#374151;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;">${s.branch}</span>
+        <span style="color:#FFFFFF;font-size:12px;font-weight:700;font-family:monospace;white-space:nowrap;flex-shrink:0;">${s.claimNo}</span>
+        <span style="color:#4B5563;font-size:10px;font-family:monospace;white-space:nowrap;flex-shrink:0;">${s.portNo}</span>
+        <span style="color:#9CA3AF;font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.partDesc}</span>
+        <button onclick="removeLocPending(${i})" style="color:#6B7280;background:none;border:none;cursor:pointer;font-size:16px;flex-shrink:0;padding:0 2px;line-height:1;">×</button>
       </div>`).join('');
   }
 
@@ -8671,23 +8671,17 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       const scanNo = scans.length - i;
       const timeStr = s.scanTime ? new Date(s.scanTime).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : '';
       return `
-      <div style="background:${_t.card}; border-radius:14px; padding:14px 16px; border:1px solid ${_t.border}; display:flex; flex-direction:column; gap:8px;">
-        <!-- 상단: 로케이션 배지 + 번호/시간 -->
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-          <span style="background:#052e16; color:#4ade80; font-size:13px; padding:5px 12px; border-radius:20px; font-weight:800; letter-spacing:0.5px; white-space:nowrap;">📍 ${s.location || '—'}</span>
-          <span style="color:#6B7280; font-size:11px; white-space:nowrap;">#${scanNo}${timeStr ? ' · ' + timeStr : ''}</span>
+      <div style="background:${_t.card};border-radius:10px;padding:8px 10px;border:1px solid ${_t.border};">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+          <span style="background:#052e16;color:#4ade80;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;white-space:nowrap;">📍 ${s.location || '—'}</span>
+          <span style="color:#4B5563;font-size:10px;margin-left:auto;white-space:nowrap;">${timeStr}</span>
         </div>
-        <!-- 중단: 클레임번호 + Part -->
-        <div style="display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;">
-          <span style="color:${_t.text}; font-size:15px; font-weight:800; font-family:monospace; letter-spacing:0.5px;">${s.claimNo}</span>
-          <span style="color:#7C3AED; font-size:12px; font-weight:700; background:rgba(124,58,237,0.1); padding:2px 8px; border-radius:6px;">Part ${s.partIndex}/${s.totalParts}</span>
+        <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+          <span style="background:#374151;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;">${s.branch}</span>
+          <span style="color:${_t.text};font-size:12px;font-weight:700;font-family:monospace;white-space:nowrap;flex-shrink:0;">${s.claimNo}</span>
+          <span style="color:#4B5563;font-size:10px;font-family:monospace;white-space:nowrap;flex-shrink:0;">${s.portNo}</span>
+          <span style="color:${_t.textSub};font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.partDesc}</span>
         </div>
-        <!-- 하단: 지점 · 부품명 · 차대번호 -->
-        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-          <span style="color:#fff; background:#374151; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px;">${s.branch}</span>
-          <span style="color:${_t.textSub}; font-size:12px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.partDesc}</span>
-        </div>
-        <div style="color:#6B7280; font-size:11px; font-family:monospace;">${s.chassisNo || ''}</div>
       </div>`;
     }).join('');
   }
