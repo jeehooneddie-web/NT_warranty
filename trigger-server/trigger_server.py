@@ -38,10 +38,11 @@ SUPABASE_URL    = "https://vbvghhtroitmroxmfepr.supabase.co"
 SUPABASE_KEY    = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZidmdoaHRyb2l0bXJveG1mZXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MTAxMjEsImV4cCI6MjA5MDM4NjEyMX0.2sq5uGj4j6Fm_IgztrucJv5bbXyk4ZXkWeZxnDMjhZg"
 
 # DMS 로그인 셀렉터
-SEL_USER_ID   = '#originUsrId'
-SEL_LOGIN_BTN = '#btnLogin'
-SEL_OTP_INPUT = '#otpNo'
-SEL_OTP_BTN   = '#btnReqAuth'
+SEL_USER_ID     = '#originUsrId'
+SEL_LOGIN_BTN   = '#btnLogin'
+SEL_OTP_INPUT   = '#otpNo'
+SEL_OTP_REQUEST = '//button[.//span[contains(text(),"인증요청")]]'  # SMS 발송
+SEL_OTP_CONFIRM = '#btnReqAuth'  # OTP 입력 후 확인
 
 # ── 전역 상태 ──────────────────────────────────────────────────────────────
 state = {
@@ -422,11 +423,14 @@ def _login_flow():
         # 로그인 버튼 클릭
         login_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, SEL_LOGIN_BTN)))
         login_btn.click()
-        state["msg"] = "로그인 버튼 클릭됨, OTP 대기 중..."
+        state["msg"] = "로그인 버튼 클릭됨..."
         time.sleep(2)
 
-        # OTP 입력 필드 대기
+        # OTP 화면 대기 → 인증요청 버튼 클릭 (SMS 발송)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, SEL_OTP_INPUT)))
+        state["msg"] = "인증요청 버튼 클릭 중..."
+        req_btn = wait.until(EC.element_to_be_clickable((By.XPATH, SEL_OTP_REQUEST)))
+        req_btn.click()
         state["status"] = "waiting_otp"
         state["msg"] = "SMS OTP를 입력하세요 (2분 내)"
 
@@ -440,7 +444,7 @@ def _login_flow():
         otp_el = d.find_element(By.CSS_SELECTOR, SEL_OTP_INPUT)
         otp_el.clear()
         otp_el.send_keys(otp)
-        d.find_element(By.CSS_SELECTOR, SEL_OTP_BTN).click()
+        d.find_element(By.CSS_SELECTOR, SEL_OTP_CONFIRM).click()
         time.sleep(2)
 
         # GNB 나타날 때까지 대기 (로그인 완료 확인)
