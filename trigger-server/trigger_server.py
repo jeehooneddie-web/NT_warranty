@@ -429,8 +429,18 @@ def _login_flow():
         # OTP 화면 대기 → 인증요청 버튼 클릭 (SMS 발송)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, SEL_OTP_INPUT)))
         state["msg"] = "인증요청 버튼 클릭 중..."
-        req_btn = wait.until(EC.element_to_be_clickable((By.XPATH, SEL_OTP_REQUEST)))
-        req_btn.click()
+        time.sleep(0.5)
+        clicked = d.execute_script("""
+            var els = document.querySelectorAll('button, a[role=button]');
+            for (var el of els) {
+                if (el.innerText && el.innerText.includes('인증요청')) {
+                    el.click(); return true;
+                }
+            }
+            return false;
+        """)
+        if not clicked:
+            raise Exception("인증요청 버튼을 찾을 수 없습니다")
         state["status"] = "waiting_otp"
         state["msg"] = "SMS OTP를 입력하세요 (2분 내)"
 
