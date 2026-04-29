@@ -85,9 +85,9 @@ def _notify_server_start(url):
     link = _dms_url(url)
     _notify(
         title="DMS Server Started",
-        body=f"터널: {url}",
+        body=f"Tunnel: {url}",
         tags="rocket",
-        actions=f"view, DMS 열기, {link}"
+        actions=f"view, Open DMS, {link}"
     )
 
 def _notify_login_required():
@@ -95,10 +95,10 @@ def _notify_login_required():
     link = _dms_url(url) if url else DMS_PAGE_BASE
     _notify(
         title="DMS Login Required (08:30)",
-        body="OTP 로그인이 필요합니다.",
+        body="OTP login needed. Tap to open DMS.",
         tags="key",
         priority="high",
-        actions=f"view, DMS 열기, {link}"
+        actions=f"view, Open DMS, {link}"
     )
 
 def _notify_done(option):

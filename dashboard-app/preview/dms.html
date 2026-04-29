@@ -99,8 +99,9 @@ input:focus { border-color:#3b82f6; }
 <div id="auth-screen">
   <div class="auth-box">
     <div class="auth-title">🔐 DMS 자동화</div>
-    <div class="auth-sub">접근 토큰을 입력하세요</div>
-    <input type="password" id="token-input" placeholder="토큰 입력" />
+    <div class="auth-sub">서버 URL과 토큰을 입력하세요</div>
+    <input type="url" id="server-input" placeholder="https://xxxx.trycloudflare.com" />
+    <input type="password" id="token-input" placeholder="접근 토큰" style="margin-top:8px;" />
     <button class="btn btn-blue" onclick="authCheck()">확인</button>
     <div id="auth-err" style="color:#f87171;font-size:13px;margin-top:10px;text-align:center;"></div>
   </div>
@@ -193,22 +194,28 @@ let _pollT  = null;
   _token  = localStorage.getItem(TOKEN_KEY)  || '';
 
   if (_token) {
-    // 저장된 토큰으로 바로 진입 시도
     showMain();
   } else {
+    if (_server) document.getElementById('server-input').value = _server;
     document.getElementById('auth-screen').style.display = 'flex';
   }
 })();
 
 function authCheck() {
   const t = document.getElementById('token-input').value.trim();
-  if (!t) return;
+  const s = document.getElementById('server-input').value.trim();
+  if (!t) { document.getElementById('auth-err').textContent = '토큰을 입력하세요.'; return; }
+  if (!s && !_server) { document.getElementById('auth-err').textContent = '서버 URL을 입력하세요.'; return; }
+  if (s) { localStorage.setItem(SERVER_KEY, s); _server = s; }
   localStorage.setItem(TOKEN_KEY, t);
   _token = t;
   showMain();
 }
 document.getElementById('token-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') authCheck();
+});
+document.getElementById('server-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('token-input').focus();
 });
 
 function showMain() {
