@@ -390,37 +390,45 @@ def _login_flow():
                 state["status"] = "error"
                 state["msg"] = "Chrome 시작 실패 (20초 초과)"
                 return
-            time.sleep(4)  # DMS 페이지 초기 로딩 대기
+            time.sleep(4)
 
         d = _get_driver()
         if not _find_dms_window(d):
             d.execute_script("window.open('https://www.bmwdms.co.kr/')")
-            time.sleep(3)
+            time.sleep(4)
             _find_dms_window(d)
 
-        if "bmwdms.co.kr" in d.current_url and "login" not in d.current_url.lower():
+        # GNB로 이미 로그인 여부 확인
+        if d.find_elements(By.CSS_SELECTOR, ".gnb-ul"):
             state["dms_logged_in"] = True
             state["status"] = "idle"
             state["msg"] = "이미 로그인됨"
             return
 
-        if "login" not in d.current_url.lower():
-            d.get("https://www.bmwdms.co.kr/")
-            time.sleep(2)
-
+        state["msg"] = "로그인 페이지 확인됨, 로그인 버튼 클릭 중..."
         wait = WebDriverWait(d, 20)
-        id_el = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, SEL_USER_ID)))
-        id_el.click()
-        time.sleep(0.5)
-        id_el.send_keys(Keys.DOWN)
-        time.sleep(0.8)
 
-        d.find_element(By.CSS_SELECTOR, SEL_LOGIN_BTN).click()
+        # ID 필드가 비어있으면 자동완성 시도
+        try:
+            id_el = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, SEL_USER_ID)))
+            if not id_el.get_attribute("value"):
+                id_el.click()
+                time.sleep(0.5)
+                id_el.send_keys(Keys.DOWN)
+                time.sleep(1.0)
+        except Exception:
+            pass
+
+        # 로그인 버튼 클릭
+        login_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, SEL_LOGIN_BTN)))
+        login_btn.click()
+        state["msg"] = "로그인 버튼 클릭됨, OTP 대기 중..."
         time.sleep(2)
 
+        # OTP 입력 필드 대기
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, SEL_OTP_INPUT)))
         state["status"] = "waiting_otp"
-        state["msg"] = "OTP를 입력하세요 (2분 내)"
+        state["msg"] = "SMS OTP를 입력하세요 (2분 내)"
 
         try:
             otp = otp_q.get(timeout=120)
@@ -433,8 +441,12 @@ def _login_flow():
         otp_el.clear()
         otp_el.send_keys(otp)
         d.find_element(By.CSS_SELECTOR, SEL_OTP_BTN).click()
-        time.sleep(3)
+        time.sleep(2)
 
+        # GNB 나타날 때까지 대기 (로그인 완료 확인)
+        WebDriverWait(d, 15).until(
+            lambda drv: len(drv.find_elements(By.CSS_SELECTOR, ".gnb-ul")) > 0
+        )
         state["dms_logged_in"] = True
         state["status"] = "idle"
         state["msg"] = "로그인 완료"
