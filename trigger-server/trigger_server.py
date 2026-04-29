@@ -297,7 +297,12 @@ def get_status():
         try:
             d = _get_driver()
             found = _find_dms_window(d)
-            state["dms_logged_in"] = found and "login" not in d.current_url.lower()
+            if found:
+                # GNB 메뉴 존재 여부로 실제 로그인 판단
+                gnb = d.find_elements(By.CSS_SELECTOR, ".gnb-ul")
+                state["dms_logged_in"] = len(gnb) > 0
+            else:
+                state["dms_logged_in"] = False
         except Exception:
             state["dms_logged_in"] = False
     return jsonify(state)
