@@ -59,7 +59,7 @@ def _notify(title, body, tags="white_check_mark", priority="default", actions=No
             "Title":    title,       # ASCII only
             "Tags":     tags,
             "Priority": priority,
-            "Click":    DASHBOARD_URL,
+            "Click":    DMS_PAGE_BASE,
             "Content-Type": "text/plain; charset=utf-8",
         }
         if actions:
