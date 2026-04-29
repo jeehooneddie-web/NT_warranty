@@ -234,6 +234,7 @@ def _start_chrome():
                 path,
                 "--remote-debugging-port=9222",
                 f"--user-data-dir={os.environ.get('TEMP', '')}\\chrome_dms",
+                "--start-maximized",
                 "https://bmwdms.co.kr/"
             ])
             print("  Chrome 시작됨", flush=True)
@@ -499,6 +500,11 @@ if __name__ == "__main__":
     print(f"  토큰: {SECRET_TOKEN}", flush=True)
     print(f"  스케줄: 매일 {SCHEDULE_HOUR:02d}:{SCHEDULE_MINUTE:02d}", flush=True)
     print(f"  ntfy 채널: ntfy.sh/{NTFY_TOPIC}", flush=True)
+
+    # Chrome 9222 없으면 자동 시작
+    if not _chrome_alive():
+        print("  Chrome 9222 시작 중...", flush=True)
+        _start_chrome()
 
     threading.Thread(target=start_tunnel,    daemon=True).start()
     threading.Thread(target=_scheduler_loop, daemon=True).start()
