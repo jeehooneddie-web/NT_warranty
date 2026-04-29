@@ -301,9 +301,13 @@ function updateUI(data) {
   const otpWrap  = document.getElementById('otp-wrap');
   const runBtn   = document.getElementById('run-btn');
 
-  const needLogin = data.chrome_ok && !data.dms_logged_in &&
+  const needLogin = data.chrome_ok &&
     ['idle','error','waiting_otp','logging_in'].includes(data.status);
   loginSec.style.display = needLogin ? 'block' : 'none';
+  if (btnWrap) {
+    const loginBtn = btnWrap.querySelector('button');
+    if (loginBtn) loginBtn.textContent = data.dms_logged_in ? '재로그인' : '로그인 시작';
+  }
 
   if (data.status === 'waiting_otp') {
     btnWrap.style.display = 'none';
