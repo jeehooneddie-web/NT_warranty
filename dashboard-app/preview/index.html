@@ -9279,6 +9279,13 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   let _dmsEvt = null;
 
   function initDmsTrigger() {
+    // URL 파라미터로 서버 주소 자동 수신 (ntfy 알림 링크)
+    const params = new URLSearchParams(window.location.search);
+    const paramUrl = params.get('dms_server');
+    if (paramUrl) {
+      localStorage.setItem(DMS_URL_KEY, paramUrl);
+      document.getElementById('dms-url-msg').textContent = '서버 URL 자동 업데이트됨';
+    }
     const savedUrl   = localStorage.getItem(DMS_URL_KEY) || '';
     const savedToken = localStorage.getItem(DMS_TOKEN_KEY) || '';
     document.getElementById('dms-server-url').value = savedUrl;

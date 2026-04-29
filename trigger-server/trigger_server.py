@@ -8,7 +8,7 @@ DMS 트리거 서버
 """
 
 import os, sys, json, queue, threading, socket, time, subprocess, re
-import datetime, urllib.request
+import datetime, urllib.request, urllib.parse
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 from selenium import webdriver
@@ -56,10 +56,11 @@ log_q = queue.Queue()
 def _notify(title, body, tags="white_check_mark", priority="default", actions=None):
     try:
         headers = {
-            "Title":    title,
+            "Title":    title,       # ASCII only
             "Tags":     tags,
             "Priority": priority,
             "Click":    DASHBOARD_URL,
+            "Content-Type": "text/plain; charset=utf-8",
         }
         if actions:
             headers["Actions"] = actions
@@ -70,36 +71,38 @@ def _notify(title, body, tags="white_check_mark", priority="default", actions=No
             method="POST"
         )
         urllib.request.urlopen(req, timeout=10)
+        print(f"  ntfy 전송: {title}", flush=True)
     except Exception as e:
         print(f"  ntfy 오류: {e}", flush=True)
 
 def _notify_server_start(url):
+    deep_link = f"{DASHBOARD_URL}?dms_server={urllib.parse.quote(url, safe='')}"
     _notify(
-        title="DMS 서버 시작",
-        body=f"터널 URL: {url}",
+        title="DMS Server Started",
+        body=f"터널 URL: {url}\n대시보드에서 확인하세요.",
         tags="rocket",
-        actions=f"view, 대시보드 열기, {DASHBOARD_URL}"
+        actions=f"view, Dashboard, {deep_link}"
     )
 
 def _notify_login_required():
     _notify(
-        title="DMS 로그인 필요 (08:30 스케줄)",
-        body="대시보드에서 로그인 시작 후 OTP를 입력하세요.",
+        title="DMS Login Required (08:30)",
+        body="대시보드에서 로그인 후 OTP를 입력하세요.",
         tags="key",
         priority="high",
-        actions=f"view, 대시보드 열기, {DASHBOARD_URL}"
+        actions=f"view, Dashboard, {DASHBOARD_URL}"
     )
 
 def _notify_done(option):
     labels = {0:"All DMS", 1:"Claim Detail", 2:"Claim Status", 3:"TC RawData", 4:"TC Verify"}
     _notify(
-        title="DMS 업데이트 완료",
-        body=f"[{option}] {labels.get(option,'')} 완료. 대시보드를 새로고침하세요.",
+        title=f"DMS Update Done [{option}] {labels.get(option,'')}",
+        body="업데이트 완료. 대시보드를 새로고침하세요.",
         tags="white_check_mark"
     )
 
 def _notify_failed(msg):
-    _notify(title="DMS 업데이트 실패", body=msg, tags="x", priority="high")
+    _notify(title="DMS Update Failed", body=msg, tags="x", priority="high")
 
 # ── 터널 자동 시작 ─────────────────────────────────────────────────────────
 def start_tunnel():
