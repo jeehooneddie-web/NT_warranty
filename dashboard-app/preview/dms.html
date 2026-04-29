@@ -175,23 +175,44 @@ input:focus { border-color:#3b82f6; }
 <script>
 const TOKEN_KEY  = 'dms_token';
 const SERVER_KEY = 'dms_server_url';
+const SB_URL     = 'https://vbvghhtroitmroxmfepr.supabase.co';
+const SB_KEY     = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZidmdoaHRyb2l0bXJveG1mZXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MTAxMjEsImV4cCI6MjA5MDM4NjEyMX0.2sq5uGj4j6Fm_IgztrucJv5bbXyk4ZXkWeZxnDMjhZg';
 let _token  = '';
 let _server = '';
 let _evt    = null;
 let _pollT  = null;
 
+async function _fetchTunnelUrl() {
+  try {
+    const res = await fetch(
+      `${SB_URL}/rest/v1/server_config?key=eq.tunnel_url&select=value`,
+      { headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` } }
+    );
+    const data = await res.json();
+    if (data && data[0] && data[0].value) return data[0].value;
+  } catch(e) {}
+  return null;
+}
+
 // ── 초기화 ────────────────────────────────────────────────────────────────
-(function init() {
+async function init() {
   const params = new URLSearchParams(window.location.search);
   const pServer = params.get('server');
   const pToken  = params.get('token');
 
-  // URL 파라미터로 온 경우 localStorage 갱신
   if (pServer) localStorage.setItem(SERVER_KEY, pServer);
   if (pToken)  localStorage.setItem(TOKEN_KEY,  pToken);
 
-  _server = localStorage.getItem(SERVER_KEY) || '';
   _token  = localStorage.getItem(TOKEN_KEY)  || '';
+
+  // Supabase에서 최신 터널 URL 조회 (항상)
+  const sbUrl = await _fetchTunnelUrl();
+  if (sbUrl) {
+    _server = sbUrl;
+    localStorage.setItem(SERVER_KEY, sbUrl);
+  } else {
+    _server = localStorage.getItem(SERVER_KEY) || '';
+  }
 
   if (_token) {
     showMain();
@@ -199,7 +220,8 @@ let _pollT  = null;
     if (_server) document.getElementById('server-input').value = _server;
     document.getElementById('auth-screen').style.display = 'flex';
   }
-})();
+}
+init();
 
 function authCheck() {
   const t = document.getElementById('token-input').value.trim();

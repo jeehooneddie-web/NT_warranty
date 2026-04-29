@@ -34,6 +34,9 @@ DMS_PAGE_BASE   = "https://jeehooneddie-web.github.io/NT_warranty/dms.html"
 SCHEDULE_HOUR   = 8
 SCHEDULE_MINUTE = 30
 
+SUPABASE_URL    = "https://vbvghhtroitmroxmfepr.supabase.co"
+SUPABASE_KEY    = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZidmdoaHRyb2l0bXJveG1mZXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MTAxMjEsImV4cCI6MjA5MDM4NjEyMX0.2sq5uGj4j6Fm_IgztrucJv5bbXyk4ZXkWeZxnDMjhZg"
+
 # DMS 로그인 셀렉터
 SEL_USER_ID   = '#originUsrId'
 SEL_LOGIN_BTN = '#btnLogin'
@@ -127,6 +130,7 @@ def start_tunnel():
                 state["tunnel_url"] = url
                 print(f"\n  터널 URL: {url}\n", flush=True)
                 _save_url(url)
+                _save_url_supabase(url)
                 _notify_server_start(url)
                 break
         proc.wait()
@@ -142,6 +146,26 @@ def _save_url(url):
             f.write(url + "\n")
     except Exception:
         pass
+
+def _save_url_supabase(url):
+    try:
+        data = json.dumps({"key": "tunnel_url", "value": url,
+                           "updated_at": datetime.datetime.utcnow().isoformat() + "Z"}).encode("utf-8")
+        req = urllib.request.Request(
+            f"{SUPABASE_URL}/rest/v1/server_config",
+            data=data,
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates",
+            },
+            method="POST"
+        )
+        urllib.request.urlopen(req, timeout=10)
+        print("  Supabase URL 저장 완료", flush=True)
+    except Exception as e:
+        print(f"  Supabase 저장 오류: {e}", flush=True)
 
 # ── 스케줄러 ──────────────────────────────────────────────────────────────
 def _scheduler_loop():
