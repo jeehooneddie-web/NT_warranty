@@ -1,11 +1,14 @@
 """
-DMS 트리거 서버 — BMW DMS 자동 업데이트를 모바일에서 실행
-  - Selenium으로 기존 Chrome(CDP 9222) 세션 재사용
-  - OTP 중계: 모바일 /otp → Selenium이 DMS OTP 입력창에 전달
-  - SSE로 실행 로그 스트리밍
+DMS 트리거 서버
+  - 매일 08:30 자동 스케줄 실행
+  - cloudflared 내부 실행 → URL 캡처 → ntfy 푸시
+  - Selenium Chrome(CDP 9222) 세션 재사용
+  - OTP 중계: 모바일 /otp → Selenium → DMS OTP 입력
+  - SSE 실시간 로그 스트리밍
 """
 
-import os, sys, json, queue, threading, socket, time, subprocess
+import os, sys, json, queue, threading, socket, time, subprocess, re
+import datetime, urllib.request
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 from selenium import webdriver
@@ -23,26 +26,160 @@ CORS(app, origins=[
 ])
 
 # ── 설정 ──────────────────────────────────────────────────────────────────
-SECRET_TOKEN = os.environ.get("DMS_TOKEN", "nm-dms-2026")
-CHROME_PORT  = 9222
-SCRIPTS_DIR  = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "1. DATA"))
+SECRET_TOKEN    = os.environ.get("DMS_TOKEN", "nm-dms-2026")
+CHROME_PORT     = 9222
+SCRIPTS_DIR     = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "1. DATA"))
+NTFY_TOPIC      = "nm-dms-trigger-9f3k2"
+DASHBOARD_URL   = "https://jeehooneddie-web.github.io/NT_warranty/#view-dms-trigger"
+SCHEDULE_HOUR   = 8
+SCHEDULE_MINUTE = 30
 
-# DMS 로그인 셀렉터 — DMS 화면 확인 후 수정 필요
-SEL_USER_ID   = '#userId'
-SEL_LOGIN_BTN = '#loginBtn'
+# DMS 로그인 셀렉터
+SEL_USER_ID   = '#originUsrId'
+SEL_LOGIN_BTN = '#btnLogin'
 SEL_OTP_INPUT = '#otpNo'
-SEL_OTP_BTN   = '#otpConfirmBtn'
+SEL_OTP_BTN   = '#btnReqAuth'
 
 # ── 전역 상태 ──────────────────────────────────────────────────────────────
 state = {
-    "chrome_ok":    False,
+    "chrome_ok":     False,
     "dms_logged_in": False,
-    "status": "idle",   # idle | logging_in | waiting_otp | running | done | error
+    "status": "idle",
     "msg": "",
     "option": None,
+    "tunnel_url": "",
 }
 otp_q = queue.Queue(maxsize=1)
 log_q = queue.Queue()
+
+# ── ntfy 알림 ──────────────────────────────────────────────────────────────
+def _notify(title, body, tags="white_check_mark", priority="default", actions=None):
+    try:
+        headers = {
+            "Title":    title,
+            "Tags":     tags,
+            "Priority": priority,
+            "Click":    DASHBOARD_URL,
+        }
+        if actions:
+            headers["Actions"] = actions
+        req = urllib.request.Request(
+            f"https://ntfy.sh/{NTFY_TOPIC}",
+            data=body.encode("utf-8"),
+            headers=headers,
+            method="POST"
+        )
+        urllib.request.urlopen(req, timeout=10)
+    except Exception as e:
+        print(f"  ntfy 오류: {e}", flush=True)
+
+def _notify_server_start(url):
+    _notify(
+        title="DMS 서버 시작",
+        body=f"터널 URL: {url}",
+        tags="rocket",
+        actions=f"view, 대시보드 열기, {DASHBOARD_URL}"
+    )
+
+def _notify_login_required():
+    _notify(
+        title="DMS 로그인 필요 (08:30 스케줄)",
+        body="대시보드에서 로그인 시작 후 OTP를 입력하세요.",
+        tags="key",
+        priority="high",
+        actions=f"view, 대시보드 열기, {DASHBOARD_URL}"
+    )
+
+def _notify_done(option):
+    labels = {0:"All DMS", 1:"Claim Detail", 2:"Claim Status", 3:"TC RawData", 4:"TC Verify"}
+    _notify(
+        title="DMS 업데이트 완료",
+        body=f"[{option}] {labels.get(option,'')} 완료. 대시보드를 새로고침하세요.",
+        tags="white_check_mark"
+    )
+
+def _notify_failed(msg):
+    _notify(title="DMS 업데이트 실패", body=msg, tags="x", priority="high")
+
+# ── 터널 자동 시작 ─────────────────────────────────────────────────────────
+def start_tunnel():
+    try:
+        proc = subprocess.Popen(
+            ["cloudflared", "tunnel", "--url", "http://localhost:5001"],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, encoding="utf-8", errors="replace"
+        )
+        for line in proc.stdout:
+            m = re.search(r'https://[\w\-]+\.trycloudflare\.com', line)
+            if m:
+                url = m.group(0)
+                state["tunnel_url"] = url
+                print(f"\n  터널 URL: {url}\n", flush=True)
+                _save_url(url)
+                _notify_server_start(url)
+                break
+        proc.wait()
+    except FileNotFoundError:
+        print("  [경고] cloudflared 없음", flush=True)
+    except Exception as e:
+        print(f"  [터널 오류] {e}", flush=True)
+
+def _save_url(url):
+    try:
+        desktop = os.path.join(os.path.expanduser("~"), "Desktop", "DMS_URL.txt")
+        with open(desktop, "w") as f:
+            f.write(url + "\n")
+    except Exception:
+        pass
+
+# ── 스케줄러 ──────────────────────────────────────────────────────────────
+def _scheduler_loop():
+    """매일 08:30 자동 실행"""
+    print(f"  스케줄러 시작 — 매일 {SCHEDULE_HOUR:02d}:{SCHEDULE_MINUTE:02d} 실행", flush=True)
+    while True:
+        now    = datetime.datetime.now()
+        target = now.replace(hour=SCHEDULE_HOUR, minute=SCHEDULE_MINUTE, second=0, microsecond=0)
+        if now >= target:
+            target += datetime.timedelta(days=1)
+        wait = (target - now).total_seconds()
+        print(f"  다음 실행: {target.strftime('%m/%d %H:%M')} ({int(wait//3600)}시간 후)", flush=True)
+        time.sleep(wait)
+        _run_scheduled()
+
+def _run_scheduled():
+    print("  [스케줄] 08:30 자동 실행 시작", flush=True)
+
+    # 이미 실행 중이면 건너뜀
+    if state["status"] == "running":
+        print("  [스케줄] 이미 실행 중 — 건너뜀", flush=True)
+        return
+
+    # DMS 로그인 확인
+    if not state["dms_logged_in"]:
+        print("  [스케줄] DMS 미로그인 → 로그인 요청 알림 전송", flush=True)
+        _notify_login_required()
+
+        # 로그인 대기 최대 30분 (30초 × 60)
+        for i in range(60):
+            time.sleep(30)
+            if state["dms_logged_in"]:
+                print(f"  [스케줄] 로그인 확인 ({(i+1)*30}초 후) → 실행 시작", flush=True)
+                break
+        else:
+            msg = "30분 내 DMS 로그인 없음 — 스케줄 취소"
+            print(f"  [스케줄] {msg}", flush=True)
+            _notify_failed(msg)
+            return
+
+    # 실행
+    while not log_q.empty():
+        try: log_q.get_nowait()
+        except Exception: break
+
+    state["status"] = "running"
+    state["option"] = 0
+    state["msg"]    = "스케줄 자동 실행 중 (08:30)"
+    _run_scripts(0)
 
 # ── 헬퍼 ──────────────────────────────────────────────────────────────────
 def _check_token():
@@ -78,6 +215,23 @@ def _log(msg):
     print(msg, flush=True)
 
 # ── 라우트 ────────────────────────────────────────────────────────────────
+@app.route("/")
+def index():
+    url = state.get("tunnel_url", "시작 중...")
+    nxt = ""
+    try:
+        now    = datetime.datetime.now()
+        target = now.replace(hour=SCHEDULE_HOUR, minute=SCHEDULE_MINUTE, second=0, microsecond=0)
+        if now >= target:
+            target += datetime.timedelta(days=1)
+        nxt = target.strftime("%m/%d %H:%M")
+    except Exception:
+        pass
+    return (f"<h2>DMS 트리거 서버</h2>"
+            f"<p>터널 URL: <b>{url}</b></p>"
+            f"<p>다음 스케줄: <b>{nxt}</b></p>"
+            f"<p>상태: {state['status']}</p>"), 200
+
 @app.route("/status")
 def get_status():
     if not _check_token():
@@ -161,42 +315,35 @@ def stream_logs():
 def _login_flow():
     try:
         d = _get_driver()
-        # DMS 탭 없으면 새 탭 열기
         if not _find_dms_window(d):
             d.execute_script("window.open('https://www.bmwdms.co.kr/')")
             time.sleep(3)
             _find_dms_window(d)
 
-        # 이미 로그인 확인
         if "bmwdms.co.kr" in d.current_url and "login" not in d.current_url.lower():
             state["dms_logged_in"] = True
             state["status"] = "idle"
             state["msg"] = "이미 로그인됨"
             return
 
-        # 로그인 페이지로 이동
         if "login" not in d.current_url.lower():
             d.get("https://www.bmwdms.co.kr/")
             time.sleep(2)
 
         wait = WebDriverWait(d, 20)
-        # ID 필드 클릭 → Chrome 자동완성 유발
         id_el = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, SEL_USER_ID)))
         id_el.click()
         time.sleep(0.5)
         id_el.send_keys(Keys.DOWN)
         time.sleep(0.8)
 
-        # 로그인 버튼
         d.find_element(By.CSS_SELECTOR, SEL_LOGIN_BTN).click()
         time.sleep(2)
 
-        # OTP 입력창 대기
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, SEL_OTP_INPUT)))
         state["status"] = "waiting_otp"
         state["msg"] = "OTP를 입력하세요 (2분 내)"
 
-        # 모바일 OTP 대기
         try:
             otp = otp_q.get(timeout=120)
         except queue.Empty:
@@ -221,10 +368,13 @@ def _login_flow():
 # ── 스크립트 실행 ──────────────────────────────────────────────────────────
 def _run_py(script_name, *args):
     path = os.path.join(SCRIPTS_DIR, script_name)
-    cmd = [sys.executable, path] + list(args)
+    cmd  = [sys.executable, path] + list(args)
+    env  = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
     proc = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        text=True, encoding="utf-8", errors="replace", cwd=SCRIPTS_DIR
+        text=True, encoding="utf-8", errors="replace",
+        cwd=SCRIPTS_DIR, env=env
     )
     for line in proc.stdout:
         _log(line.rstrip())
@@ -254,24 +404,31 @@ def _run_scripts(opt):
             _log("__DONE__")
             state["status"] = "done"
             state["msg"] = "완료"
+            _notify_done(4)
             return
 
-        # 옵션 0~3은 항상 대시보드 업데이트
         _log("▶ 대시보드 업데이트 중...")
         _run_py("update_all.py")
         _log("__DONE__")
         state["status"] = "idle"
         state["dms_logged_in"] = False
-        state["msg"] = "완료 — 대시보드 새로고침 하세요"
+        state["msg"] = "완료"
+        _notify_done(opt)
 
     except Exception as e:
         _log(f"__ERROR__ {e}")
         state["status"] = "error"
         state["msg"] = str(e)
+        _notify_failed(str(e))
 
 # ── 진입점 ────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    print(f"  DMS 트리거 서버 시작 (포트 5001)")
-    print(f"  토큰: {SECRET_TOKEN}")
-    print(f"  스크립트 경로: {SCRIPTS_DIR}")
+    print(f"  DMS 트리거 서버 시작 (포트 5001)", flush=True)
+    print(f"  토큰: {SECRET_TOKEN}", flush=True)
+    print(f"  스케줄: 매일 {SCHEDULE_HOUR:02d}:{SCHEDULE_MINUTE:02d}", flush=True)
+    print(f"  ntfy 채널: ntfy.sh/{NTFY_TOPIC}", flush=True)
+
+    threading.Thread(target=start_tunnel,    daemon=True).start()
+    threading.Thread(target=_scheduler_loop, daemon=True).start()
+
     app.run(host="0.0.0.0", port=5001, threaded=True)

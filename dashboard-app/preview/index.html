@@ -7797,9 +7797,15 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       document.getElementById('sidebar-name').textContent   = '일반 사용자';
       document.getElementById('sidebar-role').textContent   = '번역기 전용';
     }
-    // 역할별 초기 뷰
-    if (role === 'admin' || role === 'member') showView('view-notices');
-    else showView('view-translator');
+    // 역할별 초기 뷰 (URL 해시 우선)
+    const _hash = window.location.hash.replace('#', '');
+    if (_hash && document.getElementById(_hash)) {
+      showView(_hash);
+    } else if (role === 'admin' || role === 'member') {
+      showView('view-notices');
+    } else {
+      showView('view-translator');
+    }
     // 로그인 화면 숨기기
     document.getElementById('login-screen').style.display = 'none';
     sessionStorage.setItem('nm_role', role);
