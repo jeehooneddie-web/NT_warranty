@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DMS 자동화</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#0d1117; color:#e2e8f0;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  min-height:100vh; padding:16px 16px 80px;
+}
+#auth-screen {
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; min-height:100vh; gap:16px; padding:24px;
+}
+.auth-box {
+  width:100%; max-width:360px; background:#1e2433;
+  border-radius:16px; padding:24px; border:1px solid #2a3347;
+}
+.auth-title { font-size:18px; font-weight:700; margin-bottom:4px; }
+.auth-sub { font-size:13px; color:#6B7280; margin-bottom:20px; }
+input[type=password], input[type=text], input[type=url], input[type=number] {
+  width:100%; background:#0d1117; border:1px solid #2a3347;
+  border-radius:10px; padding:12px 14px; color:#e2e8f0;
+  font-size:15px; outline:none;
+}
+input:focus { border-color:#3b82f6; }
+.btn {
+  width:100%; padding:13px; border-radius:10px; border:none;
+  font-size:15px; font-weight:700; cursor:pointer; margin-top:10px;
+}
+.btn-blue  { background:#1d4ed8; color:#fff; }
+.btn-green { background:#16a34a; color:#fff; }
+.btn-gray  { background:#374151; color:#9CA3AF; font-size:13px; }
+.btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+#main-screen { display:none; max-width:480px; margin:0 auto; }
+
+.header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 0 16px;
+}
+.header-title { font-size:17px; font-weight:700; }
+.header-status { font-size:12px; color:#6B7280; }
+
+.card {
+  background:#1e2433; border-radius:14px; padding:16px;
+  border:1px solid #2a3347; margin-bottom:12px;
+}
+.card-label { font-size:12px; font-weight:600; color:#9CA3AF; margin-bottom:12px; }
+
+.dot-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:14px; }
+.dot-row span:first-child { font-size:10px; }
+
+.status-msg {
+  background:#0d1117; border-radius:8px; padding:10px 12px;
+  font-size:13px; color:#6B7280; margin-top:10px; min-height:36px;
+}
+
+/* 로그인 섹션 */
+#login-section { display:none; }
+.otp-input {
+  font-size:22px; font-family:monospace; letter-spacing:6px;
+  text-align:center; color:#f59e0b; border-color:#f59e0b !important;
+}
+
+/* 옵션 */
+.opt-item {
+  display:flex; align-items:center; gap:12px; padding:12px;
+  background:#0d1117; border-radius:10px; border:1px solid #2a3347;
+  margin-bottom:8px; cursor:pointer;
+}
+.opt-item input { accent-color:#3b82f6; width:16px; height:16px; cursor:pointer; }
+.opt-title { font-size:14px; font-weight:600; }
+.opt-desc  { font-size:12px; color:#6B7280; margin-top:2px; }
+
+/* 로그 */
+#log-box {
+  background:#0d1117; border-radius:10px; padding:12px;
+  font-size:12px; font-family:monospace; color:#4ade80;
+  line-height:1.7; white-space:pre-wrap; word-break:break-all;
+  max-height:280px; overflow-y:auto; margin-top:10px;
+}
+
+.tag {
+  display:inline-block; font-size:11px; padding:2px 8px;
+  border-radius:6px; font-weight:600;
+}
+.tag-ok  { background:#052e16; color:#4ade80; }
+.tag-err { background:#3b0a0a; color:#f87171; }
+.tag-warn{ background:#1c1a0a; color:#fbbf24; }
+</style>
+</head>
+<body>
+
+<!-- 인증 화면 -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-title">🔐 DMS 자동화</div>
+    <div class="auth-sub">접근 토큰을 입력하세요</div>
+    <input type="password" id="token-input" placeholder="토큰 입력" />
+    <button class="btn btn-blue" onclick="authCheck()">확인</button>
+    <div id="auth-err" style="color:#f87171;font-size:13px;margin-top:10px;text-align:center;"></div>
+  </div>
+</div>
+
+<!-- 메인 화면 -->
+<div id="main-screen">
+
+  <div class="header">
+    <span class="header-title">⚡ DMS 자동화</span>
+    <span id="header-next" class="header-status"></span>
+  </div>
+
+  <!-- 서버 상태 -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span class="card-label" style="margin-bottom:0;">서버 상태</span>
+      <button class="btn-gray btn" style="width:auto;padding:4px 12px;margin-top:0;border-radius:8px;" onclick="checkStatus()">새로고침</button>
+    </div>
+    <div style="margin-top:12px;">
+      <div class="dot-row"><span id="dot-server">⚫</span><span style="color:#9CA3AF;">PC 서버 연결</span></div>
+      <div class="dot-row"><span id="dot-chrome">⚫</span><span style="color:#9CA3AF;">Chrome (9222)</span></div>
+      <div class="dot-row"><span id="dot-login">⚫</span><span style="color:#9CA3AF;">DMS 로그인</span></div>
+    </div>
+    <div id="status-msg" class="status-msg">확인 중...</div>
+  </div>
+
+  <!-- DMS 로그인 -->
+  <div id="login-section" class="card" style="border-color:#1e3a5f;background:#0f1629;">
+    <div class="card-label" style="color:#60a5fa;">🔐 DMS 로그인</div>
+    <div id="login-btn-wrap">
+      <button class="btn btn-blue" onclick="startLogin()">로그인 시작</button>
+      <div style="font-size:12px;color:#6B7280;margin-top:8px;">Chrome 저장 ID/PW 자동 입력 → SMS OTP 발송</div>
+    </div>
+    <div id="otp-wrap" style="display:none;">
+      <div style="font-size:13px;color:#f59e0b;margin-bottom:10px;">📱 SMS 인증번호가 발송되었습니다</div>
+      <div style="display:flex;gap:8px;">
+        <input type="number" id="otp-input" class="otp-input" placeholder="000000" maxlength="6" />
+        <button class="btn btn-blue" style="width:auto;padding:0 18px;margin-top:0;" onclick="submitOtp()">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 실행 옵션 -->
+  <div class="card">
+    <div class="card-label">실행 옵션</div>
+    <label class="opt-item"><input type="radio" name="opt" value="0" checked>
+      <div><div class="opt-title">[0] All DMS</div><div class="opt-desc">Claim Detail + Status + TC RawData → 대시보드 업데이트</div></div></label>
+    <label class="opt-item"><input type="radio" name="opt" value="1">
+      <div><div class="opt-title">[1] Warranty Claim Detail</div><div class="opt-desc">클레임 상세 → 대시보드 업데이트</div></div></label>
+    <label class="opt-item"><input type="radio" name="opt" value="2">
+      <div><div class="opt-title">[2] Warranty Claim Status</div><div class="opt-desc">5개 지점 현황 → 대시보드 업데이트</div></div></label>
+    <label class="opt-item"><input type="radio" name="opt" value="3">
+      <div><div class="opt-title">[3] TC Non-execution RawData</div><div class="opt-desc">TC 미실시 → 대시보드 업데이트</div></div></label>
+    <label class="opt-item"><input type="radio" name="opt" value="4">
+      <div><div class="opt-title">[4] TC Verify Files</div><div class="opt-desc">TC 검증 파일 생성 (Chrome 불필요)</div></div></label>
+    <button id="run-btn" class="btn btn-green" style="margin-top:4px;" onclick="runDms()" disabled>▶ 실행</button>
+  </div>
+
+  <!-- 로그 -->
+  <div id="log-card" class="card" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span class="card-label" style="margin-bottom:0;">실행 로그</span>
+      <button class="btn-gray btn" style="width:auto;padding:4px 12px;margin-top:0;border-radius:8px;" onclick="document.getElementById('log-box').textContent=''">지우기</button>
+    </div>
+    <div id="log-box"></div>
+  </div>
+
+</div>
+
+<script>
+const TOKEN_KEY  = 'dms_token';
+const SERVER_KEY = 'dms_server_url';
+let _token  = '';
+let _server = '';
+let _evt    = null;
+let _pollT  = null;
+
+// ── 초기화 ────────────────────────────────────────────────────────────────
+(function init() {
+  const params = new URLSearchParams(window.location.search);
+  const pServer = params.get('server');
+  const pToken  = params.get('token');
+
+  // URL 파라미터로 온 경우 localStorage 갱신
+  if (pServer) localStorage.setItem(SERVER_KEY, pServer);
+  if (pToken)  localStorage.setItem(TOKEN_KEY,  pToken);
+
+  _server = localStorage.getItem(SERVER_KEY) || '';
+  _token  = localStorage.getItem(TOKEN_KEY)  || '';
+
+  if (_token) {
+    // 저장된 토큰으로 바로 진입 시도
+    showMain();
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+  }
+})();
+
+function authCheck() {
+  const t = document.getElementById('token-input').value.trim();
+  if (!t) return;
+  localStorage.setItem(TOKEN_KEY, t);
+  _token = t;
+  showMain();
+}
+document.getElementById('token-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') authCheck();
+});
+
+function showMain() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('main-screen').style.display = 'block';
+  checkStatus();
+}
+
+// ── API ───────────────────────────────────────────────────────────────────
+async function _fetch(path, opts = {}) {
+  if (!_server) { alert('서버 URL이 없습니다.\nntfy 알림 링크로 다시 접속하세요.'); return null; }
+  try {
+    const res = await fetch(_server.replace(/\/$/, '') + path, {
+      ...opts,
+      headers: { 'Content-Type':'application/json', 'X-Token': _token, ...(opts.headers||{}) }
+    });
+    if (res.status === 401) {
+      localStorage.removeItem(TOKEN_KEY);
+      location.reload();
+      return null;
+    }
+    return res.json();
+  } catch(e) {
+    return null;
+  }
+}
+
+// ── 상태 ──────────────────────────────────────────────────────────────────
+async function checkStatus() {
+  const data = await _fetch('/status');
+  const msg  = document.getElementById('status-msg');
+  if (!data) {
+    setDot('dot-server', false);
+    setDot('dot-chrome', false);
+    setDot('dot-login',  false);
+    msg.textContent = '서버 연결 실패 — ntfy 알림 링크로 다시 접속하세요';
+    msg.style.color = '#ef4444';
+    return;
+  }
+  setDot('dot-server', true);
+  setDot('dot-chrome', data.chrome_ok);
+  setDot('dot-login',  data.dms_logged_in);
+  msg.textContent = data.msg || data.status;
+  msg.style.color = data.dms_logged_in ? '#4ade80' : '#f59e0b';
+
+  // 다음 스케줄 표시
+  if (data.next_schedule) {
+    document.getElementById('header-next').textContent = `다음: ${data.next_schedule}`;
+  }
+
+  updateUI(data);
+}
+
+function setDot(id, on) {
+  document.getElementById(id).textContent = on ? '🟢' : '🔴';
+}
+
+function updateUI(data) {
+  const loginSec = document.getElementById('login-section');
+  const btnWrap  = document.getElementById('login-btn-wrap');
+  const otpWrap  = document.getElementById('otp-wrap');
+  const runBtn   = document.getElementById('run-btn');
+
+  const needLogin = data.chrome_ok && !data.dms_logged_in &&
+    ['idle','error','waiting_otp','logging_in'].includes(data.status);
+  loginSec.style.display = needLogin ? 'block' : 'none';
+
+  if (data.status === 'waiting_otp') {
+    btnWrap.style.display = 'none';
+    otpWrap.style.display = 'block';
+    document.getElementById('otp-input').focus();
+  } else {
+    btnWrap.style.display = 'block';
+    otpWrap.style.display = 'none';
+  }
+
+  const selOpt = parseInt(document.querySelector('input[name="opt"]:checked')?.value ?? '-1');
+  const canRun = data.status === 'idle' && (selOpt === 4 || data.dms_logged_in);
+  runBtn.disabled = !canRun;
+  runBtn.textContent = data.status === 'running' ? '⏳ 실행 중...' : '▶ 실행';
+}
+
+// ── 로그인 ────────────────────────────────────────────────────────────────
+async function startLogin() {
+  const data = await _fetch('/login', { method:'POST' });
+  if (!data) return;
+  pollStatus(['logging_in', 'waiting_otp']);
+}
+
+async function submitOtp() {
+  const otp = document.getElementById('otp-input').value.trim();
+  if (otp.length < 4) return;
+  await _fetch('/otp', { method:'POST', body: JSON.stringify({ otp }) });
+  pollStatus(['waiting_otp', 'logging_in']);
+}
+
+// ── 실행 ──────────────────────────────────────────────────────────────────
+async function runDms() {
+  const opt  = parseInt(document.querySelector('input[name="opt"]:checked')?.value ?? '0');
+  const data = await _fetch('/run', { method:'POST', body: JSON.stringify({ option: opt }) });
+  if (!data) return;
+  if (data.error === 'dms_login_required') { alert('DMS 로그인이 필요합니다'); return; }
+  if (data.error) { alert(data.error); return; }
+
+  const logCard = document.getElementById('log-card');
+  const logBox  = document.getElementById('log-box');
+  logCard.style.display = 'block';
+  logBox.textContent    = '';
+  document.getElementById('run-btn').disabled    = true;
+  document.getElementById('run-btn').textContent = '⏳ 실행 중...';
+
+  if (_evt) _evt.close();
+  _evt = new EventSource(`${_server.replace(/\/$/,'')}/logs?token=${_token}`);
+  _evt.onmessage = e => {
+    const d = JSON.parse(e.data);
+    if (d.ping) return;
+    if (d.msg === '__DONE__') {
+      logBox.textContent += '\n✅ 완료 — 대시보드를 새로고침하세요';
+      logBox.scrollTop = logBox.scrollHeight;
+      _evt.close();
+      checkStatus();
+      return;
+    }
+    if (d.msg?.startsWith('__ERROR__')) {
+      logBox.textContent += '\n❌ ' + d.msg.replace('__ERROR__ ','');
+      logBox.scrollTop = logBox.scrollHeight;
+      _evt.close();
+      checkStatus();
+      return;
+    }
+    logBox.textContent += d.msg + '\n';
+    logBox.scrollTop = logBox.scrollHeight;
+  };
+  _evt.onerror = () => { _evt.close(); checkStatus(); };
+}
+
+// ── 폴링 ──────────────────────────────────────────────────────────────────
+function pollStatus(waitStates, ms = 1500, max = 80) {
+  if (_pollT) clearInterval(_pollT);
+  let n = 0;
+  _pollT = setInterval(async () => {
+    if (++n > max) { clearInterval(_pollT); return; }
+    const data = await _fetch('/status');
+    if (!data) { clearInterval(_pollT); return; }
+    setDot('dot-login', data.dms_logged_in);
+    document.getElementById('status-msg').textContent = data.msg || data.status;
+    updateUI(data);
+    if (!waitStates.includes(data.status)) clearInterval(_pollT);
+  }, ms);
+}
+</script>
+</body>
+</html>

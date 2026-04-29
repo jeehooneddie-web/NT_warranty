@@ -30,7 +30,7 @@ SECRET_TOKEN    = os.environ.get("DMS_TOKEN", "nm-dms-2026")
 CHROME_PORT     = 9222
 SCRIPTS_DIR     = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "1. DATA"))
 NTFY_TOPIC      = "nm-dms-trigger-9f3k2"
-DASHBOARD_URL   = "https://jeehooneddie-web.github.io/NT_warranty/#view-dms-trigger"
+DMS_PAGE_BASE   = "https://jeehooneddie-web.github.io/NT_warranty/dms.html"
 SCHEDULE_HOUR   = 8
 SCHEDULE_MINUTE = 30
 
@@ -75,29 +75,37 @@ def _notify(title, body, tags="white_check_mark", priority="default", actions=No
     except Exception as e:
         print(f"  ntfy 오류: {e}", flush=True)
 
+def _dms_url(tunnel_url):
+    """dms.html 직접 접속 URL (server + token 포함)"""
+    return (f"{DMS_PAGE_BASE}"
+            f"?server={urllib.parse.quote(tunnel_url, safe='')}"
+            f"&token={urllib.parse.quote(SECRET_TOKEN, safe='')}")
+
 def _notify_server_start(url):
-    deep_link = f"{DASHBOARD_URL}?dms_server={urllib.parse.quote(url, safe='')}"
+    link = _dms_url(url)
     _notify(
         title="DMS Server Started",
-        body=f"터널 URL: {url}\n대시보드에서 확인하세요.",
+        body=f"터널: {url}",
         tags="rocket",
-        actions=f"view, Dashboard, {deep_link}"
+        actions=f"view, DMS 열기, {link}"
     )
 
 def _notify_login_required():
+    url = state.get("tunnel_url", "")
+    link = _dms_url(url) if url else DMS_PAGE_BASE
     _notify(
         title="DMS Login Required (08:30)",
-        body="대시보드에서 로그인 후 OTP를 입력하세요.",
+        body="OTP 로그인이 필요합니다.",
         tags="key",
         priority="high",
-        actions=f"view, Dashboard, {DASHBOARD_URL}"
+        actions=f"view, DMS 열기, {link}"
     )
 
 def _notify_done(option):
     labels = {0:"All DMS", 1:"Claim Detail", 2:"Claim Status", 3:"TC RawData", 4:"TC Verify"}
     _notify(
         title=f"DMS Update Done [{option}] {labels.get(option,'')}",
-        body="업데이트 완료. 대시보드를 새로고침하세요.",
+        body="업데이트 완료.",
         tags="white_check_mark"
     )
 
