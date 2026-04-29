@@ -267,13 +267,20 @@ async function _fetch(path, opts = {}) {
 
 // ── 상태 ──────────────────────────────────────────────────────────────────
 async function checkStatus() {
+  // Supabase에서 최신 터널 URL 재조회
+  const sbUrl = await _fetchTunnelUrl();
+  if (sbUrl && sbUrl !== _server) {
+    _server = sbUrl;
+    localStorage.setItem(SERVER_KEY, sbUrl);
+  }
+
   const data = await _fetch('/status');
   const msg  = document.getElementById('status-msg');
   if (!data) {
     setDot('dot-server', false);
     setDot('dot-chrome', false);
     setDot('dot-login',  false);
-    msg.textContent = '서버 연결 실패 — ntfy 알림 링크로 다시 접속하세요';
+    msg.textContent = '서버 연결 실패 — 서버가 실행 중인지 확인하세요';
     msg.style.color = '#ef4444';
     return;
   }
