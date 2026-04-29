@@ -221,6 +221,26 @@ def _check_token():
     t = request.headers.get("X-Token") or request.args.get("token")
     return t == SECRET_TOKEN
 
+def _start_chrome():
+    """Chrome 9222 포트로 실행 — 경로 자동 탐색"""
+    candidates = [
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        os.path.join(os.environ.get("LOCALAPPDATA", ""), r"Google\Chrome\Application\chrome.exe"),
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            subprocess.Popen([
+                path,
+                "--remote-debugging-port=9222",
+                f"--user-data-dir={os.environ.get('TEMP', '')}\\chrome_dms",
+                "https://bmwdms.co.kr/"
+            ])
+            print("  Chrome 시작됨", flush=True)
+            return True
+    print("  [오류] Chrome 경로를 찾을 수 없음", flush=True)
+    return False
+
 def _chrome_alive():
     s = socket.socket()
     s.settimeout(1)
@@ -349,6 +369,23 @@ def stream_logs():
 # ── DMS 로그인 흐름 ────────────────────────────────────────────────────────
 def _login_flow():
     try:
+        # Chrome 9222 없으면 자동 시작
+        if not _chrome_alive():
+            state["msg"] = "Chrome 시작 중..."
+            if not _start_chrome():
+                state["status"] = "error"
+                state["msg"] = "Chrome을 찾을 수 없습니다"
+                return
+            for _ in range(20):
+                time.sleep(1)
+                if _chrome_alive():
+                    break
+            else:
+                state["status"] = "error"
+                state["msg"] = "Chrome 시작 실패 (20초 초과)"
+                return
+            time.sleep(4)  # DMS 페이지 초기 로딩 대기
+
         d = _get_driver()
         if not _find_dms_window(d):
             d.execute_script("window.open('https://www.bmwdms.co.kr/')")
