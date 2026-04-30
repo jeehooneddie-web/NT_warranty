@@ -394,16 +394,10 @@ def _login_flow():
             time.sleep(4)
 
         d = _get_driver()
-        d.switch_to.default_content()
-
-        state["msg"] = "DMS 창 탐색 중..."
         if not _find_dms_window(d):
             d.execute_script("window.open('https://www.bmwdms.co.kr/')")
             time.sleep(4)
             _find_dms_window(d)
-
-        d.switch_to.default_content()
-        print(f"  현재 URL: {d.current_url}", flush=True)
 
         # GNB로 이미 로그인 여부 확인
         if d.find_elements(By.CSS_SELECTOR, ".gnb-ul"):
@@ -412,36 +406,27 @@ def _login_flow():
             state["msg"] = "이미 로그인됨"
             return
 
-        state["msg"] = "로그인 버튼 탐색 중..."
+        state["msg"] = "로그인 페이지 확인됨, 로그인 버튼 클릭 중..."
         wait = WebDriverWait(d, 20)
 
         # ID 필드가 비어있으면 자동완성 시도
         try:
             id_el = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, SEL_USER_ID)))
-            val = id_el.get_attribute("value") or ""
-            print(f"  ID 필드 값: '{val}'", flush=True)
-            if not val:
+            if not id_el.get_attribute("value"):
                 id_el.click()
                 time.sleep(0.5)
                 id_el.send_keys(Keys.DOWN)
                 time.sleep(1.0)
-        except Exception as e:
-            print(f"  ID 필드 탐색 실패: {e}", flush=True)
+        except Exception:
+            pass
 
-        # 로그인 버튼 — JS click (iframe 여부 무관)
-        state["msg"] = "로그인 버튼 클릭 중..."
-        clicked_login = d.execute_script("""
-            var btn = document.querySelector('#btnLogin');
-            if (btn) { btn.click(); return true; }
-            return false;
-        """)
-        print(f"  로그인 버튼 클릭: {clicked_login}", flush=True)
-        if not clicked_login:
-            raise Exception("로그인 버튼(#btnLogin)을 찾을 수 없습니다")
+        # 로그인 버튼 클릭
+        login_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, SEL_LOGIN_BTN)))
+        login_btn.click()
+        state["msg"] = "로그인 버튼 클릭됨..."
         time.sleep(2)
 
         # OTP 화면 대기 → 인증요청 버튼 클릭 (SMS 발송)
-        state["msg"] = "OTP 화면 대기 중..."
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, SEL_OTP_INPUT)))
         state["msg"] = "인증요청 버튼 클릭 중..."
         time.sleep(0.5)
@@ -454,7 +439,6 @@ def _login_flow():
             }
             return false;
         """)
-        print(f"  인증요청 버튼 클릭: {clicked}", flush=True)
         if not clicked:
             raise Exception("인증요청 버튼을 찾을 수 없습니다")
         state["status"] = "waiting_otp"
