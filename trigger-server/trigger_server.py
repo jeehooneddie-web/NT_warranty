@@ -439,14 +439,10 @@ def _login_flow():
         state["msg"] = "로그인 버튼 클릭됨..."
         time.sleep(2)
 
-        # OTP 화면 대기 — 인증요청 버튼이 DOM에 나타날 때까지 대기
-        WebDriverWait(d, 30).until(lambda drv: drv.execute_script("""
-            var spans = document.querySelectorAll('span.btn-icon-text');
-            for (var s of spans) {
-                if (s.innerText && s.innerText.includes('인증요청')) return true;
-            }
-            return false;
-        """))
+        # OTP 화면 대기 — btnReqOtpNo 버튼 출현 대기
+        WebDriverWait(d, 30).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "#btnReqOtpNo"))
+        )
         state["status"] = "waiting_auth_request"
         state["msg"] = "인증요청 버튼을 탭하세요"
 
@@ -458,15 +454,7 @@ def _login_flow():
             return
 
         # DMS 인증요청 버튼 클릭 (SMS 발송)
-        d.execute_script("""
-            var spans = document.querySelectorAll('span.btn-icon-text');
-            for (var s of spans) {
-                if (s.innerText.includes('인증요청')) {
-                    s.closest('button') && s.closest('button').click();
-                    break;
-                }
-            }
-        """)
+        d.execute_script("document.getElementById('btnReqOtpNo').click();")
         state["status"] = "waiting_otp"
         state["msg"] = "SMS OTP를 입력하세요 (2분 내)"
 
