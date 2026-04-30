@@ -134,7 +134,11 @@ input:focus { border-color:#3b82f6; }
     <div class="card-label" style="color:#60a5fa;">🔐 DMS 로그인</div>
     <div id="login-btn-wrap">
       <button class="btn btn-blue" onclick="startLogin()">로그인 시작</button>
-      <div style="font-size:12px;color:#6B7280;margin-top:8px;">Chrome 저장 ID/PW 자동 입력 → SMS OTP 발송</div>
+      <div style="font-size:12px;color:#6B7280;margin-top:8px;">Chrome 저장 ID/PW 자동 입력 → OTP 화면 진입</div>
+    </div>
+    <div id="auth-req-wrap" style="display:none;">
+      <div style="font-size:13px;color:#60a5fa;margin-bottom:10px;">OTP 화면이 열렸습니다. 인증요청을 탭하세요.</div>
+      <button class="btn btn-blue" onclick="requestOtp()">인증요청</button>
     </div>
     <div id="otp-wrap" style="display:none;">
       <div style="font-size:13px;color:#f59e0b;margin-bottom:10px;">📱 SMS 인증번호가 발송되었습니다</div>
@@ -303,27 +307,25 @@ function setDot(id, on) {
 }
 
 function updateUI(data) {
-  const loginSec = document.getElementById('login-section');
-  const btnWrap  = document.getElementById('login-btn-wrap');
-  const otpWrap  = document.getElementById('otp-wrap');
-  const runBtn   = document.getElementById('run-btn');
+  const loginSec    = document.getElementById('login-section');
+  const btnWrap     = document.getElementById('login-btn-wrap');
+  const authReqWrap = document.getElementById('auth-req-wrap');
+  const otpWrap     = document.getElementById('otp-wrap');
+  const runBtn      = document.getElementById('run-btn');
 
   const needLogin = data.chrome_ok &&
-    ['idle','error','waiting_otp','logging_in'].includes(data.status);
+    ['idle','error','logging_in','waiting_auth_request','waiting_otp'].includes(data.status);
   loginSec.style.display = needLogin ? 'block' : 'none';
   if (btnWrap) {
     const loginBtn = btnWrap.querySelector('button');
     if (loginBtn) loginBtn.textContent = data.dms_logged_in ? '재로그인' : '로그인 시작';
   }
 
-  if (data.status === 'waiting_otp') {
-    btnWrap.style.display = 'none';
-    otpWrap.style.display = 'block';
-    document.getElementById('otp-input').focus();
-  } else {
-    btnWrap.style.display = 'block';
-    otpWrap.style.display = 'none';
-  }
+  btnWrap.style.display     = data.status === 'waiting_auth_request' || data.status === 'waiting_otp' ? 'none' : 'block';
+  authReqWrap.style.display = data.status === 'waiting_auth_request' ? 'block' : 'none';
+  otpWrap.style.display     = data.status === 'waiting_otp' ? 'block' : 'none';
+
+  if (data.status === 'waiting_otp') document.getElementById('otp-input').focus();
 
   const selOpt = parseInt(document.querySelector('input[name="opt"]:checked')?.value ?? '-1');
   const canRun = data.status === 'idle' && (selOpt === 4 || data.dms_logged_in);
@@ -335,7 +337,13 @@ function updateUI(data) {
 async function startLogin() {
   const data = await _fetch('/login', { method:'POST' });
   if (!data) return;
-  pollStatus(['logging_in', 'waiting_otp']);
+  pollStatus(['logging_in', 'waiting_auth_request', 'waiting_otp']);
+}
+
+async function requestOtp() {
+  const data = await _fetch('/request-otp', { method:'POST' });
+  if (!data) return;
+  pollStatus(['waiting_otp']);
 }
 
 async function submitOtp() {

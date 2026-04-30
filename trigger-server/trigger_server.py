@@ -53,8 +53,9 @@ state = {
     "option": None,
     "tunnel_url": "",
 }
-otp_q = queue.Queue(maxsize=1)
-log_q = queue.Queue()
+otp_q      = queue.Queue(maxsize=1)
+auth_req_q = queue.Queue(maxsize=1)  # 모바일 인증요청 버튼 탭 신호
+log_q      = queue.Queue()
 
 # ── ntfy 알림 ──────────────────────────────────────────────────────────────
 def _notify(title, body, tags="white_check_mark", priority="default", actions=None):
@@ -322,6 +323,18 @@ def start_login():
     threading.Thread(target=_login_flow, daemon=True).start()
     return jsonify({"status": "login_started"})
 
+@app.route("/request-otp", methods=["POST"])
+def request_otp():
+    if not _check_token():
+        return jsonify({"error": "unauthorized"}), 401
+    if state["status"] != "waiting_auth_request":
+        return jsonify({"error": "not_waiting"}), 409
+    while not auth_req_q.empty():
+        try: auth_req_q.get_nowait()
+        except Exception: break
+    auth_req_q.put_nowait("go")
+    return jsonify({"status": "ok"})
+
 @app.route("/otp", methods=["POST"])
 def submit_otp():
     if not _check_token():
@@ -426,21 +439,28 @@ def _login_flow():
         state["msg"] = "로그인 버튼 클릭됨..."
         time.sleep(2)
 
-        # OTP 화면 대기 → 인증요청 버튼 클릭 (SMS 발송)
+        # OTP 화면 대기 → 모바일 인증요청 버튼 탭 대기
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, SEL_OTP_INPUT)))
-        state["msg"] = "인증요청 버튼 클릭 중..."
-        time.sleep(0.5)
-        clicked = d.execute_script("""
-            var els = document.querySelectorAll('button, a[role=button]');
-            for (var el of els) {
-                if (el.innerText && el.innerText.includes('인증요청')) {
-                    el.click(); return true;
+        state["status"] = "waiting_auth_request"
+        state["msg"] = "인증요청 버튼을 탭하세요"
+
+        try:
+            auth_req_q.get(timeout=60)
+        except queue.Empty:
+            state["status"] = "error"
+            state["msg"] = "인증요청 시간 초과 (60초)"
+            return
+
+        # DMS 인증요청 버튼 클릭 (SMS 발송)
+        d.execute_script("""
+            var spans = document.querySelectorAll('span.btn-icon-text');
+            for (var s of spans) {
+                if (s.innerText.includes('인증요청')) {
+                    s.closest('button') && s.closest('button').click();
+                    break;
                 }
             }
-            return false;
         """)
-        if not clicked:
-            raise Exception("인증요청 버튼을 찾을 수 없습니다")
         state["status"] = "waiting_otp"
         state["msg"] = "SMS OTP를 입력하세요 (2분 내)"
 
