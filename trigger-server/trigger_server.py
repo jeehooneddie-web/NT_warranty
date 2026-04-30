@@ -453,8 +453,10 @@ def _login_flow():
             state["msg"] = "인증요청 시간 초과 (60초)"
             return
 
-        # DMS 인증요청 버튼 클릭 (SMS 발송)
-        d.execute_script("document.getElementById('btnReqOtpNo').click();")
+        # DMS 인증요청 버튼 클릭 (SMS 발송) — Kendo 버튼은 element.click() 사용
+        btn_otp = d.find_element(By.CSS_SELECTOR, "#btnReqOtpNo")
+        d.execute_script("arguments[0].scrollIntoView({block:'center'});", btn_otp)
+        btn_otp.click()
         state["status"] = "waiting_otp"
         state["msg"] = "SMS OTP를 입력하세요 (2분 내)"
 
