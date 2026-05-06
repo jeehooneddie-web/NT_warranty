@@ -557,6 +557,11 @@
         <span>클레임 볼륨</span>
       </div>
 
+      <div class="nav-item admin-only" data-view="view-stage23" onclick="showView('view-stage23')">
+        <i data-lucide="layers"></i>
+        <span>Stage 2·3 볼륨</span>
+      </div>
+
       <div class="nav-item admin-only" data-view="view-qr-match" onclick="showView('view-qr-match')">
         <i data-lucide="git-compare-arrows"></i>
         <span>고품 반납 현황</span>
@@ -3279,6 +3284,81 @@
         </div>
       </div><!-- /view-wholesale -->
 
+      <!-- =============================================
+           뷰: Stage 2·3 볼륨
+           ============================================= -->
+      <div id="view-stage23" class="view hidden">
+        <!-- 필터 카드 -->
+        <div class="sales-card p-5 mb-4" style="border-top:3px solid #d97706;">
+          <div class="flex flex-wrap gap-6 items-start">
+            <div>
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">마감 기준</span>
+              <div class="pill-group">
+                <button onclick="setS23Base('보증마감')" id="s23-base-warranty" class="sales-pill active">보증마감</button>
+                <button onclick="setS23Base('회계마감')" id="s23-base-account"  class="sales-pill">회계마감</button>
+              </div>
+            </div>
+            <div>
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">지점</span>
+              <div class="pill-group">
+                <button onclick="setS23Branch('전체')" id="s23-br-전체" class="sales-pill active">전체</button>
+                <button onclick="setS23Branch('전주')" id="s23-br-전주" class="sales-pill">전주</button>
+                <button onclick="setS23Branch('군산')" id="s23-br-군산" class="sales-pill">군산</button>
+                <button onclick="setS23Branch('목포')" id="s23-br-목포" class="sales-pill">목포</button>
+                <button onclick="setS23Branch('서산')" id="s23-br-서산" class="sales-pill">서산</button>
+                <button onclick="setS23Branch('평택')" id="s23-br-평택" class="sales-pill">평택</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 잔여 요약 카드 -->
+        <div class="sales-card p-5 mb-4" style="border-top:3px solid #d97706;">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-sm font-semibold text-slate-700">잔여 현황</span>
+            <span class="text-xs text-slate-400">(청구 − 승인, 전체 월 누적)</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="border-b border-slate-200">
+                  <th class="py-2 text-left text-slate-500 font-semibold" style="min-width:160px;">Claim Type</th>
+                  <th class="py-2 text-right text-slate-500 font-semibold pr-4">청구</th>
+                  <th class="py-2 text-right text-slate-500 font-semibold pr-4">승인</th>
+                  <th class="py-2 text-right text-amber-600 font-semibold pr-4">잔여</th>
+                  <th class="py-2 text-right text-slate-400 font-semibold w-16">잔여율</th>
+                </tr>
+              </thead>
+              <tbody id="s23-residual-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 탭 + 월별 테이블 -->
+        <div class="sales-card overflow-hidden" style="border-top:3px solid #d97706;">
+          <div class="flex items-center px-5 pt-0 border-b border-slate-100">
+            <button onclick="setS23Tab('charge')"  id="s23-tab-charge"
+              class="px-4 py-3 text-xs font-semibold border-b-2 border-amber-500 text-amber-600 -mb-px bg-white mr-1">청구</button>
+            <button onclick="setS23Tab('approve')" id="s23-tab-approve"
+              class="px-4 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 -mb-px bg-white">승인</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs" id="s23-main-table" style="table-layout:fixed;width:100%;">
+              <colgroup>
+                <col style="width:160px">
+                <col style="width:90px">
+                <col style="width:72px"><col style="width:72px"><col style="width:72px">
+                <col style="width:72px"><col style="width:72px"><col style="width:72px">
+                <col style="width:72px"><col style="width:72px"><col style="width:72px">
+                <col style="width:72px"><col style="width:72px"><col style="width:72px">
+              </colgroup>
+              <thead><tr id="s23-main-head"></tr></thead>
+              <tbody id="s23-main-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div><!-- /view-stage23 -->
+
     </main>
   </div>
 </div><!-- /최상위 레이아웃 -->
@@ -3554,6 +3634,7 @@
       'view-qr-match':         '고품 반납 현황',
       'view-qr-location':      '고품 로케이션 조회',
       'view-wholesale':        '클레임 볼륨',
+      'view-stage23':          'Stage 2·3 볼륨',
       'view-dms-trigger':      'DMS 자동화',
     };
     document.getElementById('page-title').textContent = titles[viewId] || '';
@@ -3570,6 +3651,7 @@
     if (viewId === 'view-qr-match')    initQRMatch();
     if (viewId === 'view-qr-location') initQRLocation();
     if (viewId === 'view-wholesale') renderWholesale();
+    if (viewId === 'view-stage23')   renderStage23();
     if (viewId === 'view-admin-menus') renderMenuCfgTable();
     if (viewId === 'view-dms-trigger') initDmsTrigger();
     if (viewId === 'view-user-mgmt')  loadUserList();
@@ -7558,6 +7640,130 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   }
   // ===================== /클레임 볼륨 =====================
 
+  // ===================== Stage 2·3 볼륨 =====================
+  const S23_TYPES  = ['Warranty Plus', 'AG Goodwill', 'KR Goodwill'];
+  const S23_COLORS = { 'Warranty Plus':'#d97706', 'AG Goodwill':'#7c3aed', 'KR Goodwill':'#9333ea' };
+  let s23Base = '보증마감', s23Branch = '전체', s23Tab = 'charge';
+
+  function setS23Base(b) {
+    s23Base = b;
+    [['보증마감','s23-base-warranty'],['회계마감','s23-base-account']].forEach(([v,id]) => {
+      document.getElementById(id)?.classList.toggle('active', v === b);
+    });
+    renderStage23();
+  }
+
+  function setS23Branch(br) {
+    s23Branch = br;
+    ['전체','전주','군산','목포','서산','평택'].forEach(b => {
+      document.getElementById('s23-br-'+b)?.classList.toggle('active', b === br);
+    });
+    renderStage23();
+  }
+
+  function setS23Tab(t) {
+    s23Tab = t;
+    ['charge','approve'].forEach(v => {
+      const el = document.getElementById('s23-tab-'+v);
+      if (!el) return;
+      const active = v === t;
+      el.classList.toggle('border-amber-500', active);
+      el.classList.toggle('text-amber-600', active);
+      el.classList.toggle('border-transparent', !active);
+      el.classList.toggle('text-slate-400', !active);
+    });
+    renderS23MainTable();
+  }
+
+  function renderStage23() {
+    renderS23Residual();
+    renderS23MainTable();
+  }
+
+  function renderS23Residual() {
+    const tbody = document.getElementById('s23-residual-body');
+    if (!tbody) return;
+    const base = WHOLESALE_DATA?.[s23Base]?.[s23Branch] || {};
+    const fmtAmt = v => v ? v.toLocaleString() + '원' : '-';
+    const pct = (c, a) => c > 0 ? ((c - a) / c * 100).toFixed(1) + '%' : '-';
+    let totalCharge = 0, totalApprove = 0;
+    const rows = S23_TYPES.map((t, i) => {
+      const typeData = base[t] || {};
+      let charge = 0, approve = 0;
+      Object.values(typeData).forEach(mo => {
+        charge  += mo?.charge?.amount  || 0;
+        approve += mo?.approve?.amount || 0;
+      });
+      totalCharge  += charge;
+      totalApprove += approve;
+      const residual = charge - approve;
+      const rowBg = i % 2 === 1 ? '#f8fafc' : '#ffffff';
+      return `<tr style="border-bottom:1px solid #f1f5f9;background:${rowBg};">
+        <td class="py-2 text-slate-700 font-medium">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${S23_COLORS[t]};margin-right:6px;vertical-align:middle;"></span>${t}
+        </td>
+        <td class="py-2 text-right tabular-nums text-slate-600 pr-4">${fmtAmt(charge)}</td>
+        <td class="py-2 text-right tabular-nums text-slate-600 pr-4">${fmtAmt(approve)}</td>
+        <td class="py-2 text-right tabular-nums font-semibold pr-4" style="color:#b45309;">${fmtAmt(residual)}</td>
+        <td class="py-2 text-right text-slate-400">${pct(charge, approve)}</td>
+      </tr>`;
+    }).join('');
+    const totalResidual = totalCharge - totalApprove;
+    tbody.innerHTML = rows + `<tr style="border-top:2px solid #d97706;background:#fff7ed;font-weight:700;">
+      <td class="py-2" style="color:#92400e;">합계</td>
+      <td class="py-2 text-right tabular-nums pr-4" style="color:#92400e;">${fmtAmt(totalCharge)}</td>
+      <td class="py-2 text-right tabular-nums pr-4" style="color:#92400e;">${fmtAmt(totalApprove)}</td>
+      <td class="py-2 text-right tabular-nums pr-4" style="color:#b45309;">${fmtAmt(totalResidual)}</td>
+      <td class="py-2 text-right" style="color:#92400e;">${pct(totalCharge, totalApprove)}</td>
+    </tr>`;
+  }
+
+  function renderS23MainTable() {
+    const thead = document.getElementById('s23-main-head');
+    const tbody = document.getElementById('s23-main-body');
+    if (!thead || !tbody) return;
+    const _wt = _tc();
+    const base = WHOLESALE_DATA?.[s23Base]?.[s23Branch] || {};
+    const months = Array.from({length:12}, (_,i) => `26-${String(i+1).padStart(2,'0')}`);
+    const fmt = v => v ? v.toLocaleString() : '-';
+    thead.innerHTML =
+      `<th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap sticky left-0 z-10" style="color:${_wt.textSub};background:${_wt.cardAlt};">Claim Type</th>` +
+      `<th class="px-3 py-2.5 text-right font-semibold" style="color:${_wt.textSub};">합계</th>` +
+      months.map(m => `<th class="px-3 py-2.5 text-right font-semibold whitespace-nowrap" style="color:${_wt.textSub};">${m}</th>`).join('');
+    const colTotals = {};
+    months.forEach(m => { colTotals[m] = 0; });
+    let grandTotal = 0;
+    const dataRows = S23_TYPES.filter(t => base[t]);
+    if (!dataRows.length) {
+      tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-slate-400">데이터 없음</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = dataRows.map((t, i) => {
+      let rowTotal = 0;
+      const cells = months.map(mo => {
+        const v = base[t]?.[mo]?.[s23Tab]?.amount || 0;
+        rowTotal += v;
+        colTotals[mo] = (colTotals[mo] || 0) + v;
+        return `<td class="px-3 py-2.5 text-right tabular-nums" style="color:${_wt.textSub};">${fmt(v)}</td>`;
+      }).join('');
+      grandTotal += rowTotal;
+      const dot = `<span style="width:8px;height:8px;border-radius:2px;background:${S23_COLORS[t]};display:inline-block;margin-right:6px;flex-shrink:0;"></span>`;
+      const rowBg = i % 2 === 1 ? _wt.cardAlt : _wt.card;
+      return `<tr style="background:${rowBg};border-bottom:1px solid ${_wt.border};">
+        <td class="px-3 py-2.5 whitespace-nowrap sticky left-0 z-10" style="background:${rowBg};">
+          <span class="flex items-center text-xs font-medium" style="color:${_wt.text};">${dot}${t}</span>
+        </td>
+        <td class="px-3 py-2.5 text-right font-bold tabular-nums" style="color:${_wt.text};">${fmt(rowTotal)}</td>
+        ${cells}
+      </tr>`;
+    }).join('') + `<tr style="border-top:2px solid #d97706;background:#fff7ed;font-weight:700;font-size:12px;">
+      <td class="px-3 py-2.5 sticky left-0 z-10" style="background:#fff7ed;color:#92400e;">합계</td>
+      <td class="px-3 py-2.5 text-right tabular-nums" style="color:#92400e;">${fmt(grandTotal)}</td>
+      ${months.map(m => `<td class="px-3 py-2.5 text-right tabular-nums" style="color:#92400e;">${fmt(colTotals[m]||0)}</td>`).join('')}
+    </tr>`;
+  }
+  // ===================== /Stage 2·3 볼륨 =====================
+
   /* 조치사항 버튼 - 값 설정 후 커서를 끝으로 이동 */
   function setActionTaken(text) {
     const el = document.getElementById('trans-in-6');
@@ -7606,6 +7812,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     { key:'view-tc',          label:'TC 미실시율',      minRole:'admin',  hidden:false, fixed:false },
     { key:'view-claim',       label:'CLAIM 상태 확인', minRole:'admin',  hidden:false, fixed:false },
     { key:'view-wholesale',   label:'클레임 볼륨',      minRole:'admin',  hidden:false, fixed:false },
+    { key:'view-stage23',     label:'Stage 2·3 볼륨',  minRole:'semi',   hidden:false, fixed:false },
     { key:'view-qr-match',    label:'고품 반납 현황',   minRole:'admin',  hidden:false, fixed:false },
     { key:'view-qr-location', label:'고품 로케이션 조회', minRole:'admin',  hidden:false, fixed:false },
     { key:'view-user-mgmt',   label:'구성원 관리',       minRole:'admin',  hidden:false, fixed:true  },
