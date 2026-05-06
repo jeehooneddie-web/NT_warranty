@@ -3326,7 +3326,6 @@
                   <th class="py-2 text-right font-semibold pr-4" style="color:#0891b2;">청구</th>
                   <th class="py-2 text-right font-semibold pr-4" style="color:#059669;">승인</th>
                   <th class="py-2 text-right font-semibold pr-4" style="color:#d97706;">승인대기</th>
-                  <th class="py-2 text-right text-amber-600 font-semibold pr-4">잔여(청구−승인)</th>
                 </tr>
               </thead>
               <tbody id="s23-residual-body"></tbody>
@@ -3334,8 +3333,16 @@
           </div>
         </div>
 
-        <!-- 월별 테이블 -->
+        <!-- 탭 + 월별 테이블 -->
         <div class="sales-card overflow-hidden mb-4" style="border-top:3px solid #d97706;">
+          <div class="flex items-center px-5 pt-0 border-b border-slate-100">
+            <button onclick="setS23Tab('charge')"  id="s23-tab-charge"
+              class="px-4 py-3 text-xs font-semibold border-b-2 border-cyan-500 -mb-px bg-white mr-1" style="color:#0891b2;">청구</button>
+            <button onclick="setS23Tab('approve')" id="s23-tab-approve"
+              class="px-4 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 -mb-px bg-white mr-1">승인</button>
+            <button onclick="setS23Tab('pending')" id="s23-tab-pending"
+              class="px-4 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 -mb-px bg-white">승인대기</button>
+          </div>
           <!-- 2025 -->
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100">
             <span class="text-sm font-semibold text-slate-700">2025 · Claim Type × 월별</span>
@@ -7664,7 +7671,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     { key:'approve', label:'승인',     color:'#059669' },
     { key:'pending', label:'승인대기', color:'#d97706' },
   ];
-  let s23Base = '보증마감', s23Branch = '전체';
+  let s23Base = '보증마감', s23Branch = '전체', s23Tab = 'charge';
 
   function setS23Base(b) {
     s23Base = b;
@@ -7680,6 +7687,26 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       document.getElementById('s23-br-'+b)?.classList.toggle('active', b === br);
     });
     renderStage23();
+  }
+
+  function setS23Tab(t) {
+    s23Tab = t;
+    const tabColors = { charge:'#0891b2', approve:'#059669', pending:'#d97706' };
+    const tabBorders = { charge:'border-cyan-500', approve:'border-emerald-500', pending:'border-amber-500' };
+    ['charge','approve','pending'].forEach(v => {
+      const el = document.getElementById('s23-tab-'+v);
+      if (!el) return;
+      if (v === t) {
+        el.style.color = tabColors[v];
+        el.classList.add(tabBorders[v]);
+        el.classList.remove('border-transparent','text-slate-400');
+      } else {
+        el.style.color = '';
+        el.classList.remove(...Object.values(tabBorders));
+        el.classList.add('border-transparent','text-slate-400');
+      }
+    });
+    ['25','26'].forEach(yr => renderS23Year(yr));
   }
 
   function renderStage23() {
@@ -7709,7 +7736,6 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
         <td class="py-2 text-right tabular-nums pr-4" style="color:#0891b2;">${fmt(c)}</td>
         <td class="py-2 text-right tabular-nums pr-4" style="color:#059669;">${fmt(a)}</td>
         <td class="py-2 text-right tabular-nums pr-4" style="color:#d97706;">${fmt(p)}</td>
-        <td class="py-2 text-right tabular-nums font-semibold pr-4" style="color:#b45309;">${fmt(c - a)}</td>
       </tr>`;
     }).join('');
     tbody.innerHTML = rows + `<tr style="border-top:2px solid #d97706;background:#fff7ed;font-weight:700;">
@@ -7717,7 +7743,6 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       <td class="py-2 text-right tabular-nums pr-4" style="color:#0891b2;">${fmt(totC)}</td>
       <td class="py-2 text-right tabular-nums pr-4" style="color:#059669;">${fmt(totA)}</td>
       <td class="py-2 text-right tabular-nums pr-4" style="color:#d97706;">${fmt(totP)}</td>
-      <td class="py-2 text-right tabular-nums pr-4" style="color:#b45309;">${fmt(totC - totA)}</td>
     </tr>`;
   }
 
@@ -7729,6 +7754,8 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     const base = WHOLESALE_DATA?.[s23Base]?.[s23Branch] || {};
     const months = Array.from({length:12}, (_,i) => `${yr}-${String(i+1).padStart(2,'0')}`);
     const fmt = v => v ? v.toLocaleString() : '-';
+    const tabColor = { charge:'#0891b2', approve:'#059669', pending:'#d97706' };
+    const accentColor = tabColor[s23Tab] || '#0891b2';
     thead.innerHTML =
       `<th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap sticky left-0 z-10" style="color:${_wt.textSub};background:${_wt.cardAlt};">Claim Type</th>` +
       `<th class="px-3 py-2.5 text-right font-semibold" style="color:${_wt.textSub};">합계</th>` +
@@ -7738,51 +7765,32 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-slate-400">데이터 없음</td></tr>`;
       return;
     }
-    // status별 누적 합계
-    const totByStatus = {};
-    S23_STATUS.forEach(s => { totByStatus[s.key] = { row: 0, cols: {} }; months.forEach(m => { totByStatus[s.key].cols[m] = 0; }); });
-    let html = '';
-    dataRows.forEach((t, ti) => {
-      const typeBg = ti % 2 === 0 ? _wt.card : _wt.cardAlt;
-      // ClaimType 헤더 행
-      html += `<tr style="background:${typeBg};border-bottom:1px solid ${_wt.border};">
-        <td class="px-3 py-2 sticky left-0 z-10 font-semibold text-xs" colspan="14" style="background:${typeBg};color:${_wt.text};">
-          <span style="width:8px;height:8px;border-radius:2px;background:${S23_COLORS[t]};display:inline-block;margin-right:6px;vertical-align:middle;"></span>${t}
+    const colTotals = {};
+    months.forEach(m => { colTotals[m] = 0; });
+    let grandTotal = 0;
+    tbody.innerHTML = dataRows.map((t, i) => {
+      let rowTotal = 0;
+      const cells = months.map(mo => {
+        const v = base[t]?.[mo]?.[s23Tab]?.parts || 0;
+        rowTotal += v;
+        colTotals[mo] = (colTotals[mo] || 0) + v;
+        return `<td class="px-3 py-2.5 text-right tabular-nums" style="color:${_wt.textSub};">${fmt(v)}</td>`;
+      }).join('');
+      grandTotal += rowTotal;
+      const dot = `<span style="width:8px;height:8px;border-radius:2px;background:${S23_COLORS[t]};display:inline-block;margin-right:6px;flex-shrink:0;"></span>`;
+      const rowBg = i % 2 === 1 ? _wt.cardAlt : _wt.card;
+      return `<tr style="background:${rowBg};border-bottom:1px solid ${_wt.border};">
+        <td class="px-3 py-2.5 whitespace-nowrap sticky left-0 z-10" style="background:${rowBg};">
+          <span class="flex items-center text-xs font-medium" style="color:${_wt.text};">${dot}${t}</span>
         </td>
+        <td class="px-3 py-2.5 text-right font-bold tabular-nums" style="color:${_wt.text};">${fmt(rowTotal)}</td>
+        ${cells}
       </tr>`;
-      // 청구 / 승인 / 승인대기 3행
-      S23_STATUS.forEach(s => {
-        let rowTotal = 0;
-        const cells = months.map(mo => {
-          const v = base[t]?.[mo]?.[s.key]?.parts || 0;
-          rowTotal += v;
-          totByStatus[s.key].cols[mo] += v;
-          return `<td class="px-3 py-2 text-right tabular-nums" style="color:${_wt.textSub};">${fmt(v)}</td>`;
-        }).join('');
-        totByStatus[s.key].row += rowTotal;
-        html += `<tr style="background:${typeBg};border-bottom:1px solid ${_wt.border};">
-          <td class="px-3 py-2 sticky left-0 z-10 pl-8" style="background:${typeBg};">
-            <span style="font-size:11px;font-weight:600;color:${s.color};">${s.label}</span>
-          </td>
-          <td class="px-3 py-2 text-right tabular-nums font-semibold" style="color:${s.color};">${fmt(rowTotal)}</td>
-          ${cells}
-        </tr>`;
-      });
-    });
-    // 합계 섹션
-    html += `<tr style="border-top:2px solid #d97706;background:#fff7ed;">
-      <td class="px-3 py-2 sticky left-0 z-10 font-bold text-xs" colspan="14" style="background:#fff7ed;color:#92400e;">합계</td>
+    }).join('') + `<tr style="border-top:2px solid ${accentColor};background:#f0fdf4;font-weight:700;font-size:12px;">
+      <td class="px-3 py-2.5 sticky left-0 z-10" style="background:#f0fdf4;color:${accentColor};">합계</td>
+      <td class="px-3 py-2.5 text-right tabular-nums" style="color:${accentColor};">${fmt(grandTotal)}</td>
+      ${months.map(m => `<td class="px-3 py-2.5 text-right tabular-nums" style="color:${accentColor};">${fmt(colTotals[m]||0)}</td>`).join('')}
     </tr>`;
-    S23_STATUS.forEach(s => {
-      html += `<tr style="background:#fff7ed;border-bottom:1px solid #fed7aa;">
-        <td class="px-3 py-2 sticky left-0 z-10 pl-8" style="background:#fff7ed;">
-          <span style="font-size:11px;font-weight:600;color:${s.color};">${s.label}</span>
-        </td>
-        <td class="px-3 py-2 text-right tabular-nums font-bold" style="color:${s.color};">${fmt(totByStatus[s.key].row)}</td>
-        ${months.map(m => `<td class="px-3 py-2 text-right tabular-nums" style="color:${s.color};">${fmt(totByStatus[s.key].cols[m]||0)}</td>`).join('')}
-      </tr>`;
-    });
-    tbody.innerHTML = html;
   }
   // ===================== /Stage 2·3 볼륨 =====================
 
