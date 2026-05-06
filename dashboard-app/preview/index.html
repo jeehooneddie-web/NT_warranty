@@ -3335,25 +3335,47 @@
         </div>
 
         <!-- 탭 + 월별 테이블 -->
-        <div class="sales-card overflow-hidden" style="border-top:3px solid #d97706;">
+        <div class="sales-card overflow-hidden mb-4" style="border-top:3px solid #d97706;">
           <div class="flex items-center px-5 pt-0 border-b border-slate-100">
             <button onclick="setS23Tab('charge')"  id="s23-tab-charge"
               class="px-4 py-3 text-xs font-semibold border-b-2 border-amber-500 text-amber-600 -mb-px bg-white mr-1">청구</button>
             <button onclick="setS23Tab('approve')" id="s23-tab-approve"
               class="px-4 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 -mb-px bg-white">승인</button>
           </div>
+          <!-- 2025 -->
+          <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+            <span class="text-sm font-semibold text-slate-700">2025 · Claim Type × 월별</span>
+            <span id="s23-unit-25" class="text-xs text-slate-400">단위: 원</span>
+          </div>
           <div class="overflow-x-auto">
-            <table class="w-full text-xs" id="s23-main-table" style="table-layout:fixed;width:100%;">
+            <table class="w-full text-xs" id="s23-table-25" style="table-layout:fixed;width:100%;">
               <colgroup>
-                <col style="width:160px">
-                <col style="width:90px">
+                <col style="width:160px"><col style="width:90px">
                 <col style="width:72px"><col style="width:72px"><col style="width:72px">
                 <col style="width:72px"><col style="width:72px"><col style="width:72px">
                 <col style="width:72px"><col style="width:72px"><col style="width:72px">
                 <col style="width:72px"><col style="width:72px"><col style="width:72px">
               </colgroup>
-              <thead><tr id="s23-main-head"></tr></thead>
-              <tbody id="s23-main-body"></tbody>
+              <thead><tr id="s23-head-25"></tr></thead>
+              <tbody id="s23-body-25"></tbody>
+            </table>
+          </div>
+          <!-- 2026 -->
+          <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100 border-t border-t-slate-200 mt-2">
+            <span class="text-sm font-semibold text-slate-700">2026 · Claim Type × 월별</span>
+            <span id="s23-unit-26" class="text-xs text-slate-400">단위: 원</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs" id="s23-table-26" style="table-layout:fixed;width:100%;">
+              <colgroup>
+                <col style="width:160px"><col style="width:90px">
+                <col style="width:72px"><col style="width:72px"><col style="width:72px">
+                <col style="width:72px"><col style="width:72px"><col style="width:72px">
+                <col style="width:72px"><col style="width:72px"><col style="width:72px">
+                <col style="width:72px"><col style="width:72px"><col style="width:72px">
+              </colgroup>
+              <thead><tr id="s23-head-26"></tr></thead>
+              <tbody id="s23-body-26"></tbody>
             </table>
           </div>
         </div>
@@ -7719,12 +7741,16 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   }
 
   function renderS23MainTable() {
-    const thead = document.getElementById('s23-main-head');
-    const tbody = document.getElementById('s23-main-body');
+    ['25','26'].forEach(yr => renderS23Year(yr));
+  }
+
+  function renderS23Year(yr) {
+    const thead = document.getElementById('s23-head-'+yr);
+    const tbody = document.getElementById('s23-body-'+yr);
     if (!thead || !tbody) return;
     const _wt = _tc();
     const base = WHOLESALE_DATA?.[s23Base]?.[s23Branch] || {};
-    const months = Array.from({length:12}, (_,i) => `26-${String(i+1).padStart(2,'0')}`);
+    const months = Array.from({length:12}, (_,i) => `${yr}-${String(i+1).padStart(2,'0')}`);
     const fmt = v => v ? v.toLocaleString() : '-';
     thead.innerHTML =
       `<th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap sticky left-0 z-10" style="color:${_wt.textSub};background:${_wt.cardAlt};">Claim Type</th>` +
