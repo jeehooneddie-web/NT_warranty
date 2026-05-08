@@ -2607,7 +2607,7 @@
 
         <!-- 필터 카드 -->
         <div class="bg-white dark:bg-slate-800 rounded-xl p-4 mb-4 border border-slate-200 dark:border-slate-700">
-          <div class="flex items-center gap-3 mb-3">
+          <div id="person-type-filter" class="flex items-center gap-3 mb-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">타입</span>
             <div class="pill-group">
               <button onclick="togglePersonType('all')" id="ptype-all" class="sales-pill active">전체</button>
@@ -2783,7 +2783,7 @@
         </div><!-- /person-section-main -->
 
         <!-- 디펙트 편중 분석 섹션 -->
-        <div id="person-section-defect" class="hidden">
+        <div id="person-section-defect" style="display:none">
           <!-- 담당자 pill 선택 -->
           <div class="bg-white dark:bg-slate-800 rounded-xl p-4 mb-4 border border-slate-200 dark:border-slate-700">
             <div class="flex items-center gap-3 flex-wrap">
@@ -2792,7 +2792,7 @@
             </div>
           </div>
           <!-- 탑 디펙트 결과 -->
-          <div id="pd-result-wrap" class="hidden bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div id="pd-result-wrap" style="display:none" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
               <p id="pd-result-title" class="text-xs font-semibold text-gray-700 dark:text-slate-300">-</p>
               <span class="text-[11px] text-slate-400">건수 기준 정렬</span>
@@ -7585,15 +7585,23 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
 
   function setPersonMainTab(tab) {
     pMainTab = tab;
-    const isMain = tab === 'main';
-    const btnMain   = document.getElementById('ptab-main-main');
-    const btnDefect = document.getElementById('ptab-main-defect');
-    if (btnMain)   btnMain.style.borderBottomColor   = isMain  ? '#3B82F6' : 'transparent';
-    if (btnDefect) btnDefect.style.borderBottomColor = !isMain ? '#3B82F6' : 'transparent';
-    document.getElementById('person-section-main')?.classList.toggle('hidden', !isMain);
-    document.getElementById('person-section-defect')?.classList.toggle('hidden', isMain);
-    document.getElementById('person-status-filter')?.classList.toggle('hidden', !isMain);
-    if (!isMain) renderPersonDefect();
+    const _t = _tc();
+    ['main','defect'].forEach(t => {
+      const btn = document.getElementById('ptab-main-' + t);
+      if (btn) {
+        btn.style.borderBottomColor = t === tab ? '#3B82F6' : 'transparent';
+        btn.style.color = t === tab ? _t.text : _t.textSub;
+      }
+    });
+    const mainSec   = document.getElementById('person-section-main');
+    const defectSec = document.getElementById('person-section-defect');
+    if (mainSec)   mainSec.style.display   = tab === 'main'   ? '' : 'none';
+    if (defectSec) defectSec.style.display = tab === 'defect' ? '' : 'none';
+    const typeFilter   = document.getElementById('person-type-filter');
+    const statusFilter = document.getElementById('person-status-filter');
+    if (typeFilter)   typeFilter.style.display   = tab === 'main' ? '' : 'none';
+    if (statusFilter) statusFilter.style.display = tab === 'main' ? '' : 'none';
+    if (tab === 'defect') renderPersonDefect();
     else { renderPersonChart(); renderPersonDailyCharts(); }
   }
 
@@ -7603,7 +7611,8 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     pillWrap.innerHTML = Object.entries(PERSON_NAMES).map(([id, name]) =>
       `<button id="pd-pill-${id}" onclick="selectPersonDefectPill('${id}')" class="sales-pill">${name}</button>`
     ).join('');
-    document.getElementById('pd-result-wrap')?.classList.add('hidden');
+    const rw = document.getElementById('pd-result-wrap');
+    if (rw) rw.style.display = 'none';
     pdSelectedPerson = null;
   }
 
@@ -7657,7 +7666,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
         </td>
       </tr>`;
     }).join('') : '<tr><td colspan="6" class="text-center py-8 text-slate-400">해당 기간 데이터 없음</td></tr>';
-    wrap?.classList.remove('hidden');
+    if (wrap) wrap.style.display = '';
   }
   // ===================== /개인별 청구 현황 =====================
 
