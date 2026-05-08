@@ -56,7 +56,7 @@ df = pd.read_excel(RAW_TMP, sheet_name=2, header=_header_row, engine='openpyxl')
 cols = df.columns.tolist()
 ok(f'헤더 행: {_header_row}행  /  총 컬럼: {len(cols)}개  /  B열: {cols[1]}')
 status_col = cols[1]; city_col = cols[5]; code_col = cols[12]
-amount_col = cols[22]; task_col = cols[8]
+amount_col = cols[22]; task_col = cols[8]; person_col = cols[23]
 k_col = cols[10]  # K열: Warranty Stage
 # month/type은 수식열(AC/AE) 대신 원본열(N열 날짜, K/M열)로 직접 계산
 df['_month'] = pd.to_datetime(df[cols[13]], errors='coerce').dt.strftime('%y-%m')
@@ -492,6 +492,27 @@ except Exception as _e:
     qr_claim_rows = []
     ok(f'QR_CLAIM_DATA 생성 실패 (무시): {_e}')
 
+# ── 8-2. PERSON_DEFECT_RAW 집계 (청구 전체 × 담당자 × 타입 × 지점 × DefectCode × 월) ──
+# 포맷: [personId, month, claimType, branch, defectCode, count, amount]
+step('PERSON_DEFECT_RAW 집계 중...')
+try:
+    df_pd = df_c[[person_col, month_col, type_col, city_col, code_col, amount_col]].copy()
+    df_pd = df_pd[df_pd[person_col].notna() & (df_pd[person_col].astype(str).str.strip() != '')]
+    df_pd[person_col] = df_pd[person_col].astype(str).str.strip()
+    df_pd[code_col]   = df_pd[code_col].astype(str).str.strip()
+    pd_agg = df_pd.groupby([person_col, month_col, type_col, city_col, code_col]).agg(
+        count=(amount_col, 'count'),
+        amount=(amount_col, 'sum')
+    ).reset_index()
+    person_defect_raw = [
+        [str(r[person_col]), str(r[month_col]), str(r[type_col]), str(r[city_col]), str(r[code_col]), int(r['count']), int(r['amount'])]
+        for _, r in pd_agg.iterrows()
+    ]
+    ok(f'PERSON_DEFECT_RAW: {len(person_defect_raw):,}행')
+except Exception as _e:
+    person_defect_raw = []
+    ok(f'PERSON_DEFECT_RAW 생성 실패 (무시): {_e}')
+
 # ── 8-1. JS 문자열 생성 ───────────────────────────────────
 step('JS 데이터 문자열 생성 중...')
 desc_js     = 'const DEFECT_DESC='       + json.dumps(matched_desc, ensure_ascii=False, separators=(',',':')) + ';'
@@ -505,7 +526,8 @@ tc_top_js   = 'const TC_TOP_DATA='   + json.dumps(tc_top_data,  ensure_ascii=Fal
 tc_same_js  = 'const TC_SAME_MONTH_DATA=' + json.dumps(tc_same_data, ensure_ascii=False, separators=(',',':')) + ';'
 claim_js      = 'const CLAIM_DATA='      + json.dumps(claim_raw,      ensure_ascii=False, separators=(',',':')) + ';'
 wholesale_js  = 'const WHOLESALE_DATA=' + json.dumps(wholesale_data, ensure_ascii=False, separators=(',',':')) + ';'
-qr_claim_js   = 'const QR_CLAIM_DATA='  + json.dumps(qr_claim_rows,  ensure_ascii=False, separators=(',',':')) + ';'
+qr_claim_js        = 'const QR_CLAIM_DATA='       + json.dumps(qr_claim_rows,      ensure_ascii=False, separators=(',',':')) + ';'
+person_defect_js   = 'const PERSON_DEFECT_RAW='  + json.dumps(person_defect_raw,  ensure_ascii=False, separators=(',',':')) + ';'
 ok('완료')
 
 # ── 7. HTML embed ─────────────────────────────────────────
@@ -525,7 +547,8 @@ html = re.sub(r'const TC_TOP_DATA=\[.*?\];',         tc_top_js,  html, flags=re.
 html = re.sub(r'const TC_SAME_MONTH_DATA=\[.*?\];', tc_same_js, html, flags=re.DOTALL)
 html = re.sub(r'const CLAIM_DATA=\[.*?\];',          claim_js,      html, flags=re.DOTALL)
 html = re.sub(r'const WHOLESALE_DATA=\{.*?\};',     wholesale_js,  html, flags=re.DOTALL)
-html = re.sub(r'const QR_CLAIM_DATA=\[.*?\];',      qr_claim_js,   html, flags=re.DOTALL)
+html = re.sub(r'const QR_CLAIM_DATA=\[.*?\];',      qr_claim_js,        html, flags=re.DOTALL)
+html = re.sub(r'const PERSON_DEFECT_RAW=\[.*?\];', person_defect_js,   html, flags=re.DOTALL)
 
 with open(HTML_PATH, 'w', encoding='utf-8') as f:
     f.write(html)

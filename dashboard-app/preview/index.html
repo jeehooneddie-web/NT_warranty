@@ -2652,6 +2652,17 @@
               <button onclick="setPersonStatus('취소')" id="pstatus-cancel" class="sales-pill">취소</button>
             </div>
           </div>
+          <div id="person-defect-branch-filter" style="display:none" class="flex items-center gap-3 mt-3">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">지점</span>
+            <div class="pill-group">
+              <button onclick="togglePersonDefectBranch('all')" id="pdbranch-all" class="sales-pill active">전체</button>
+              <button onclick="togglePersonDefectBranch('전주')" id="pdbranch-전주" class="sales-pill">전주</button>
+              <button onclick="togglePersonDefectBranch('군산')" id="pdbranch-군산" class="sales-pill">군산</button>
+              <button onclick="togglePersonDefectBranch('목포')" id="pdbranch-목포" class="sales-pill">목포</button>
+              <button onclick="togglePersonDefectBranch('서산')" id="pdbranch-서산" class="sales-pill">서산</button>
+              <button onclick="togglePersonDefectBranch('평택')" id="pdbranch-평택" class="sales-pill">평택</button>
+            </div>
+          </div>
         </div>
 
         <div id="person-section-main">
@@ -7072,6 +7083,8 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   let pChartDailyCum = null;
   let pMainTab = 'main';
   let pdSelectedPerson = null;
+  const PD_ALL_BRANCHES = ['전주','군산','목포','서산','평택'];
+  let pdActiveBranches = new Set(PD_ALL_BRANCHES);
 
   function pGetVisibleMonths() {
     const years = [...pActiveYears].sort();
@@ -7597,10 +7610,10 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
     const defectSec = document.getElementById('person-section-defect');
     if (mainSec)   mainSec.style.display   = tab === 'main'   ? '' : 'none';
     if (defectSec) defectSec.style.display = tab === 'defect' ? '' : 'none';
-    const typeFilter   = document.getElementById('person-type-filter');
     const statusFilter = document.getElementById('person-status-filter');
-    if (typeFilter)   typeFilter.style.display   = tab === 'main' ? '' : 'none';
-    if (statusFilter) statusFilter.style.display = tab === 'main' ? '' : 'none';
+    const branchFilter = document.getElementById('person-defect-branch-filter');
+    if (statusFilter) statusFilter.style.display = tab === 'main'   ? '' : 'none';
+    if (branchFilter) branchFilter.style.display = tab === 'defect' ? '' : 'none';
     if (tab === 'defect') renderPersonDefect();
     else { renderPersonChart(); renderPersonDailyCharts(); }
   }
@@ -7622,21 +7635,27 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       const el = document.getElementById('pd-pill-' + id);
       if (el) el.className = 'sales-pill' + (id === personId ? ' active' : '');
     });
-    // PERSON_DEFECT_RAW = [personId, month(yy-mm), defectCode, count, amount]
+    // PERSON_DEFECT_RAW = [personId, month(yy-mm), claimType, branch, defectCode, count, amount]
     const filtered = (PERSON_DEFECT_RAW || []).filter(r => {
       if (r[0] !== personId) return false;
-      const mo = String(r[1]); // "26-05"
+      const mo = String(r[1]);
       const yy = mo.slice(0, 2);
       const mm = mo.slice(3, 5);
       if (!pActiveYears.has(yy))  return false;
       if (!pActiveMonths.has(mm)) return false;
+      if (r.length >= 7) {
+        if (!pActiveTypes.has(r[2])) return false;
+        if (!pdActiveBranches.has(r[3])) return false;
+      }
       return true;
     });
     const codeCounts = {}, codeAmounts = {};
     for (const r of filtered) {
-      const code = r[2];
-      codeCounts[code]  = (codeCounts[code]  || 0) + r[3];
-      codeAmounts[code] = (codeAmounts[code] || 0) + r[4];
+      const code = r.length >= 7 ? r[4] : r[2];
+      const cnt  = r.length >= 7 ? r[5] : r[3];
+      const amt  = r.length >= 7 ? r[6] : r[4];
+      codeCounts[code]  = (codeCounts[code]  || 0) + cnt;
+      codeAmounts[code] = (codeAmounts[code] || 0) + amt;
     }
     const total = Object.values(codeCounts).reduce((a, b) => a + b, 0);
     const sorted = Object.entries(codeCounts).sort((a, b) => b[1] - a[1]);
@@ -7667,6 +7686,21 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       </tr>`;
     }).join('') : '<tr><td colspan="6" class="text-center py-8 text-slate-400">해당 기간 데이터 없음</td></tr>';
     if (wrap) wrap.style.display = '';
+  }
+
+  function togglePersonDefectBranch(branch) {
+    if (branch === 'all') { pdActiveBranches = new Set(PD_ALL_BRANCHES); }
+    else {
+      if (pdActiveBranches.size === PD_ALL_BRANCHES.length) pdActiveBranches = new Set([branch]);
+      else if (pdActiveBranches.has(branch) && pdActiveBranches.size === 1) pdActiveBranches = new Set(PD_ALL_BRANCHES);
+      else { pdActiveBranches.has(branch) ? pdActiveBranches.delete(branch) : pdActiveBranches.add(branch); }
+    }
+    PD_ALL_BRANCHES.forEach(b => {
+      const el = document.getElementById('pdbranch-' + b);
+      if (el) el.className = 'sales-pill' + (pdActiveBranches.has(b) && pdActiveBranches.size < PD_ALL_BRANCHES.length ? ' active' : '');
+    });
+    document.getElementById('pdbranch-all').className = 'sales-pill' + (pdActiveBranches.size === PD_ALL_BRANCHES.length ? ' active' : '');
+    if (pdSelectedPerson) selectPersonDefectPill(pdSelectedPerson);
   }
   // ===================== /개인별 청구 현황 =====================
 
