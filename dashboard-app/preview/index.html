@@ -2597,6 +2597,14 @@
       ============================================= -->
       <div id="view-person" class="view hidden">
 
+        <!-- 메인 탭바 -->
+        <div style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid rgba(148,163,184,0.2);">
+          <button id="ptab-main-main" onclick="setPersonMainTab('main')"
+            style="padding:10px 20px; font-size:13px; font-weight:700; border:none; background:none; cursor:pointer; border-bottom:3px solid #3B82F6; margin-bottom:-2px; transition:all 0.25s ease;">청구 현황</button>
+          <button id="ptab-main-defect" onclick="setPersonMainTab('defect')"
+            style="padding:10px 20px; font-size:13px; font-weight:700; border:none; background:none; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; transition:all 0.25s ease;">디펙트 편중</button>
+        </div>
+
         <!-- 필터 카드 -->
         <div class="bg-white dark:bg-slate-800 rounded-xl p-4 mb-4 border border-slate-200 dark:border-slate-700">
           <div class="flex items-center gap-3 mb-3">
@@ -2637,7 +2645,7 @@
               <button onclick="togglePersonMonth('12')" id="pmonth-12" class="sales-pill">12월</button>
             </div>
           </div>
-          <div class="flex items-center gap-3 mt-3">
+          <div id="person-status-filter" class="flex items-center gap-3 mt-3">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">상태</span>
             <div class="pill-group">
               <button onclick="setPersonStatus('청구')" id="pstatus-claim" class="sales-pill active">청구</button>
@@ -2646,6 +2654,7 @@
           </div>
         </div>
 
+        <div id="person-section-main">
         <!-- 차트 카드 -->
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <!-- 탭 바 -->
@@ -2771,6 +2780,56 @@
           </div>
 
         </div>
+        </div><!-- /person-section-main -->
+
+        <!-- 디펙트 편중 분석 섹션 -->
+        <div id="person-section-defect" class="hidden">
+          <!-- 요약 테이블 -->
+          <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+              <p class="text-xs font-semibold text-gray-700 dark:text-slate-300">담당자별 디펙트 집중도</p>
+              <span class="text-[11px] text-slate-400">집중도 = 1위 코드 건수 ÷ 총건수 · 행 클릭 → 상세</span>
+            </div>
+            <div class="overflow-auto">
+              <table class="w-full text-xs">
+                <thead>
+                  <tr class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
+                    <th class="text-left px-4 py-2.5 font-semibold text-gray-700 dark:text-slate-300">담당자</th>
+                    <th class="text-left px-4 py-2.5 font-semibold text-gray-700 dark:text-slate-300">지점</th>
+                    <th class="text-right px-4 py-2.5 font-semibold text-gray-700 dark:text-slate-300">총건수</th>
+                    <th class="text-left px-4 py-2.5 font-semibold text-gray-700 dark:text-slate-300">1위 코드</th>
+                    <th class="text-right px-4 py-2.5 font-semibold text-gray-700 dark:text-slate-300">집중도</th>
+                    <th class="text-left px-4 py-2.5 font-semibold text-gray-700 dark:text-slate-300">2위</th>
+                    <th class="text-left px-4 py-2.5 font-semibold text-gray-700 dark:text-slate-300">3위</th>
+                  </tr>
+                </thead>
+                <tbody id="person-defect-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <!-- 선택 담당자 상세 -->
+          <div id="person-defect-detail" class="hidden mt-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+              <p id="person-defect-detail-title" class="text-xs font-semibold text-gray-700 dark:text-slate-300">-</p>
+              <button onclick="document.getElementById('person-defect-detail').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-xs">닫기 ✕</button>
+            </div>
+            <div class="overflow-auto">
+              <table class="w-full text-xs">
+                <thead>
+                  <tr class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
+                    <th class="text-center px-4 py-2.5 font-semibold text-gray-700 dark:text-slate-300 w-12">순위</th>
+                    <th class="text-left px-4 py-2.5 font-semibold text-gray-700 dark:text-slate-300">디펙트 코드</th>
+                    <th class="text-left px-4 py-2.5 font-semibold text-gray-700 dark:text-slate-300">설명</th>
+                    <th class="text-right px-4 py-2.5 font-semibold text-gray-700 dark:text-slate-300">건수</th>
+                    <th class="text-left px-4 py-2.5 font-semibold text-gray-700 dark:text-slate-300" style="min-width:160px">비중</th>
+                  </tr>
+                </thead>
+                <tbody id="person-defect-detail-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div><!-- /person-section-defect -->
+
       </div><!-- /view-person -->
 
       <!-- =============================================
@@ -3667,7 +3726,7 @@
     // TOP DEFECT 테이블 초기화
     if (viewId === 'view-top-defect') setDefectMainTab(dMainTab || 'topdefect');
     // 개인별 청구 차트 초기화
-    if (viewId === 'view-person') { renderPersonChart(); renderPersonDailyCharts(); }
+    if (viewId === 'view-person') { setPersonMainTab(pMainTab || 'main'); }
     if (viewId === 'view-tc') renderTcView();
     if (viewId === 'view-claim') initClaimView();
     if (viewId === 'view-qr-scanner') initQRScanner();
@@ -7025,6 +7084,8 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   let pDailyMetric   = 'count';
   let pChartDailyBar = null;
   let pChartDailyCum = null;
+  let pMainTab = 'main';
+  let pdSelectedPerson = null;
 
   function pGetVisibleMonths() {
     const years = [...pActiveYears].sort();
@@ -7325,8 +7386,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       if (el) el.className = 'sales-pill'+(pActiveTypes.has(t)&&pActiveTypes.size<P_ALL_TYPES.length?' active':'');
     });
     document.getElementById('ptype-all').className = 'sales-pill'+(pActiveTypes.size===P_ALL_TYPES.length?' active':'');
-    renderPersonChart();
-    renderPersonDailyCharts();
+    if (pMainTab === 'defect') renderPersonDefect(); else { renderPersonChart(); renderPersonDailyCharts(); }
   }
 
   function togglePersonYear(yr) {
@@ -7341,8 +7401,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       if (el) el.className = 'sales-pill'+(pActiveYears.has(y)&&pActiveYears.size<P_ALL_YEARS.length?' active':'');
     });
     document.getElementById('pyear-all').className = 'sales-pill'+(pActiveYears.size===P_ALL_YEARS.length?' active':'');
-    renderPersonChart();
-    renderPersonDailyCharts();
+    if (pMainTab === 'defect') renderPersonDefect(); else { renderPersonChart(); renderPersonDailyCharts(); }
   }
 
   function togglePersonMonth(mo) {
@@ -7357,8 +7416,7 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
       if (el) el.className = 'sales-pill'+(pActiveMonths.has(m)&&pActiveMonths.size<P_ALL_MO.length?' active':'');
     });
     document.getElementById('pmonth-all').className = 'sales-pill'+(pActiveMonths.size===P_ALL_MO.length?' active':'');
-    renderPersonChart();
-    renderPersonDailyCharts();
+    if (pMainTab === 'defect') renderPersonDefect(); else { renderPersonChart(); renderPersonDailyCharts(); }
   }
   // ── 일별 현황 ──────────────────────────────────────────────
   function setDailyMetric(m) {
@@ -7538,6 +7596,131 @@ const QR_CLAIM_DATA=[["209011","8700060000","9X12649","군산","2026-01-02","BSI
   function toggleDailyAll() { /* 스파크라인/숫자표로 교체되어 미사용 */ }
 
   function toggleDailyPerson(person, idx) { /* 스파크라인/숫자표로 교체되어 미사용 */ }
+
+  function setPersonMainTab(tab) {
+    pMainTab = tab;
+    const isMain = tab === 'main';
+    const btnMain   = document.getElementById('ptab-main-main');
+    const btnDefect = document.getElementById('ptab-main-defect');
+    if (btnMain)   btnMain.style.borderBottomColor   = isMain  ? '#3B82F6' : 'transparent';
+    if (btnDefect) btnDefect.style.borderBottomColor = !isMain ? '#3B82F6' : 'transparent';
+    document.getElementById('person-section-main')?.classList.toggle('hidden', !isMain);
+    document.getElementById('person-section-defect')?.classList.toggle('hidden', isMain);
+    document.getElementById('person-status-filter')?.classList.toggle('hidden', !isMain);
+    if (!isMain) renderPersonDefect();
+    else { renderPersonChart(); renderPersonDailyCharts(); }
+  }
+
+  function renderPersonDefect() {
+    const tbody = document.getElementById('person-defect-tbody');
+    if (!tbody) return;
+    const filtered = (CLAIM_DATA || []).filter(r => {
+      const date = r[6];
+      if (!date) return false;
+      const parts = String(date).split('-');
+      if (parts.length < 2) return false;
+      const yy = parts[0].slice(2);
+      const mm = parts[1];
+      if (!pActiveTypes.has(r[4])) return false;
+      if (!pActiveYears.has(yy))   return false;
+      if (!pActiveMonths.has(mm))  return false;
+      return true;
+    });
+    const personMap = {};
+    for (const r of filtered) {
+      const person = r[8];
+      if (!person) continue;
+      if (!personMap[person]) personMap[person] = { branches: {}, total: 0, codes: {} };
+      personMap[person].total++;
+      const code = r[5];
+      personMap[person].codes[code] = (personMap[person].codes[code] || 0) + 1;
+      const br = r[1];
+      personMap[person].branches[br] = (personMap[person].branches[br] || 0) + 1;
+    }
+    const rows = Object.entries(personMap).map(([id, d]) => {
+      const sc = Object.entries(d.codes).sort((a, b) => b[1] - a[1]);
+      const top1 = sc[0] || ['—', 0];
+      const top2 = sc[1] || ['—', 0];
+      const top3 = sc[2] || ['—', 0];
+      const conc = d.total > 0 ? (top1[1] / d.total * 100) : 0;
+      const branch = Object.entries(d.branches).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+      return { id, name: PERSON_NAMES[id] || id, branch, total: d.total, top1, top2, top3, conc, sc };
+    }).sort((a, b) => b.conc - a.conc);
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400">데이터 없음</td></tr>';
+      document.getElementById('person-defect-detail')?.classList.add('hidden');
+      return;
+    }
+    tbody.innerHTML = rows.map(r => {
+      const isHigh = r.conc >= 70;
+      const isMid  = r.conc >= 50;
+      const cc = isHigh ? 'color:#ef4444;font-weight:700;' : isMid ? 'color:#f59e0b;font-weight:600;' : 'color:#10b981;';
+      const rb = isHigh ? 'background:rgba(239,68,68,0.04);' : '';
+      const desc1 = DEFECT_DESC?.[r.top1[0]] ? ` <span style="color:#94a3b8;font-size:10px;">${DEFECT_DESC[r.top1[0]].slice(0,18)}</span>` : '';
+      return `<tr onclick="selectPersonDefect('${r.id}')" style="cursor:pointer;border-top:1px solid rgba(148,163,184,0.15);${rb}" class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+        <td class="px-4 py-2 font-semibold text-gray-700 dark:text-slate-200">${r.name}</td>
+        <td class="px-4 py-2 text-slate-500 dark:text-slate-400">${r.branch}</td>
+        <td class="px-4 py-2 text-right text-gray-700 dark:text-slate-300">${r.total}</td>
+        <td class="px-4 py-2 font-mono text-slate-600 dark:text-slate-300">${r.top1[0]}${desc1}</td>
+        <td class="px-4 py-2 text-right" style="${cc}">${r.conc.toFixed(1)}%</td>
+        <td class="px-4 py-2 font-mono text-slate-400 dark:text-slate-500 text-[11px]">${r.top2[0] !== '—' ? r.top2[0] : '—'}</td>
+        <td class="px-4 py-2 font-mono text-slate-400 dark:text-slate-500 text-[11px]">${r.top3[0] !== '—' ? r.top3[0] : '—'}</td>
+      </tr>`;
+    }).join('');
+    document.getElementById('person-defect-detail')?.classList.add('hidden');
+    pdSelectedPerson = null;
+  }
+
+  function selectPersonDefect(personId) {
+    pdSelectedPerson = personId;
+    const detail = document.getElementById('person-defect-detail');
+    const titleEl = document.getElementById('person-defect-detail-title');
+    const tbody   = document.getElementById('person-defect-detail-tbody');
+    if (!detail || !tbody) return;
+    const name = PERSON_NAMES[personId] || personId;
+    const filtered = (CLAIM_DATA || []).filter(r => {
+      if (r[8] !== personId) return false;
+      const date = r[6];
+      if (!date) return false;
+      const parts = String(date).split('-');
+      if (parts.length < 2) return false;
+      const yy = parts[0].slice(2);
+      const mm = parts[1];
+      if (!pActiveTypes.has(r[4])) return false;
+      if (!pActiveYears.has(yy))   return false;
+      if (!pActiveMonths.has(mm))  return false;
+      return true;
+    });
+    const codeCounts = {};
+    for (const r of filtered) {
+      const code = r[5];
+      codeCounts[code] = (codeCounts[code] || 0) + 1;
+    }
+    const total = filtered.length;
+    const sorted = Object.entries(codeCounts).sort((a, b) => b[1] - a[1]);
+    titleEl.textContent = `${name} — 총 ${total}건 상세`;
+    tbody.innerHTML = sorted.map(([code, cnt], i) => {
+      const pct = total > 0 ? (cnt / total * 100) : 0;
+      const desc = DEFECT_DESC?.[code] || '—';
+      const bar = i === 0 ? '#3b82f6' : i < 3 ? '#64748b' : '#cbd5e1';
+      return `<tr style="border-top:1px solid rgba(148,163,184,0.15);" class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+        <td class="px-4 py-2 text-center text-slate-400">${i + 1}</td>
+        <td class="px-4 py-2 font-mono text-slate-600 dark:text-slate-300">${code}</td>
+        <td class="px-4 py-2 text-slate-500 dark:text-slate-400 max-w-xs" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${desc}">${desc}</td>
+        <td class="px-4 py-2 text-right text-gray-700 dark:text-slate-300">${cnt}</td>
+        <td class="px-4 py-2">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="flex:1;height:6px;background:rgba(148,163,184,0.2);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:${pct.toFixed(1)}%;background:${bar};border-radius:3px;"></div>
+            </div>
+            <span style="font-size:11px;color:#94a3b8;white-space:nowrap;min-width:36px;text-align:right;">${pct.toFixed(1)}%</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="5" class="text-center py-4 text-slate-400">데이터 없음</td></tr>';
+    detail.classList.remove('hidden');
+    detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
   // ===================== /개인별 청구 현황 =====================
 
   // ===================== 클레임 볼륨 =====================
