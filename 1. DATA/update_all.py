@@ -625,7 +625,7 @@ try:
     from config_azure import SWA_DEPLOYMENT_TOKEN
     APP_DIR = f'{BASE}/dashboard-app/preview'
     result = subprocess.run(
-        ['swa', 'deploy', APP_DIR,
+        ['swa.cmd', 'deploy', APP_DIR,
          '--deployment-token', SWA_DEPLOYMENT_TOKEN,
          '--env', 'production'],
         capture_output=True, text=True
