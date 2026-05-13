@@ -554,51 +554,80 @@ with open(HTML_PATH, 'w', encoding='utf-8') as f:
     f.write(html)
 ok(f'HTML 크기: {os.path.getsize(HTML_PATH)/1024:.1f}KB')
 
-# ── 7-1. 외부 경량 페이지 embed ─────────────────────────────
-step('외부 경량 페이지(external/index.html) 데이터 삽입 중...')
+# ── 7-1. 외부 페이지 재빌드 (4개 뷰 고정 공개) ───────────────
+step('외부 페이지(external/index.html) 재빌드 중...')
 EXT_HTML_PATH = f'{BASE}/dashboard-app/preview/external/index.html'
 try:
-    import urllib.request as _urllib
     from datetime import datetime as _dt
-
-    # Supabase에서 external=true 뷰 목록 조회
-    SUPABASE_URL = 'https://vbvghhtroitmroxmfepr.supabase.co'
-    SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZidmdoaHRyb2l0bXJveG1mZXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MTAxMjEsImV4cCI6MjA5MDM4NjEyMX0.2sq5uGj4j6Fm_IgztrucJv5bbXyk4ZXkWeZxnDMjhZg'
-    _req = _urllib.Request(
-        f'{SUPABASE_URL}/rest/v1/menu_settings?select=key,external&external=eq.true',
-        headers={'apikey': SUPABASE_KEY}
-    )
-    with _urllib.urlopen(_req, timeout=5) as _resp:
-        _ext_views = {row['key'] for row in json.loads(_resp.read())}
-    ok(f'외부공개 뷰: {sorted(_ext_views) or "없음"}')
-
     ext_date = _dt.now().strftime('%Y-%m-%d %H:%M')
 
-    # 외부공개 뷰에 해당하는 데이터만 embed, 나머지는 빈 값
-    ext_branch_js    = 'const EXT_BRANCH_DATA='    + json.dumps(branch_data    if 'view-sales'      in _ext_views else {}, ensure_ascii=False, separators=(',',':')) + ';'
-    ext_defect_js    = 'const EXT_DEFECT_RAW='     + json.dumps(defect_raw     if 'view-top-defect' in _ext_views else [], ensure_ascii=False, separators=(',',':')) + ';'
-    ext_tc_js        = 'const EXT_TC_DATA='        + json.dumps(tc_data        if 'view-tc'         in _ext_views else {}, ensure_ascii=False, separators=(',',':')) + ';'
-    ext_claim_js     = 'const EXT_CLAIM_DATA='     + json.dumps(claim_raw      if 'view-claim'      in _ext_views else [], ensure_ascii=False, separators=(',',':')) + ';'
-    ext_wholesale_js = 'const EXT_WHOLESALE_DATA=' + json.dumps(wholesale_data if 'view-wholesale'  in _ext_views else {}, ensure_ascii=False, separators=(',',':')) + ';'
-    ext_qr_js        = 'const EXT_QR_CLAIM_DATA='  + json.dumps(qr_claim_rows  if 'view-qr-match'   in _ext_views else [], ensure_ascii=False, separators=(',',':')) + ';'
-    ext_date_js      = f"const EXT_UPDATE_DATE='{ext_date}';"
+    # ① index.html에서 HTML 마커 추출
+    with open(HTML_PATH, 'r', encoding='utf-8') as f:
+        idx_content = f.read()
 
+    ext_views_html = {}
+    for vid in ['view-sales', 'view-top-defect', 'view-tc', 'view-stage23']:
+        m = re.search(f'<!-- EXT:{vid}:START -->(.*?)<!-- EXT:{vid}:END -->', idx_content, re.DOTALL)
+        ext_views_html[vid] = m.group(1) if m else ''
+        ok(f'{vid} HTML 추출: {len(ext_views_html[vid])}chars')
+
+    # ② index.html에서 JS 마커 추출
+    ext_js = {}
+    for jid in ['theme', 'sales', 'defect', 'tc', 'stage23']:
+        m = re.search(f'// EXT_JS:{jid}:START(.*?)// EXT_JS:{jid}:END', idx_content, re.DOTALL)
+        ext_js[jid] = m.group(1) if m else ''
+        ok(f'JS:{jid} 추출: {len(ext_js[jid])}chars')
+
+    # ③ external/index.html 읽기
     with open(EXT_HTML_PATH, 'r', encoding='utf-8') as f:
         ext_html = f.read()
 
-    ext_html = re.sub(r'const EXT_BRANCH_DATA=[\[{].*?[\]}];',    ext_branch_js,    ext_html, flags=re.DOTALL)
-    ext_html = re.sub(r'const EXT_DEFECT_RAW=\[.*?\];',           ext_defect_js,    ext_html, flags=re.DOTALL)
-    ext_html = re.sub(r'const EXT_TC_DATA=[\[{].*?[\]}];',        ext_tc_js,        ext_html, flags=re.DOTALL)
-    ext_html = re.sub(r'const EXT_CLAIM_DATA=\[.*?\];',           ext_claim_js,     ext_html, flags=re.DOTALL)
-    ext_html = re.sub(r'const EXT_WHOLESALE_DATA=[\[{].*?[\]}];', ext_wholesale_js, ext_html, flags=re.DOTALL)
-    ext_html = re.sub(r'const EXT_QR_CLAIM_DATA=\[.*?\];',        ext_qr_js,        ext_html, flags=re.DOTALL)
-    ext_html = re.sub(r"const EXT_UPDATE_DATE='.*?';",            ext_date_js,      ext_html)
+    # ④ HTML 인젝트 (lambda로 백슬래시 이스케이프 문제 우회)
+    for vid, html_content in ext_views_html.items():
+        repl = f'<!-- EXT_INJECT:{vid}:START -->{html_content}<!-- EXT_INJECT:{vid}:END -->'
+        ext_html = re.sub(
+            f'<!-- EXT_INJECT:{vid}:START -->.*?<!-- EXT_INJECT:{vid}:END -->',
+            lambda m, r=repl: r, ext_html, flags=re.DOTALL
+        )
+
+    # ⑤ JS 인젝트 (lambda로 백슬래시 이스케이프 문제 우회)
+    for jid, js_content in ext_js.items():
+        repl = f'// EXT_JS_INJECT:{jid}:START{js_content}// EXT_JS_INJECT:{jid}:END'
+        ext_html = re.sub(
+            f'// EXT_JS_INJECT:{jid}:START.*?// EXT_JS_INJECT:{jid}:END',
+            lambda m, r=repl: r, ext_html, flags=re.DOTALL
+        )
+
+    # ⑥ 데이터 embed (4개 뷰 항상 전체)
+    subs = [
+        (r'const EXT_BRANCH_DATA=[\[{].*?[\]}];',
+         'const EXT_BRANCH_DATA=' + json.dumps(branch_data,   ensure_ascii=False, separators=(',',':')) + ';'),
+        (r'const EXT_DEFECT_RAW=\[.*?\];',
+         'const EXT_DEFECT_RAW='  + json.dumps(defect_raw,    ensure_ascii=False, separators=(',',':')) + ';'),
+        (r'const EXT_DEFECT_DESC=\{.*?\};',
+         'const EXT_DEFECT_DESC=' + json.dumps(matched_desc,  ensure_ascii=False, separators=(',',':')) + ';'),
+        (r'const EXT_DEFECT_UNMATCHED=\[.*?\];',
+         'const EXT_DEFECT_UNMATCHED=' + json.dumps(unmatched, ensure_ascii=False, separators=(',',':')) + ';'),
+        (r'const EXT_TC_DATA=[\[{].*?[\]}];',
+         'const EXT_TC_DATA='     + json.dumps(tc_data,       ensure_ascii=False, separators=(',',':')) + ';'),
+        (r'const EXT_TC_TOP_DATA=\[.*?\];',
+         'const EXT_TC_TOP_DATA=' + json.dumps(tc_top_data,   ensure_ascii=False, separators=(',',':')) + ';'),
+        (r'const EXT_TC_SAME_DATA=\[.*?\];',
+         'const EXT_TC_SAME_DATA='+ json.dumps(tc_same_data,  ensure_ascii=False, separators=(',',':')) + ';'),
+        (r'const EXT_WHOLESALE_DATA=[\[{].*?[\]}];',
+         'const EXT_WHOLESALE_DATA=' + json.dumps(wholesale_data, ensure_ascii=False, separators=(',',':')) + ';'),
+        (r"const EXT_UPDATE_DATE='.*?';",
+         f"const EXT_UPDATE_DATE='{ext_date}';"),
+    ]
+    for pattern, replacement in subs:
+        ext_html = re.sub(pattern, replacement, ext_html, flags=re.DOTALL)
 
     with open(EXT_HTML_PATH, 'w', encoding='utf-8') as f:
         f.write(ext_html)
-    ok(f'외부 페이지 크기: {os.path.getsize(EXT_HTML_PATH)/1024:.1f}KB')
+    ok(f'외부 페이지 재빌드 완료: {os.path.getsize(EXT_HTML_PATH)/1024:.1f}KB')
 except Exception as _e:
-    print(f'    ⚠ 외부 페이지 embed 실패 (무시): {_e}')
+    import traceback; traceback.print_exc()
+    print(f'    ⚠ 외부 페이지 재빌드 실패 (무시): {_e}')
 
 # ── 8. git commit & push ──────────────────────────────────
 step('git commit & push 중...')
