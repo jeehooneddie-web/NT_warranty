@@ -554,10 +554,56 @@ with open(HTML_PATH, 'w', encoding='utf-8') as f:
     f.write(html)
 ok(f'HTML 크기: {os.path.getsize(HTML_PATH)/1024:.1f}KB')
 
+# ── 7-1. 외부 경량 페이지 embed ─────────────────────────────
+step('외부 경량 페이지(external/index.html) 데이터 삽입 중...')
+EXT_HTML_PATH = f'{BASE}/dashboard-app/preview/external/index.html'
+try:
+    import urllib.request as _urllib
+    from datetime import datetime as _dt
+
+    # Supabase에서 external=true 뷰 목록 조회
+    SUPABASE_URL = 'https://vbvghhtroitmroxmfepr.supabase.co'
+    SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZidmdoaHRyb2l0bXJveG1mZXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MTAxMjEsImV4cCI6MjA5MDM4NjEyMX0.2sq5uGj4j6Fm_IgztrucJv5bbXyk4ZXkWeZxnDMjhZg'
+    _req = _urllib.Request(
+        f'{SUPABASE_URL}/rest/v1/menu_settings?select=key,external&external=eq.true',
+        headers={'apikey': SUPABASE_KEY}
+    )
+    with _urllib.urlopen(_req, timeout=5) as _resp:
+        _ext_views = {row['key'] for row in json.loads(_resp.read())}
+    ok(f'외부공개 뷰: {sorted(_ext_views) or "없음"}')
+
+    ext_date = _dt.now().strftime('%Y-%m-%d %H:%M')
+
+    # 외부공개 뷰에 해당하는 데이터만 embed, 나머지는 빈 값
+    ext_branch_js    = 'const EXT_BRANCH_DATA='    + json.dumps(branch_data    if 'view-sales'      in _ext_views else {}, ensure_ascii=False, separators=(',',':')) + ';'
+    ext_defect_js    = 'const EXT_DEFECT_RAW='     + json.dumps(defect_raw     if 'view-top-defect' in _ext_views else [], ensure_ascii=False, separators=(',',':')) + ';'
+    ext_tc_js        = 'const EXT_TC_DATA='        + json.dumps(tc_data        if 'view-tc'         in _ext_views else {}, ensure_ascii=False, separators=(',',':')) + ';'
+    ext_claim_js     = 'const EXT_CLAIM_DATA='     + json.dumps(claim_raw      if 'view-claim'      in _ext_views else [], ensure_ascii=False, separators=(',',':')) + ';'
+    ext_wholesale_js = 'const EXT_WHOLESALE_DATA=' + json.dumps(wholesale_data if 'view-wholesale'  in _ext_views else {}, ensure_ascii=False, separators=(',',':')) + ';'
+    ext_qr_js        = 'const EXT_QR_CLAIM_DATA='  + json.dumps(qr_claim_rows  if 'view-qr-match'   in _ext_views else [], ensure_ascii=False, separators=(',',':')) + ';'
+    ext_date_js      = f"const EXT_UPDATE_DATE='{ext_date}';"
+
+    with open(EXT_HTML_PATH, 'r', encoding='utf-8') as f:
+        ext_html = f.read()
+
+    ext_html = re.sub(r'const EXT_BRANCH_DATA=[\[{].*?[\]}];',    ext_branch_js,    ext_html, flags=re.DOTALL)
+    ext_html = re.sub(r'const EXT_DEFECT_RAW=\[.*?\];',           ext_defect_js,    ext_html, flags=re.DOTALL)
+    ext_html = re.sub(r'const EXT_TC_DATA=[\[{].*?[\]}];',        ext_tc_js,        ext_html, flags=re.DOTALL)
+    ext_html = re.sub(r'const EXT_CLAIM_DATA=\[.*?\];',           ext_claim_js,     ext_html, flags=re.DOTALL)
+    ext_html = re.sub(r'const EXT_WHOLESALE_DATA=[\[{].*?[\]}];', ext_wholesale_js, ext_html, flags=re.DOTALL)
+    ext_html = re.sub(r'const EXT_QR_CLAIM_DATA=\[.*?\];',        ext_qr_js,        ext_html, flags=re.DOTALL)
+    ext_html = re.sub(r"const EXT_UPDATE_DATE='.*?';",            ext_date_js,      ext_html)
+
+    with open(EXT_HTML_PATH, 'w', encoding='utf-8') as f:
+        f.write(ext_html)
+    ok(f'외부 페이지 크기: {os.path.getsize(EXT_HTML_PATH)/1024:.1f}KB')
+except Exception as _e:
+    print(f'    ⚠ 외부 페이지 embed 실패 (무시): {_e}')
+
 # ── 8. git commit & push ──────────────────────────────────
 step('git commit & push 중...')
 os.chdir(BASE)
-subprocess.run(['git', 'add', 'dashboard-app/preview/index.html'], check=True)
+subprocess.run(['git', 'add', 'dashboard-app/preview/index.html', 'dashboard-app/preview/external/index.html'], check=True)
 
 from datetime import datetime
 today = datetime.now().strftime('%Y-%m-%d %H:%M')
@@ -571,6 +617,27 @@ if status:
     ok('배포 완료!')
 else:
     ok('데이터 변경 없음 — 커밋 스킵 (이미 최신 상태)')
+
+# ── 9. Azure Static Web Apps 배포 ────────────────────────
+step('Azure Static Web Apps 배포 중...')
+try:
+    sys.path.insert(0, DATA_DIR)
+    from config_azure import SWA_DEPLOYMENT_TOKEN
+    APP_DIR = f'{BASE}/dashboard-app/preview'
+    result = subprocess.run(
+        ['swa', 'deploy', APP_DIR,
+         '--deployment-token', SWA_DEPLOYMENT_TOKEN,
+         '--env', 'production'],
+        capture_output=True, text=True
+    )
+    if result.returncode == 0:
+        ok('SWA 배포 완료! → https://warranty.nationalmotors.co.kr')
+    else:
+        print(f'    ⚠ SWA 배포 실패: {result.stderr}')
+except ImportError as e:
+    print(f'    ⚠ config_azure.py 없음: {e}')
+except Exception as e:
+    print(f'    ⚠ SWA 배포 오류: {e}')
 
 print('\n' + '='*50)
 print('  모든 작업이 완료됐습니다.')
