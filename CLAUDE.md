@@ -1,7 +1,7 @@
 # National Motors 보증팀 사내 대시보드 — CLAUDE.md
 
 > Agent 지침서. Claude Code가 이 프로젝트를 작업할 때 항상 먼저 읽는 파일.
-> 마지막 갱신: 2026-04-06
+> 마지막 갱신: 2026-05-14 (external 페이지 구조 재구축, 뷰 정리)
 
 ---
 
@@ -9,11 +9,17 @@
 
 | 항목 | 값 |
 |------|-----|
-| 배포 URL | https://jeehooneddie-web.github.io/NT_warranty/ |
-| 메인 파일 | `dashboard-app/preview/index.html` (~635KB, 단일 파일 SPA) |
+| 운영 URL (주, 현재) | https://jeehooneddie-web.github.io/NT_warranty/ (GitHub Pages) |
+| 운영 URL (SWA) | https://warranty.nationalmotors.co.kr (Azure SWA, HTTPS) ← 문제 시 전환 |
+| 운영 URL (Blob) | https://ntwarranty.z12.web.core.windows.net (Blob, HTTPS) |
+| 메인 파일 | `dashboard-app/preview/index.html` (~4.4MB, 단일 파일 SPA) |
 | Git 루트 | `d:/코딩/work for_` |
-| 배포 방식 | push to main → GitHub Actions → GitHub Pages 자동 배포 |
-| 배포 반영 | push 후 **1~3분** 소요 |
+| 배포 방식 (Git) | push to main → GitHub Actions → GitHub Pages 자동 배포 |
+| 배포 방식 (SWA) | update_all.py → SWA CLI → Azure Static Web Apps → 즉시 반영 |
+| 배포 반영 (Git) | push 후 **1~3분** 소요 |
+| 배포 반영 (SWA) | SWA CLI 배포 즉시 반영 |
+| Front Door | ❌ 삭제됨 (2026-05-12) — $35/월 고정비로 제거 |
+| Supabase Site URL | https://jeehooneddie-web.github.io/NT_warranty/ (github.io 메인 사용 중) |
 
 ---
 
@@ -34,21 +40,48 @@ grep -n "view-xxx\|TARGET_PATTERN" "dashboard-app/preview/index.html" | head -20
 ```
 
 ### 2-2. 작업 완료 기준
-요청 → 코드 수정 → git push → 완료를 한 번에 처리.
+요청 → 코드 수정 → git push → SWA 배포 → 완료를 한 번에 처리.
 아래 경우만 예외적으로 사전 확인:
 - 보안 관련 변경 (인증 로직, RLS 정책)
 - 데이터 구조 변경 (기존 데이터 호환성에 영향)
 - 2개 이상 뷰에 동시 영향을 주는 변경
 
-### 2-3. git push 명령어
+### 2-3. 배포 명령어 (git push + SWA 항상 함께)
+
+> ⚠ 코드 변경 후 git push만 하면 warranty.nationalmotors.co.kr(SWA)에 반영 안 됨 — 반드시 SWA도 함께 배포
+
 ```bash
+# 1. git push
 cd "d:/코딩/work for_" \
   && git add dashboard-app/preview/index.html \
   && git commit -m "메시지" \
   && git push
+
+# 2. SWA 배포 (항상 함께 실행)
+python "d:/코딩/work for_/1. DATA/deploy_swa.py"
 ```
 
-### 2-4. 응답 스타일
+external/index.html도 변경된 경우:
+```bash
+git add dashboard-app/preview/index.html dashboard-app/preview/external/index.html
+```
+
+### 2-5. 비용 정책 (필독)
+```
+월 $5(약 ₩7,000) 이상 비용이 발생하는 Azure 서비스는 절대 추천 금지
+추천 전 반드시 무료 티어 여부 확인 후 명시
+유료 서비스가 필요한 경우 → 사용자에게 정확한 월 비용 먼저 고지 후 승인받기
+```
+
+현재 허용된 Azure 서비스 (무료):
+- Azure Blob Storage Free (5GB, 트랜잭션 소량)
+- Azure Static Web Apps Free (500MB, 100GB/월 대역폭)
+
+금지된 서비스 (유료):
+- Azure Front Door Standard ($35/월) ← 2026-05-12 삭제
+- Azure CDN (종량제, 예측 어려움)
+
+### 2-6. 응답 스타일
 - 설명 최소화, 코드 우선
 - MD 문서는 `MD/` + `memory/` 양쪽에 동시 저장
 - 불필요한 확인 질문 최소화
@@ -64,6 +97,8 @@ cd "d:/코딩/work for_" \
 | 드래그 | SortableJS |
 | 번역 | Google Translate 무료 API |
 | 인증/DB | Supabase Auth + REST (OTP, user_roles, menu_settings) |
+| Microsoft 로그인 | ❌ 제거됨 (2026-05-12) |
+| 호스팅 | GitHub Pages (주) + Azure Blob Storage `$web` (부, HTTP) |
 | 상태 저장 | sessionStorage (로그인) / localStorage (테마·필터순서·메뉴캐시) |
 | QR 스캔 | html5-qrcode@2.3.8 (CDN) |
 | 고품 저장 | Google Apps Script 웹훅 + Google Sheets CSV |
@@ -75,17 +110,33 @@ cd "d:/코딩/work for_" \
 
 ### 4-1. 인증 방식
 ```
-이메일 OTP (6자리) — Supabase Auth + Gmail SMTP (smtp.gmail.com:587)
-허용 도메인: @nationalmotors.co.kr + jeehoon.eddie@gmail.com
+① 이메일 OTP (6자리) — Supabase Auth + Gmail SMTP (smtp.gmail.com:587)
+   허용 도메인: @nationalmotors.co.kr + jeehoon.eddie@gmail.com
+
+② Microsoft 계정 로그인 — Supabase Azure OAuth provider
+   Entra ID 단일 테넌트 (내쇼날모터스 조직 계정만)
+   2단계 접근 제어: Entra ID 인증 → user_roles 테이블 등록 여부 확인
 ```
 
 ### 4-2. 로그인 플로우
+
+**OTP 방식:**
 ```
 이메일 입력 → 도메인 검증(프론트)
     → signInWithOtp({ email })
     → Gmail SMTP → OTP 발송
     → /auth/v1/verify 직접 fetch   ← SDK verifyOtp() 우회 (PKCE hanging 이슈)
     → access_token 수신 → _accessToken 전역 변수 저장
+    → user_roles 조회 → applyRole() → 로그인 완료
+```
+
+**Microsoft 계정 방식:**
+```
+Microsoft 로그인 버튼 클릭
+    → _sb.auth.signInWithOAuth({ provider: 'azure' })
+    → Microsoft 로그인 팝업/리디렉션
+    → Supabase /auth/v1/callback
+    → onAuthStateChange → _handleSession() 처리
     → user_roles 조회 → applyRole() → 로그인 완료
 ```
 
@@ -126,6 +177,8 @@ updated_at timestamptz
 ```
 RLS: SELECT는 전체 공개, 수정은 admin만
 
+> ⚠ `external` 컬럼(외부공개 토글)은 2026-05-14 삭제됨 — view-admin-menus UI에서 `toggleMenuExternal()` 함수 및 관련 `<th>`/`<td>` 제거 완료. external 페이지는 고정 4개 뷰로 운영 (Section 19 참조)
+
 #### my_role() 함수
 ```sql
 -- security definer: RLS 재귀 무한루프 방지용
@@ -139,10 +192,19 @@ select role from public.user_roles where email = auth.jwt()->>'email' limit 1;
 3순위: DEFAULT_MENU_CFG (코드 내 기본값 — 전부 admin)
 ```
 
-### 4-7. 보안 절대 규칙
+### 4-7. Entra ID (Microsoft OAuth) 설정
+```
+테넌트 ID    : 5ca36d29-8e24-49df-8dba-881b2ce1459b
+Tenant URL   : https://login.microsoftonline.com/5ca36d29-8e24-49df-8dba-881b2ce1459b
+앱 이름      : NT Warranty Dashboard
+클라이언트 암호 만료: 2028-04-11 (24개월) — 캘린더 갱신 알림 등록 필요
+```
+
+### 4-8. 보안 절대 규칙
 - `test.html`의 auto-login 코드를 `index.html`에 **절대 복사 금지**
 - 배포본에 인증 우회 코드 잔존 금지
 - RLS 정책 변경 시 반드시 확인 후 진행
+- `config_azure.py` 절대 커밋 금지 (.gitignore 등록됨)
 
 ---
 
@@ -152,18 +214,12 @@ select role from public.user_roles where email = auth.jwt()->>'email' limit 1;
 | view ID | 메뉴명 | 설명 |
 |---------|--------|------|
 | view-dashboard | 대시보드 | 초기 진입 화면 |
-| view-notices | 공지사항 | 공지 열람 |
-| view-inquiries | 문의하기 | 일반 사용자 문의 |
 | view-translator | 보증번역기 | 한→영 7개 항목 번역 |
 | view-warranty | 보증기간 조회 | 디펙트코드별 보증기간 |
 | view-qr-scanner | 고품 QR 스캔 | QR 스캔 → Google Sheets 저장 |
 | view-qr-compare | 고품 QR 비교 | 로그인 없이 접근 가능 |
 
-### 관리자 전용 (숨김 — 사이드바 미노출)
-| view ID | 메뉴명 | 설명 |
-|---------|--------|------|
-| view-admin-inquiries | 문의 관리 | 문의 답변·처리 |
-| view-admin-notices | 공지 관리 | 공지 작성·수정·삭제 |
+> ❌ 삭제됨 (2026-05-14): view-notices(공지사항), view-inquiries(문의하기), view-admin-inquiries(문의 관리), view-admin-notices(공지 관리)
 
 ### 관리자 전용 (admin-only, 사이드바 노출)
 | view ID | 메뉴명 | 데이터 변수 | 설명 |
@@ -175,6 +231,7 @@ select role from public.user_roles where email = auth.jwt()->>'email' limit 1;
 | view-tc-top20 | TC 미실시 TOP20 | `TC_DATA` | view-tc 하위 |
 | view-claim | 클레임 검토 | `CLAIM_DATA` | 불승인/보완요청/완료 |
 | view-wholesale | 클레임 볼륨 | `WHOLESALE_DATA` | 보증마감/회계마감 |
+| view-stage23 | Stage 2·3 볼륨 | `WHOLESALE_DATA` | Stage2/3 청구볼륨 |
 | view-qr-match | 고품 반납 현황 | `QR_CLAIM_DATA` | QR↔클레임 매칭 |
 | view-qr-location | 고품 로케이션 조회 | — | 위치 조회·수정 |
 | view-user-mgmt | 사용자 관리 | Supabase `user_roles` | — |
@@ -304,6 +361,7 @@ C:\Users\user\Desktop\업데이트.bat 더블클릭
   Step 5  (123~147줄)  DEFECT_RAW·DESC·UNMATCHED
   Step 6  (149~200줄)  PERSON_DATA·PERSON_DAILY
   Step 7  (202~287줄)  TC_DATA·TC_TOP_DATA·TC_SAME_MONTH_DATA ← RecallTcRptRawData.xlsx
+  Step 7-1             external/index.html 재빌드 (마커 기반 자동 sync)
   Step 8  (289~334줄)  CLAIM_DATA (+ Credit수신일자 매핑)
   Step 8-0(397~445줄)  QR_CLAIM_DATA ← Claim 상세_전체
   Step 9  (336~395줄)  WHOLESALE_DATA← 클레임현황 시트 (직접 읽기)
@@ -311,7 +369,9 @@ C:\Users\user\Desktop\업데이트.bat 더블클릭
     ↓ 집계 완료
 각 변수 → index.html에 regex embed
     ↓
-git push → GitHub Pages 배포
+[순차 실행 — 독립적, 하나 실패해도 나머지 계속]
+    ├→ git push → GitHub Actions → GitHub Pages 배포 (1~3분)
+    └→ SWA CLI → ntwarranty-swa → warranty.nationalmotors.co.kr (즉시 반영)
 ```
 
 ### TC 자동화 별도 흐름
@@ -422,6 +482,10 @@ const normNo = v => String(v).replace(/^WC/i, '').trim();
 ⚠ Chart.js BRANCH_DATA           → 구조 변경 시 렌더 함수도 함께 수정
 ⚠ SortableJS 필터 순서           → localStorage 저장 — 초기화 시 localStorage 삭제
 ⚠ DEFECT_DESC 매칭률             → 약 97% (나머지 DEFECT_UNMATCHED로 분리)
+⚠ Azure Front Door 설정 반영     → 최대 20분 소요 (Back-to-Back 변경 시 40분)
+⚠ Entra ID 클라이언트 암호       → 2028-04-11 만료 — 갱신 필수
+⚠ Microsoft 로그인               → user_roles 미등록 시 Entra 인증 성공해도 접근 불가
+⚠ config_azure.py                → .gitignore 등록됨, 절대 커밋 금지
 ```
 
 ---
@@ -430,9 +494,13 @@ const normNo = v => String(v).replace(/^WC/i, '').trim();
 
 ```
 □ git push 완료 확인
-□ 1~3분 후 배포 URL 접속
+□ 1~3분 후 https://jeehooneddie-web.github.io/NT_warranty/ 접속 확인
+□ SWA CLI 업로드 완료 로그 확인 (update_all.py 콘솔)
+□ https://warranty.nationalmotors.co.kr 즉시 접속 확인
+□ https://jeehooneddie-web.github.io/NT_warranty/external/ 접속 확인 (외부 페이지)
 □ 수정된 뷰 직접 확인
 □ admin / member 권한 분리 정상 여부
+□ OTP 로그인 정상 여부 (인증 관련 수정 시)
 □ 브라우저 콘솔 에러 없음
 □ 모바일 레이아웃 이상 없음 (필요 시)
 ```
@@ -467,12 +535,145 @@ const normNo = v => String(v).replace(/^WC/i, '').trim();
 | QR 스캐너 구조 | `MD/07_고품QR스캐너.md` |
 | 고품 반납 현황 구조 | `MD/08_고품수거비교.md` |
 | 인증·RLS·메뉴 권한 | `MD/09_로그인_보안_AUTH.md` |
+| DMS 자동 다운로더 | `MD/11_DMS자동다운로더.md` |
+| Azure 호스팅·SWA·도메인 전체 과정 | `MD/Azure_warranty도메인_설정_전체과정.md` |
 | 엑셀 파일 구조 (RAW_Claim, Wholesale) | `MD/파일구조_설명.md` |
 | MD 저장 규칙 | `MD/00_MD_관리규칙.md` |
 
 ---
 
-## 18. MD 파일 관리 규칙
+## 18. Azure 인프라 구조
+
+### 18-1. 리소스 목록
+| 리소스 | 이름 | 용도 |
+|--------|------|------|
+| 리소스 그룹 | `NT_Warranty_RG` | 모든 Azure 리소스 묶음 |
+| 스토리지 계정 | `ntwarranty` | Blob Storage (`$web` 컨테이너, 백업용) |
+| 정적 웹앱 | `ntwarranty-swa` | SWA Free — HTTPS + 커스텀 도메인 + CDN |
+| SWA 기본 도메인 | `orange-mud-02217d700.7.azurestaticapps.net` | SWA 자동 생성 도메인 |
+| Front Door | ❌ 삭제됨 (2026-05-12) | — |
+
+### 18-2. 배포 흐름
+```
+현재 (Git 우선):
+update_all.py
+  ├→ Step 8: git push → GitHub Pages (github.io) — 현재 메인
+  └→ Step 9: SWA CLI → ntwarranty-swa → warranty.nationalmotors.co.kr
+
+문제 발생 시 전환:
+  Supabase Site URL → https://warranty.nationalmotors.co.kr 변경
+  GitHub 레포 → Private 전환
+  → SWA가 메인 배포 경로로 전환 완료
+```
+
+### 18-3. 시크릿 파일
+```
+1. DATA/config_azure.py   ← .gitignore 등록, 로컬 전용
+    AZURE_CONNECTION_STRING = "..."   (Blob Storage)
+    AZURE_CONTAINER = "$web"
+    SWA_DEPLOYMENT_TOKEN = "..."      (SWA 배포 토큰)
+```
+
+### 18-4. DNS 구조
+```
+warranty.nationalmotors.co.kr
+    CNAME → orange-mud-02217d700.7.azurestaticapps.net  (SWA)
+```
+
+### 18-5. Supabase URL 설정 현황
+```
+Site URL    : https://jeehooneddie-web.github.io/NT_warranty/ (github.io 메인 사용 중)
+Redirect URLs:
+  - https://jeehooneddie-web.github.io/NT_warranty/
+  - https://ntwarranty.z12.web.core.windows.net/**
+  - https://warranty.nationalmotors.co.kr
+
+※ SWA 전환 시: Site URL → https://warranty.nationalmotors.co.kr 변경 필요
+```
+
+### 18-6. 구성원·메뉴 관리
+```
+구성원 관리 → Supabase user_roles 테이블 (단일 DB)
+메뉴 관리   → Supabase menu_settings 테이블 (단일 DB)
+→ github.io / warranty.nationalmotors.co.kr 어디서 변경해도 즉시 양쪽 반영
+```
+
+### 18-7. SWA 설정 파일
+```
+dashboard-app/preview/staticwebapp.config.json
+  - Cache-Control: no-cache (CDN 캐시 비활성화)
+  - navigationFallback: SPA 라우팅 지원
+```
+
+---
+
+## 19. External 페이지 구조
+
+### 19-1. 개요
+```
+URL (github.io) : https://jeehooneddie-web.github.io/NT_warranty/external/
+URL (SWA)       : https://warranty.nationalmotors.co.kr/external/
+파일            : dashboard-app/preview/external/index.html (~900KB, 데이터 포함)
+인증            : 없음 — 누구나 접근 가능 (로그인 불필요)
+공개 뷰 고정    : view-sales / view-top-defect / view-tc / view-stage23 (4개 고정)
+```
+
+### 19-2. 마커 기반 자동 sync 구조
+update_all.py Step 7-1에서 index.html → external/index.html 자동 반영
+
+**HTML 마커 (index.html 내 4개 뷰에 태그)**
+```html
+<!-- EXT:view-sales:START -->
+  ... 뷰 HTML ...
+<!-- EXT:view-sales:END -->
+```
+
+**JS 마커 (index.html 내 렌더 함수 범위 태그)**
+```javascript
+// EXT_JS:sales:START
+  ... 렌더 함수 JS ...
+// EXT_JS:sales:END
+```
+
+**external/index.html 내 주입 대상 마커**
+```html
+<!-- EXT_INJECT:view-sales:START --><!-- EXT_INJECT:view-sales:END -->
+// EXT_JS_INJECT:sales:START// EXT_JS_INJECT:sales:END
+```
+
+**마커 ID 대응표**
+| JS 마커 ID | 포함 내용 |
+|-----------|----------|
+| `theme` | `_tc()` 함수 (테마 컬러) |
+| `sales` | ALL_BRANCHES, 보증매출 렌더 함수 |
+| `defect` | DEFECT_GROUPS, TOP DEFECT 렌더 함수 |
+| `tc` | TC 렌더 함수 |
+| `stage23` | Stage 2·3 볼륨 렌더 함수 |
+
+### 19-3. 데이터 변수 (EXT_ 접두어)
+```javascript
+const EXT_BRANCH_DATA = {};      // → BRANCH_DATA alias
+const EXT_DEFECT_RAW = [];       // → DEFECT_RAW alias
+const EXT_DEFECT_DESC = {};      // → DEFECT_DESC alias
+const EXT_DEFECT_UNMATCHED = []; // → DEFECT_UNMATCHED alias
+const EXT_TC_DATA = {};          // → TC_DATA alias
+const EXT_TC_TOP_DATA = [];      // → TC_TOP_DATA alias
+const EXT_TC_SAME_DATA = [];     // → TC_SAME_MONTH_DATA alias
+const EXT_WHOLESALE_DATA = {};   // → WHOLESALE_DATA alias
+const EXT_UPDATE_DATE = '';      // 업데이트 날짜 표시용
+```
+
+### 19-4. 주의사항
+```
+⚠ index.html의 EXT: 마커 범위 변경 시 → external/index.html 자동 반영됨 (update_all.py 실행 시)
+⚠ EXT_JS: 마커는 JS 함수 범위 전체를 포함해야 함 (중간 자르기 금지)
+⚠ external/index.html을 직접 수정해도 → update_all.py 실행 시 마커 구간 덮어씌워짐
+⚠ 데이터 변수 추가 시 → EXT_ 접두어로 추가 + alias 추가 + update_all.py subs 리스트 추가
+```
+
+---
+
+## 20. MD 파일 관리 규칙
 
 ```
 새 MD 파일 → 항상 두 곳 동시 저장:
