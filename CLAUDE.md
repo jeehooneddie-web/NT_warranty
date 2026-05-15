@@ -10,7 +10,7 @@
 | 항목 | 값 |
 |------|-----|
 | 운영 URL (주, 현재) | https://warranty.nationalmotors.co.kr (Azure SWA) ← 메인 공개 URL |
-| 운영 URL (GitHub) | https://jeehooneddie-web.github.io/NT_warranty/ (배포 파이프라인 전용, Pages 비활성화) |
+| 운영 URL (GitHub) | https://jeehooneddie-web.github.io/NT_warranty/ (❌ Pages 비활성화 — SWA 장애 시 백업용) |
 | 운영 URL (Blob) | https://ntwarranty.z12.web.core.windows.net (❌ 정적 웹사이트 비활성화됨) |
 | 메인 파일 | `dashboard-app/preview/index.html` (~4.4MB, 단일 파일 SPA) |
 | Git 루트 | `d:/코딩/work for_` |
@@ -557,8 +557,13 @@ const normNo = v => String(v).replace(/^WC/i, '').trim();
 ```
 현재 (SWA 메인):
 update_all.py
-  ├→ Step 8: git push → GitHub (코드 관리 전용)
+  ├→ Step 8: git push → GitHub (코드 백업/버전관리 전용)
   └→ Step 9: SWA CLI → ntwarranty-swa → warranty.nationalmotors.co.kr (메인 공개)
+
+SWA 장애 시 GitHub Pages 백업 전환 절차:
+  1. GitHub → NT_warranty → Settings → Pages → Source: GitHub Actions → Publish
+  2. Supabase → Authentication → URL Configuration → Redirect URLs에 github.io URL 추가
+  3. 사용자에게 github.io URL 안내
 ```
 
 ### 18-3. 시크릿 파일
