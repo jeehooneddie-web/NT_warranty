@@ -9,9 +9,9 @@
 
 | 항목 | 값 |
 |------|-----|
-| 운영 URL (주, 현재) | https://jeehooneddie-web.github.io/NT_warranty/ (GitHub Pages) |
-| 운영 URL (SWA) | https://warranty.nationalmotors.co.kr (Azure SWA, HTTPS) ← 문제 시 전환 |
-| 운영 URL (Blob) | https://ntwarranty.z12.web.core.windows.net (Blob, HTTPS) |
+| 운영 URL (주, 현재) | https://warranty.nationalmotors.co.kr (Azure SWA) ← 메인 공개 URL |
+| 운영 URL (GitHub) | https://jeehooneddie-web.github.io/NT_warranty/ (배포 파이프라인 전용, Pages 비활성화) |
+| 운영 URL (Blob) | https://ntwarranty.z12.web.core.windows.net (❌ 정적 웹사이트 비활성화됨) |
 | 메인 파일 | `dashboard-app/preview/index.html` (~4.4MB, 단일 파일 SPA) |
 | Git 루트 | `d:/코딩/work for_` |
 | 배포 방식 (Git) | push to main → GitHub Actions → GitHub Pages 자동 배포 |
@@ -555,15 +555,10 @@ const normNo = v => String(v).replace(/^WC/i, '').trim();
 
 ### 18-2. 배포 흐름
 ```
-현재 (Git 우선):
+현재 (SWA 메인):
 update_all.py
-  ├→ Step 8: git push → GitHub Pages (github.io) — 현재 메인
-  └→ Step 9: SWA CLI → ntwarranty-swa → warranty.nationalmotors.co.kr
-
-문제 발생 시 전환:
-  Supabase Site URL → https://warranty.nationalmotors.co.kr 변경
-  GitHub 레포 → Private 전환
-  → SWA가 메인 배포 경로로 전환 완료
+  ├→ Step 8: git push → GitHub (코드 관리 전용)
+  └→ Step 9: SWA CLI → ntwarranty-swa → warranty.nationalmotors.co.kr (메인 공개)
 ```
 
 ### 18-3. 시크릿 파일
@@ -582,13 +577,12 @@ warranty.nationalmotors.co.kr
 
 ### 18-5. Supabase URL 설정 현황
 ```
-Site URL    : https://jeehooneddie-web.github.io/NT_warranty/ (github.io 메인 사용 중)
+Site URL    : https://warranty.nationalmotors.co.kr (SWA 메인)
 Redirect URLs:
-  - https://jeehooneddie-web.github.io/NT_warranty/
-  - https://ntwarranty.z12.web.core.windows.net/**
   - https://warranty.nationalmotors.co.kr
+  - https://jeehooneddie-web.github.io/NT_warranty/
 
-※ SWA 전환 시: Site URL → https://warranty.nationalmotors.co.kr 변경 필요
+※ Blob URL 제거됨 (정적 웹사이트 비활성화 2026-05-15)
 ```
 
 ### 18-6. 구성원·메뉴 관리
