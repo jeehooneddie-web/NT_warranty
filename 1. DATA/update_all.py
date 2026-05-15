@@ -657,7 +657,7 @@ try:
         ['swa.cmd', 'deploy', APP_DIR,
          '--deployment-token', SWA_DEPLOYMENT_TOKEN,
          '--env', 'production'],
-        capture_output=True, text=True
+        capture_output=True, text=True, errors='replace'
     )
     if result.returncode == 0:
         ok('SWA 배포 완료! → https://warranty.nationalmotors.co.kr')
