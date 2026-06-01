@@ -6,6 +6,7 @@ OneDrive Excel → 집계 → HTML embed → git push 원클릭 자동화
 """
 import pandas as pd
 import json, re, os, shutil, subprocess, sys
+from openpyxl import load_workbook
 
 BASE      = 'D:/코딩/work for_'
 DATA_DIR  = f'{BASE}/1. DATA'
@@ -21,26 +22,46 @@ TC_TMP       = f'{DATA_DIR}/tc_raw_tmp.xlsx'
 TC_ARCHIVE   = f'C:/Users/user/OneDrive - 내쇼날모터스/보증팀 원드라이브/TC_누적_RAW.xlsx'
 EXCLUDE_SRC  = f'{ONEDRIVE}/RECALL TC 작업불가 리스트.xlsx'
 EXCLUDE_TMP  = f'{DATA_DIR}/tc_exclude_tmp.xlsx'
+KR_REJECT_SRC = f'{ONEDRIVE}/KR_REJECT_LIST.xlsx'
+KR_REJECT_TMP = f'{DATA_DIR}/kr_reject_tmp.xlsx'
 
 def step(msg): print(f'\n[▶] {msg}')
 def ok(msg):   print(f'    ✓ {msg}')
 def err(msg):  print(f'    ✗ {msg}'); sys.exit(1)
 
+SKIP_COPY = '--skip-copy' in sys.argv
+
 # ── 1. 파일 복사 ──────────────────────────────────────────
-step('OneDrive 파일 복사 중...')
-for src, dst, name in [
-    (RAW_SRC,    RAW_TMP,    'RAW 클레임'),
-    (DEFECT_SRC, DEFECT_TMP, '디펙트코드 리스트'),
-    (TC_SRC,     TC_TMP,     'TC 미실시 RAW'),
-    (EXCLUDE_SRC, EXCLUDE_TMP, '작업불가 리스트'),
-]:
+if SKIP_COPY:
+    step('파일 복사 건너뜀 (기존 임시파일 사용)')
+    _kr_reject_ok = os.path.exists(KR_REJECT_TMP)
+    ok('기존 임시파일로 진행')
+else:
+    step('OneDrive 파일 복사 중...')
+    for src, dst, name in [
+        (RAW_SRC,    RAW_TMP,    'RAW 클레임'),
+        (DEFECT_SRC, DEFECT_TMP, '디펙트코드 리스트'),
+        (TC_SRC,     TC_TMP,     'TC 미실시 RAW'),
+        (EXCLUDE_SRC, EXCLUDE_TMP, '작업불가 리스트'),
+    ]:
+        try:
+            shutil.copy2(src, dst)
+            ok(f'{name} 복사 완료')
+        except PermissionError:
+            err(f'{name} 파일이 Excel에서 열려 있습니다. 닫고 다시 실행하세요.')
+        except FileNotFoundError:
+            err(f'{name} 파일을 찾을 수 없습니다: {src}')
+
+    # KR_REJECT_LIST는 선택 파일 — 없거나 열려있어도 계속 진행
+    _kr_reject_ok = False
     try:
-        shutil.copy2(src, dst)
-        ok(f'{name} 복사 완료')
+        shutil.copy2(KR_REJECT_SRC, KR_REJECT_TMP)
+        ok('KR Reject 리스트 복사 완료')
+        _kr_reject_ok = True
     except PermissionError:
-        err(f'{name} 파일이 Excel에서 열려 있습니다. 닫고 다시 실행하세요.')
+        ok('KR Reject 리스트가 Excel에서 열려 있음 (무시)')
     except FileNotFoundError:
-        err(f'{name} 파일을 찾을 수 없습니다: {src}')
+        ok('KR Reject 리스트 없음 (무시)')
 
 # ── 2. RAW 클레임 읽기 ────────────────────────────────────
 step('RAW 클레임 집계 중...')
@@ -449,6 +470,7 @@ try:
     cc_branch=cc[5]; cc_cdate=cc[13]  # N열: 클레임생성일자
     cc_status=cc[1]  # B열: 청구/취소
     cc_stage=cc[10]  # K열: 보증 Stage
+    cc_parts=cc[19]  # T열: 부품금액
 
     def _qr_type(stage, defect):
         s = str(stage).strip() if pd.notna(stage) else ''
@@ -486,11 +508,69 @@ try:
         except Exception:
             cdate_str = ''
         qr_type = _qr_type(r[cc_stage], defect)
-        qr_claim_rows.append([cn, str(defect).strip(), vin7, branch, cdate_str, qr_type])
+        try:
+            parts_amt = int(float(str(r[cc_parts]).replace(',', ''))) if pd.notna(r[cc_parts]) else 0
+        except Exception:
+            parts_amt = 0
+        qr_claim_rows.append([cn, str(defect).strip(), vin7, branch, cdate_str, qr_type, parts_amt])
     ok(f'QR_CLAIM_DATA: {len(qr_claim_rows):,}건 (2026년)')
 except Exception as _e:
     qr_claim_rows = []
     ok(f'QR_CLAIM_DATA 생성 실패 (무시): {_e}')
+
+# ── 8-1. KR_REJECT_DATA 집계 ──────────────────────────────
+step('KR_REJECT_DATA 집계 중...')
+kr_reject_rows = []
+try:
+    if _kr_reject_ok:
+        KR_BRANCH_MAP = {'26999':'전주','40699':'군산','41967':'목포',
+                         '41968':'서산','419668':'서산','44835':'평택'}
+        PERSON_NAMES = {
+            'bna157':'이지훈','bna255':'최금환','bna358':'김민철','bna377':'강청호',
+            'bna472':'기준혁','bna557':'유정현','nt230403':'최희원','nt250204':'고서진',
+            'nt250601':'신기섭','nt250702':'고형민','nt250911':'김선기','nt250917':'한현구',
+            'nt251001':'권승리','nt251104':'오정훈',
+        }
+        # RAW claim data에서 WC번호(WC제거) → 담당자 lookup
+        # H열(cols[7]): 'WC205529' 형식 → '205529' 키로 저장
+        claim_person_map = {}
+        for _, row in df.iterrows():
+            cno_raw = str(row[cols[7]]).strip()
+            cno     = cno_raw.upper().replace('WC', '').strip()
+            person  = str(row[cols[23]]).strip()
+            if cno and cno != 'nan' and cno != '' and person and person != 'nan':
+                claim_person_map[cno] = person
+
+        kr_df = pd.read_excel(KR_REJECT_TMP, sheet_name='KR REJECT LIST',
+                              header=None, engine='openpyxl')
+        for _, row in kr_df.iloc[1:].iterrows():   # 헤더행(0) 스킵
+            claim_no  = str(row.iloc[1]).strip()  if pd.notna(row.iloc[1])  else ''
+            ext_no    = str(int(float(row.iloc[7]))) if pd.notna(row.iloc[7]) else ''  # Ext.No. = WC번호(숫자만)
+            hst       = str(int(float(row.iloc[8]))) if pd.notna(row.iloc[8]) else ''  # HST = 딜러코드
+            ref_date  = str(row.iloc[4]).split(' ')[0] if pd.notna(row.iloc[4]) else ''
+            rtype     = str(row.iloc[9]).strip()  if pd.notna(row.iloc[9])  else ''
+            reason    = str(row.iloc[15]).strip() if pd.notna(row.iloc[15]) else ''
+            month     = str(row.iloc[26]).strip() if pd.notna(row.iloc[26]) and str(row.iloc[26]) != 'nan' else ''
+            confirmed = str(row.iloc[28]).strip() if pd.notna(row.iloc[28]) and str(row.iloc[28]) != 'nan' else ''
+            branch    = KR_BRANCH_MAP.get(hst, hst)
+            person_id = claim_person_map.get(ext_no, '')
+            person    = PERSON_NAMES.get(person_id, person_id)
+            kr_reject_rows.append([claim_no, branch, ref_date, rtype, reason, person, confirmed, month])
+        ok(f'KR_REJECT_DATA: {len(kr_reject_rows):,}건')
+
+        # AB열(담당자) 자동 기입 — openpyxl로 해당 열만 수정 (다른 데이터 보존)
+        wb = load_workbook(KR_REJECT_SRC)
+        ws = wb['KR REJECT LIST']
+        ws.cell(row=1, column=28).value = '담당자'   # 헤더 변경
+        for i, r in enumerate(kr_reject_rows):
+            ws.cell(row=i + 2, column=28).value = r[5]  # 담당자값
+        wb.save(KR_REJECT_SRC)
+        ok('AB열(담당자) 자동 기입 완료')
+    else:
+        ok('KR_REJECT_DATA: 파일 없음, 빈 배열 사용')
+except Exception as _e:
+    kr_reject_rows = []
+    ok(f'KR_REJECT_DATA 생성 실패 (무시): {_e}')
 
 # ── 8-2. PERSON_DEFECT_RAW 집계 (청구 전체 × 담당자 × 타입 × 지점 × DefectCode × 월) ──
 # 포맷: [personId, month, claimType, branch, defectCode, count, amount]
@@ -528,6 +608,7 @@ claim_js      = 'const CLAIM_DATA='      + json.dumps(claim_raw,      ensure_asc
 wholesale_js  = 'const WHOLESALE_DATA=' + json.dumps(wholesale_data, ensure_ascii=False, separators=(',',':')) + ';'
 qr_claim_js        = 'const QR_CLAIM_DATA='       + json.dumps(qr_claim_rows,      ensure_ascii=False, separators=(',',':')) + ';'
 person_defect_js   = 'const PERSON_DEFECT_RAW='  + json.dumps(person_defect_raw,  ensure_ascii=False, separators=(',',':')) + ';'
+kr_reject_js       = 'const KR_REJECT_DATA='     + json.dumps(kr_reject_rows,     ensure_ascii=False, separators=(',',':')) + ';'
 ok('완료')
 
 # ── 7. HTML embed ─────────────────────────────────────────
@@ -549,6 +630,7 @@ html = re.sub(r'const CLAIM_DATA=\[.*?\];',          claim_js,      html, flags=
 html = re.sub(r'const WHOLESALE_DATA=\{.*?\};',     wholesale_js,  html, flags=re.DOTALL)
 html = re.sub(r'const QR_CLAIM_DATA=\[.*?\];',      qr_claim_js,        html, flags=re.DOTALL)
 html = re.sub(r'const PERSON_DEFECT_RAW=\[.*?\];', person_defect_js,   html, flags=re.DOTALL)
+html = re.sub(r'const KR_REJECT_DATA=\[.*?\];',   kr_reject_js,        html, flags=re.DOTALL)
 
 with open(HTML_PATH, 'w', encoding='utf-8') as f:
     f.write(html)
