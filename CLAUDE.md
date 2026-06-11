@@ -1,7 +1,7 @@
 # National Motors 보증팀 사내 대시보드 — CLAUDE.md
 
 > Agent 지침서. Claude Code가 이 프로젝트를 작업할 때 항상 먼저 읽는 파일.
-> 마지막 갱신: 2026-05-14 (external 페이지 구조 재구축, 뷰 정리)
+> 마지막 갱신: 2026-06-11 (프로젝트 경로 통합: D:/NM-Dev/warranty-dashboard)
 
 ---
 
@@ -13,7 +13,7 @@
 | 운영 URL (GitHub) | https://jeehooneddie-web.github.io/NT_warranty/ (❌ Pages 비활성화 — SWA 장애 시 백업용) |
 | 운영 URL (Blob) | https://ntwarranty.z12.web.core.windows.net (❌ 정적 웹사이트 비활성화됨) |
 | 메인 파일 | `dashboard-app/preview/index.html` (~4.4MB, 단일 파일 SPA) |
-| Git 루트 | `d:/코딩/work for_` |
+| Git 루트 | `D:/NM-Dev/warranty-dashboard` |
 | 배포 방식 (Git) | push to main → GitHub Actions → GitHub Pages 자동 배포 |
 | 배포 방식 (SWA) | update_all.py → SWA CLI → Azure Static Web Apps → 즉시 반영 |
 | 배포 반영 (Git) | push 후 **1~3분** 소요 |
@@ -52,13 +52,13 @@ grep -n "view-xxx\|TARGET_PATTERN" "dashboard-app/preview/index.html" | head -20
 
 ```bash
 # 1. git push
-cd "d:/코딩/work for_" \
+cd "D:/NM-Dev/warranty-dashboard" \
   && git add dashboard-app/preview/index.html \
   && git commit -m "메시지" \
   && git push
 
 # 2. SWA 배포 (항상 함께 실행)
-python "d:/코딩/work for_/1. DATA/deploy_swa.py"
+python "D:/NM-Dev/warranty-dashboard/1. DATA/deploy_swa.py"
 ```
 
 external/index.html도 변경된 경우:
@@ -676,7 +676,7 @@ const EXT_UPDATE_DATE = '';      // 업데이트 날짜 표시용
 
 ```
 새 MD 파일 → 항상 두 곳 동시 저장:
-  ① d:/코딩/work for_/MD/          (Git, Claude Code 접근)
+  ① D:/NM-Dev/warranty-dashboard/MD/          (Git, Claude Code 접근)
   ② C:/Users/user/OneDrive - 내쇼날모터스/보증팀 원드라이브/MD/  (공유·백업)
 
 네이밍: 번호_카테고리명_데이터명.md

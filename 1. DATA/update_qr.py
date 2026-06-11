@@ -8,7 +8,7 @@ Claim 상세_전체 시트에서 2026년 클레임 추출 → HTML embed → git
 import pandas as pd
 import json, re, os, shutil, subprocess, sys
 
-BASE      = 'D:/코딩/work for_'
+BASE      = 'D:/NM-Dev/warranty-dashboard'
 DATA_DIR  = f'{BASE}/1. DATA'
 HTML_PATH = f'{BASE}/dashboard-app/preview/index.html'
 ONEDRIVE  = 'C:/Users/user/OneDrive - 내쇼날모터스/보증팀 원드라이브/1. Warranty Claim RAW'
@@ -92,6 +92,27 @@ if status:
     ok('배포 완료!')
 else:
     ok('데이터 변경 없음 — 커밋 스킵')
+
+# ── 5. Azure Static Web Apps 배포 ────────────────────────
+step('Azure Static Web Apps 배포 중...')
+try:
+    sys.path.insert(0, DATA_DIR)
+    from config_azure import SWA_DEPLOYMENT_TOKEN
+    APP_DIR = f'{BASE}/dashboard-app/preview'
+    result = subprocess.run(
+        ['swa', 'deploy', APP_DIR,
+         '--deployment-token', SWA_DEPLOYMENT_TOKEN,
+         '--env', 'production'],
+        capture_output=True, text=True
+    )
+    if result.returncode == 0:
+        ok('SWA 배포 완료! → https://warranty.nationalmotors.co.kr')
+    else:
+        print(f'    ⚠ SWA 배포 실패: {result.stderr}')
+except ImportError as e:
+    print(f'    ⚠ config_azure.py 없음: {e}')
+except Exception as e:
+    print(f'    ⚠ SWA 배포 오류: {e}')
 
 print('\n' + '='*50)
 print('  QR 고품 데이터 업데이트 완료.')
