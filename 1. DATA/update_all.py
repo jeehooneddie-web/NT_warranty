@@ -532,45 +532,56 @@ try:
             'nt251001':'권승리','nt251104':'오정훈',
         }
         # RAW claim data에서 WC번호(WC제거) → 담당자 lookup
-        # H열(cols[7]): 'WC205529' 형식 → '205529' 키로 저장
-        claim_person_map = {}
+        # 단독키(Ext.No) + 복합키(Ext.No|VIN) 두 가지 저장 — 복합키 우선 조회
+        claim_person_map  = {}   # Ext.No 단독
+        claim_person_map2 = {}   # Ext.No + VIN 복합
         for _, row in df.iterrows():
-            cno_raw = str(row[cols[7]]).strip()
-            cno     = cno_raw.upper().replace('WC', '').strip()
-            person  = str(row[cols[23]]).strip()
-            if cno and cno != 'nan' and cno != '' and person and person != 'nan':
+            cno    = str(row[cols[7]]).upper().replace('WC', '').strip()
+            vin    = str(row[cols[18]]).strip()
+            person = str(row[cols[23]]).strip()
+            if cno and cno != 'nan' and person and person != 'nan':
                 claim_person_map[cno] = person
+                claim_person_map2[cno + '|' + vin] = person
 
         kr_df = pd.read_excel(KR_REJECT_TMP, sheet_name='KR REJECT LIST',
                               header=None, engine='openpyxl')
         for _, row in kr_df.iloc[1:].iterrows():   # 헤더행(0) 스킵
+            # 중간 헤더 반복 행 스킵 (Ext.No가 숫자가 아닌 행)
+            if not pd.notna(row.iloc[7]) or not str(row.iloc[7]).replace('.','',1).isdigit():
+                continue
             claim_no  = str(row.iloc[1]).strip()  if pd.notna(row.iloc[1])  else ''
-            ext_no    = str(int(float(row.iloc[7]))) if pd.notna(row.iloc[7]) else ''  # Ext.No. = WC번호(숫자만)
-            hst       = str(int(float(row.iloc[8]))) if pd.notna(row.iloc[8]) else ''  # HST = 딜러코드
+            ext_no    = str(int(float(row.iloc[7])))
+            vin_val   = str(row.iloc[2]).strip()  if pd.notna(row.iloc[2])  else ''
+            hst       = str(int(float(row.iloc[8]))) if pd.notna(row.iloc[8]) else ''
             ref_date  = str(row.iloc[4]).split(' ')[0] if pd.notna(row.iloc[4]) else ''
             rtype     = str(row.iloc[9]).strip()  if pd.notna(row.iloc[9])  else ''
             reason    = str(row.iloc[15]).strip() if pd.notna(row.iloc[15]) else ''
             month     = str(row.iloc[26]).strip() if pd.notna(row.iloc[26]) and str(row.iloc[26]) != 'nan' else ''
             confirmed = str(row.iloc[28]).strip() if pd.notna(row.iloc[28]) and str(row.iloc[28]) != 'nan' else ''
             branch    = KR_BRANCH_MAP.get(hst, hst)
-            person_id = claim_person_map.get(ext_no, '')
+            # 복합키(Ext.No+VIN) 우선, 없으면 단독키(Ext.No) fallback
+            person_id = claim_person_map2.get(ext_no + '|' + vin_val, '') or claim_person_map.get(ext_no, '')
             person    = PERSON_NAMES.get(person_id, person_id)
             kr_reject_rows.append([claim_no, branch, ref_date, rtype, reason, person, confirmed, month])
         ok(f'KR_REJECT_DATA: {len(kr_reject_rows):,}건')
-
-        # AB열(담당자) 자동 기입 — openpyxl로 해당 열만 수정 (다른 데이터 보존)
-        wb = load_workbook(KR_REJECT_SRC)
-        ws = wb['KR REJECT LIST']
-        ws.cell(row=1, column=28).value = '담당자'   # 헤더 변경
-        for i, r in enumerate(kr_reject_rows):
-            ws.cell(row=i + 2, column=28).value = r[5]  # 담당자값
-        wb.save(KR_REJECT_SRC)
-        ok('AB열(담당자) 자동 기입 완료')
     else:
         ok('KR_REJECT_DATA: 파일 없음, 빈 배열 사용')
 except Exception as _e:
     kr_reject_rows = []
     ok(f'KR_REJECT_DATA 생성 실패 (무시): {_e}')
+
+# AB열(담당자) 자동 기입 — 데이터 집계와 분리하여 실패해도 kr_reject_rows 유지
+if kr_reject_rows:
+    try:
+        wb = load_workbook(KR_REJECT_SRC)
+        ws = wb['KR REJECT LIST']
+        ws.cell(row=1, column=28).value = '담당자'
+        for i, r in enumerate(kr_reject_rows):
+            ws.cell(row=i + 2, column=28).value = r[5]
+        wb.save(KR_REJECT_SRC)
+        ok('AB열(담당자) 자동 기입 완료')
+    except Exception as _e2:
+        ok(f'AB열 자동 기입 실패 (데이터는 정상): {_e2}')
 
 # ── 8-2. PERSON_DEFECT_RAW 집계 (청구 전체 × 담당자 × 타입 × 지점 × DefectCode × 월) ──
 # 포맷: [personId, month, claimType, branch, defectCode, count, amount]
